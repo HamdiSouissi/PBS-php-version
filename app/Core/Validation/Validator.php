@@ -88,14 +88,19 @@ final class Validator
         };
     }
 
-    /** @param list<string> $parameters */
+    /**
+     * Règle de taille : comparaison numérique pour les int/float réels,
+     * longueur de chaîne sinon (un code postal « 69000 » est une chaîne de 5 caractères).
+     *
+     * @param list<string> $parameters
+     */
     private function minCheck(string $rule, string $field, mixed $value, array $parameters, string $label, bool $filled): ?string
     {
         if (!$filled) {
             return null;
         }
         $min = (int) $parameters[0];
-        if (is_numeric($value)) {
+        if (is_int($value) || is_float($value)) {
             return (float) $value < $min ? "Le champ {$label} doit être supérieur ou égal à {$min}." : null;
         }
         return mb_strlen((string) $value) < $min ? "Le champ {$label} doit contenir au moins {$min} caractères." : null;
@@ -108,7 +113,7 @@ final class Validator
             return null;
         }
         $max = (int) $parameters[0];
-        if (is_numeric($value)) {
+        if (is_int($value) || is_float($value)) {
             return (float) $value > $max ? "Le champ {$label} doit être inférieur ou égal à {$max}." : null;
         }
         return mb_strlen((string) $value) > $max ? "Le champ {$label} ne doit pas dépasser {$max} caractères." : null;

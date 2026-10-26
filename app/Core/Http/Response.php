@@ -28,6 +28,22 @@ class Response
         return $this;
     }
 
+    /**
+     * Réponse de téléchargement d'un fichier du stockage local.
+     */
+    public static function download(string $absolutePath, string $contentType = 'application/octet-stream'): static
+    {
+        if (!is_file($absolutePath)) {
+            throw new \App\Core\Exception\NotFoundException('Fichier introuvable.');
+        }
+        $response = new static((string) file_get_contents($absolutePath), 200, [
+            'Content-Type' => $contentType,
+            'Content-Length' => (string) filesize($absolutePath),
+            'Content-Disposition' => 'attachment; filename="' . basename($absolutePath) . '"',
+        ]);
+        return $response;
+    }
+
     public function addHeader(string $name, string $value): static
     {
         $this->headers[strtolower($name)][] = $value;

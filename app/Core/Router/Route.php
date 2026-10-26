@@ -69,7 +69,15 @@ final class Route
         $anchored = $regex === '/' ? '/' : rtrim((string) $regex, '/');
         $regex = '#^' . $anchored . '$#';
         if (preg_match($regex, $path, $matches)) {
-            return array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+            $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+            // Les segments purement numériques sont typés en entier pour satisfaire
+            // les signatures de contrôleurs en int (IDs) ; les autres restent des chaînes.
+            foreach ($params as $key => $value) {
+                if (preg_match('/^-?\d+$/', (string) $value)) {
+                    $params[$key] = (int) $value;
+                }
+            }
+            return $params;
         }
         return null;
     }

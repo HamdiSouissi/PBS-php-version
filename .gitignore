@@ -29,7 +29,7 @@ storage/encryption/*.key
 /storage/queue/*
 !/storage/queue/.gitkeep
 
-# Documents sensibles générés (bulletins, RH, bancaires)
+# Documents sensibles générés (bulletins, RH, bancaires, factures clients)
 /storage/uploads/*
 !/storage/uploads/.gitkeep
 /storage/documents/*
@@ -38,6 +38,8 @@ storage/encryption/*.key
 !/storage/exports/.gitkeep
 /storage/backups/*
 !/storage/backups/.gitkeep
+/storage/einvoicing/*
+!/storage/einvoicing/.gitkeep
 
 # Bases locales
 *.sqlite

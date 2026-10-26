@@ -24,7 +24,7 @@ final class RbacSeeder
         'payroll' => ['payroll.read', 'payroll.run', 'payroll.validate', 'payroll.lock'],
         'accounting' => ['accounting.read', 'accounting.write', 'accounting.close'],
         'treasury' => ['treasury.read', 'treasury.write'],
-        'invoicing' => ['invoicing.read', 'invoicing.write', 'invoicing.validate', 'invoicing.payments'],
+        'invoicing' => ['invoicing.read', 'invoicing.write', 'invoicing.validate', 'invoicing.payments', 'invoicing.einvoice'],
         'contracts' => ['contracts.read', 'contracts.write'],
         'subscriptions' => ['subscriptions.read', 'subscriptions.write'],
         'expenses' => ['expenses.read', 'expenses.request', 'expenses.approve', 'expenses.pay'],
