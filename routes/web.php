@@ -9,6 +9,7 @@ declare(strict_types=1);
  */
 
 use App\Controllers\DashboardController;
+use App\Controllers\HealthController;
 use App\Controllers\HomeController;
 use App\Core\Router\Router;
 use Modules\Documents\Controllers\DocumentController;
@@ -18,6 +19,9 @@ return static function (Router $router): void {
 foreach (glob(base_path('modules/*/Routes/web.php')) ?: [] as $file) {
     (require $file)($router);
 }
+
+// Sonde de vivacité (healthcheck Docker / reverse proxy), sans authentification.
+$router->get('/health', [HealthController::class, 'show'])->name('health');
 
 // Pages transversales.
 $router->get('/', [HomeController::class, 'index']);

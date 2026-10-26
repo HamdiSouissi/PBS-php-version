@@ -6,6 +6,7 @@ declare(strict_types=1);
  * Enregistrement des commandes console.
  */
 
+use App\Console\Commands\BackupListCommand;
 use App\Console\Commands\BackupRunCommand;
 use App\Console\Commands\BackupRestoreCommand;
 use App\Console\Commands\DatabaseSeedCommand;
@@ -32,6 +33,7 @@ return static function (ConsoleKernel $kernel): void {
     $kernel->register(ScheduleRunCommand::class);
     $kernel->register(BackupRunCommand::class);
     $kernel->register(BackupRestoreCommand::class);
+    $kernel->register(BackupListCommand::class);
     $kernel->register(SubscriptionGenerateCommand::class);
     $kernel->register(InvoiceOverdueCommand::class);
     $kernel->register(RecurringInvoiceRunCommand::class);
