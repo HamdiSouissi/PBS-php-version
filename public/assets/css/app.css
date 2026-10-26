@@ -1,0 +1,58 @@
+/* Prime Business Suite - styles applicatifs */
+:root {
+    --pbs-sidebar-width: 260px;
+    --pbs-topbar-height: 56px;
+}
+
+body { font-size: .92rem; background: #f4f6fa; }
+
+.wrapper { min-height: 100vh; }
+
+.sidebar {
+    width: var(--pbs-sidebar-width);
+    position: fixed;
+    inset: 0 auto 0 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 1030;
+    transition: transform .2s ease;
+}
+.sidebar-brand { border-bottom: 1px solid rgba(255,255,255,.08); }
+.sidebar .nav-link {
+    color: rgba(255,255,255,.78);
+    border-radius: .5rem;
+    padding: .55rem .8rem;
+    margin-bottom: 2px;
+    font-size: .9rem;
+}
+.sidebar .nav-link:hover, .sidebar .nav-link.active {
+    background: rgba(255,255,255,.1);
+    color: #fff;
+}
+.sidebar .nav-section { font-size: .7rem; letter-spacing: .08em; }
+
+.main { margin-left: var(--pbs-sidebar-width); }
+.topbar { position: sticky; top: 0; z-index: 1020; height: var(--pbs-topbar-height); }
+.content { min-height: calc(100vh - var(--pbs-topbar-height)); }
+
+.avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #0d6efd; color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: .8rem;
+}
+
+.auth-body { background: linear-gradient(135deg, #0f2033 0%, #144a6b 100%); }
+.auth-body .card { border: 0; border-radius: 1rem; }
+
+.stat-card { border: 0; border-radius: .9rem; box-shadow: 0 2px 10px rgba(15,32,51,.06); }
+.stat-card .icon { width: 48px; height: 48px; border-radius: .75rem; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+
+.table-sm td, .table-sm th { vertical-align: middle; }
+.badge-outline { border: 1px solid currentColor; background: transparent; }
+
+@media (max-width: 991.98px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.show { transform: translateX(0); }
+    .main { margin-left: 0; }
+}
