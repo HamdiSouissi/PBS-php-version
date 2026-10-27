@@ -8,6 +8,7 @@ use App\Core\Database\Connection;
 use App\Core\Exception\NotFoundException;
 use App\Core\Pdf\OnePageDocument;
 use App\Core\Pdf\PdfDocument;
+use App\Core\Pdf\PdfLabels;
 use App\Core\Pdf\PdfSection;
 
 /**
@@ -88,7 +89,7 @@ final class PayslipPdf implements PdfTemplate, OnePageDocument
         $pdf->keyValueTable([
             ['Période', $period . ' (' . date('d/m/Y', strtotime((string) $payslip['starts_on']))
                 . ' au ' . date('d/m/Y', strtotime((string) $payslip['ends_on'])) . ')'],
-            ['Statut du bulletin', $this->statusLabel((string) $payslip['status'])],
+            ['Statut du bulletin', PdfLabels::payslipStatus((string) $payslip['status'])],
             ['Heures travaillées', number_format((float) $payslip['hours_worked'], 2, ',', ' ') . ' h'],
         ], 42);
 
@@ -163,15 +164,6 @@ final class PayslipPdf implements PdfTemplate, OnePageDocument
         $pdf->smallMuted('Document généré par Prime Business Suite. Les taux et plafonds appliqués sont ceux des règles de cotisation en vigueur à la période ; toute régularisation fait l\'objet d\'un bulletin correctif.');
 
         return $title;
-    }
-
-    private function statusLabel(string $status): string
-    {
-        return match ($status) {
-            'draft' => 'Brouillon',
-            'locked' => 'Clôturé',
-            default => $status,
-        };
     }
 
     /**

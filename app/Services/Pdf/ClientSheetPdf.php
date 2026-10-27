@@ -7,6 +7,7 @@ namespace App\Services\Pdf;
 use App\Core\Database\Connection;
 use App\Core\Exception\NotFoundException;
 use App\Core\Pdf\PdfDocument;
+use App\Core\Pdf\PdfLabels;
 
 /**
  * Fiche client : coordonnées, encours, factures, devis, contrats et abonnements.
@@ -65,7 +66,7 @@ final class ClientSheetPdf implements PdfTemplate
             ])) ?: '—'],
             ['E-mail', (string) ($client['email'] ?: '—')],
             ['Téléphone', (string) ($client['phone'] ?: '—')],
-            ['Conditions de règlement', (int) $client['payment_terms_days'] . ' jours, ' . $client['payment_method']],
+            ['Conditions de règlement', (int) $client['payment_terms_days'] . ' jours, ' . PdfLabels::paymentMethod((string) $client['payment_method'])],
         ]);
 
         $pdf->h2('Indicateurs commerciaux');
@@ -83,7 +84,7 @@ final class ClientSheetPdf implements PdfTemplate
                     (string) $invoice['invoice_number'],
                     date('d/m/Y', strtotime((string) $invoice['issue_date'])),
                     money_format((float) $invoice['total_ttc']),
-                    (string) $invoice['status'],
+                    PdfLabels::invoiceStatus((string) $invoice['status']),
                 ];
             }
             $pdf->dataTable(['N° facture', 'Date', 'Montant TTC', 'Statut'], $rows, [45, 35, 45, 0], ['L', 'L', 'R', 'L']);
@@ -98,7 +99,7 @@ final class ClientSheetPdf implements PdfTemplate
                     (string) $contract['title'],
                     date('d/m/Y', strtotime((string) $contract['starts_on'])),
                     money_format((float) $contract['amount_ht']),
-                    (string) $contract['status'],
+                    PdfLabels::contractStatus((string) $contract['status']),
                 ];
             }
             $pdf->dataTable(['Référence', 'Intitulé', 'Effet', 'Montant HT', 'Statut'], $rows, [32, 0, 28, 32, 24]);
@@ -110,7 +111,7 @@ final class ClientSheetPdf implements PdfTemplate
             foreach ($subscriptions as $subscription) {
                 $rows[] = [
                     (string) $subscription['label'],
-                    (string) $subscription['status'],
+                    PdfLabels::subscriptionStatus((string) $subscription['status']),
                     'x' . (string) $subscription['quantity'],
                     money_format((float) $subscription['unit_amount_ht']),
                     date('d/m/Y', strtotime((string) $subscription['next_invoice_date'])),

@@ -7,6 +7,7 @@ namespace App\Services\Pdf;
 use App\Core\Database\Connection;
 use App\Core\Exception\NotFoundException;
 use App\Core\Pdf\PdfDocument;
+use App\Core\Pdf\PdfLabels;
 
 /**
  * Fiche synthétique salarié : identité, contrat actif, congés et bulletins.
@@ -64,7 +65,7 @@ final class EmployeeSheetPdf implements PdfTemplate
         $pdf->h2('Situation professionnelle');
         $pdf->keyValueTable([
             ['Poste', (string) ($employee['job_title'] ?: '—')],
-            ['Statut', (string) $employee['status']],
+            ['Statut', PdfLabels::employeeStatus((string) $employee['status'])],
             ['Date d\'embauche', $employee['hire_date'] ? date('d/m/Y', strtotime((string) $employee['hire_date'])) : '—'],
             ['Solde de congés restant', number_format((float) $leaveBalance, 1, ',', ' ') . ' jours'],
         ]);
@@ -85,7 +86,7 @@ final class EmployeeSheetPdf implements PdfTemplate
             foreach ($payslips as $payslip) {
                 $rows[] = [
                     sprintf('%02d/%d', (int) $payslip['month'], (int) $payslip['year']),
-                    (string) $payslip['status'],
+                    PdfLabels::payslipStatus((string) $payslip['status']),
                     money_format((float) $payslip['gross_salary']),
                     money_format((float) $payslip['net_payable']),
                     (int) $payslip['is_paid'] === 1 ? 'Payé' : 'Non payé',

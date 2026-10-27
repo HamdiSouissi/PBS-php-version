@@ -7,6 +7,7 @@ namespace App\Services\Pdf;
 use App\Core\Database\Connection;
 use App\Core\Exception\NotFoundException;
 use App\Core\Pdf\PdfDocument;
+use App\Core\Pdf\PdfLabels;
 
 /**
  * Facture client PDF : en-tête société, adresse de facturation, lignes
@@ -47,7 +48,7 @@ final class InvoicePdf implements PdfTemplate
             ['Numéro', (string) $invoice['invoice_number']],
             ["Date d'émission", date('d/m/Y', strtotime((string) $invoice['issue_date']))],
             ['Date d\'échéance', date('d/m/Y', strtotime((string) $invoice['due_date']))],
-            ['Statut', $this->statusLabel((string) $invoice['status'])],
+            ['Statut', PdfLabels::invoiceStatus((string) $invoice['status'])],
         ]);
 
         $pdf->h2('Adresse de facturation');
@@ -109,18 +110,5 @@ final class InvoicePdf implements PdfTemplate
         }
 
         return $title;
-    }
-
-    private function statusLabel(string $status): string
-    {
-        return match ($status) {
-            'draft' => 'Brouillon',
-            'issued' => 'Émise',
-            'partial' => 'Paiement partiel',
-            'paid' => 'Payée',
-            'overdue' => 'En retard',
-            'cancelled' => 'Annulée',
-            default => $status,
-        };
     }
 }
