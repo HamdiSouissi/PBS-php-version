@@ -20,15 +20,24 @@ final class Env
             if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
                 continue;
             }
-            [$key, $value] = explode('=', $line, 2);
+            [$key, $rawValue] = explode('=', $line, 2);
             $key = trim($key);
-            $value = trim($value);
-            if (strlen($value) >= 2) {
-                $first = $value[0];
-                $last = $value[strlen($value) - 1];
+            $trimmed = trim($rawValue);
+            $length = strlen($trimmed);
+            if ($length >= 2) {
+                $first = $trimmed[0];
+                $last = $trimmed[$length - 1];
                 if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
-                    $value = substr($value, 1, -1);
+                    // Valeur entièrement entre guillemets : contenu brut,
+                    // un éventuel '#' interne est conservé tel quel.
+                    $value = substr($trimmed, 1, -1);
+                } else {
+                    // Valeur non quotée : un '#' en début ou précédé d'un blanc
+                    // démarre un commentaire en ligne (convention dotenv).
+                    $value = trim((string) preg_replace('/(^|\s)#.*$/', '', $rawValue));
                 }
+            } else {
+                $value = $trimmed;
             }
             if (getenv($key) === false) {
                 putenv("{$key}={$value}");

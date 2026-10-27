@@ -19,8 +19,11 @@ if [ ! -f .env ]; then
     chmod 640 .env
 fi
 
-# Génération des clés si absentes (la commande modifie .env, idempotente si déjà présentes).
-if ! grep -qE '^APP_KEY=.+' .env || ! grep -qE '^JWT_SECRET=.+' .env; then
+# Génération des clés si absentes. On exige une vraie valeur (au moins un
+# caractère qui n'est ni un blanc ni un '#') : une ligne "APP_KEY=  # commentaire"
+# du .env.example ne doit pas être considérée comme pourvue.
+if ! grep -qE '^APP_KEY=[[:space:]]*[^[:space:]#]' .env \
+   || ! grep -qE '^JWT_SECRET=[[:space:]]*[^[:space:]#]' .env; then
     log "Génération des clés APP_KEY / JWT_SECRET"
     php bin/console app:key-generate
 fi
