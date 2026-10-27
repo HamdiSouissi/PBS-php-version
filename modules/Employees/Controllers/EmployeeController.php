@@ -16,6 +16,9 @@ use Modules\Organization\Services\OrganizationService;
 
 final class EmployeeController extends Controller
 {
+    /** Colonnes DATE / entier clé étrangère : une chaîne vide doit devenir NULL. */
+    private const NULLABLE_COLUMNS = ['birth_date', 'hire_date', 'end_date', 'department_id', 'establishment_id'];
+
     public function __construct(
         private readonly EmployeeService $employees,
         private readonly EmployeeRepository $repository,
@@ -72,7 +75,9 @@ final class EmployeeController extends Controller
             'employee' => $employee,
             'contracts' => $this->repository->contracts($id),
             'activeContract' => $this->repository->activeContract($id),
-            'documents' => $this->db()->fetchAll(
+            // CORRECTIF : $this->db() n'existe pas dans Controller (erreur fatale) ;
+            // on utilise le helper global db().
+            'documents' => db()->fetchAll(
                 'SELECT * FROM employee_documents WHERE employee_id = :e ORDER BY created_at DESC',
                 ['e' => $id]
             ),
@@ -82,7 +87,7 @@ final class EmployeeController extends Controller
     public function update(Request $request, int $id): Response
     {
         $this->auth()->requirePermission('employees.write');
-        $data = $this->validateEmployee($request, false);
+        $data = $this->validateEmployee($request);
         $this->employees->update($id, $data);
         flash('success', 'Salarié mis à jour.');
         return new RedirectResponse('/employees/' . $id);
@@ -117,7 +122,12 @@ final class EmployeeController extends Controller
             'monthly_gross' => 'required|decimal:2',
             'weekly_hours' => 'required|decimal:2',
             'status' => 'required|in:draft,active',
+            // CORRECTIF : ces champs du formulaire étaient ignorés (absents des règles).
+            'position' => 'nullable|string|max:120',
+            'classification' => 'nullable|string|max:120',
         ]);
+        // CORRECTIF : « end_date » vide (CDI) était envoyé comme '' à une colonne DATE (erreur SQL).
+        $data = $this->nullifyEmpty($data);
         $this->contracts->create($id, $data, $this->auth()->id());
         flash('success', 'Contrat enregistré.');
         return new RedirectResponse('/employees/' . $id);
@@ -134,13 +144,15 @@ final class EmployeeController extends Controller
     /**
      * @return array<string,mixed>
      */
-    private function validateEmployee(Request $request, bool $required = true): array
+    private function validateEmployee(Request $request): array
     {
-        $rule = static fn (string $base): string => $required ? 'required|' . $base : 'nullable|' . $base;
-        return $this->validator()->validate($request->all(), [
+        $data = $this->validator()->validate($request->all(), [
             'last_name' => 'required|string|max:100',
             'first_name' => 'required|string|max:100',
             'birth_date' => 'nullable|date',
+            'birth_place' => 'nullable|string|max:120',
+            'gender' => 'nullable|in:m,f,non_renseigne',
+            'nationality' => 'nullable|string|max:60',
             'personal_email' => 'nullable|email',
             'professional_email' => 'nullable|email',
             'phone' => 'nullable|string|max:40',
@@ -158,5 +170,35 @@ final class EmployeeController extends Controller
             'iban' => 'nullable|iban',
             'bic' => 'nullable|string|max:11',
         ], ['last_name' => 'nom', 'first_name' => 'prénom']);
+
+        $data = $this->nullifyEmpty($data);
+
+        // Colonnes texte NOT NULL : jamais de NULL. Colonnes à valeur par défaut : on laisse la valeur par défaut.
+        foreach ($data as $field => $value) {
+            if ($value === null && !in_array($field, self::NULLABLE_COLUMNS, true)) {
+                if (in_array($field, ['status', 'gender'], true)) {
+                    unset($data[$field]);
+                } else {
+                    $data[$field] = '';
+                }
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Transforme les chaînes vides en NULL pour les colonnes DATE et clés étrangères.
+     *
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>
+     */
+    private function nullifyEmpty(array $data): array
+    {
+        foreach (self::NULLABLE_COLUMNS as $field) {
+            if (array_key_exists($field, $data) && ($data[$field] === '' || $data[$field] === null)) {
+                $data[$field] = null;
+            }
+        }
+        return $data;
     }
 }

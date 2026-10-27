@@ -17,6 +17,8 @@ use Modules\Authentication\Services\PasswordResetService;
  */
 final class AuthController extends Controller
 {
+    private const MAX_2FA_ATTEMPTS = 5;
+
     public function __construct(
         private readonly AuthService $authService,
         private readonly PasswordResetService $resetService,
@@ -45,19 +47,26 @@ final class AuthController extends Controller
             return (new RedirectResponse('/login'))->withInput($data);
         }
 
+        $remember = (bool) $request->input('remember', false);
+
         if ($user->totpEnrolled) {
             $this->authService->prepareTwoFactor($user);
+            $_SESSION['2fa_remember'] = $remember;
+            $_SESSION['2fa_attempts'] = 0;
             return new RedirectResponse('/two-factor');
         }
 
-        $this->authService->login($user, (bool) $request->input('remember', false), $request->ip(), $request->userAgent());
+        $this->authService->login($user, $remember, $request->ip(), $request->userAgent());
         flash('success', 'Bienvenue, ' . $user->fullName() . '.');
         return new RedirectResponse('/dashboard');
     }
 
     public function showTwoFactor(Request $request): Response
     {
-        if ($this->auth()->guest() || session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION['2fa_pending'])) {
+        // CORRECTIF : l'ancienne condition « $this->auth()->guest() » est toujours vraie
+        // pendant la 2FA (l'utilisateur n'est pas encore connecté) : la page
+        // /two-factor redirigeait systématiquement vers /login.
+        if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION['2fa_pending'])) {
             return new RedirectResponse('/login');
         }
         return $this->view('Authentication::auth/two-factor', ['title' => 'Double authentification'], 'layouts/minimal');
@@ -69,14 +78,23 @@ final class AuthController extends Controller
         if ($pendingId === null) {
             return new RedirectResponse('/login');
         }
-        $user = $this->auth()->user() ?? \App\Core\Application::container()
+        $user = \App\Core\Application::container()
             ->get(\Modules\Authentication\Repositories\UserRepository::class)
             ->findWithRights((int) $pendingId);
         if ($user === null || !$this->authService->validateTwoFactor($user, (string) $request->input('code', ''))) {
+            // Protection contre l'énumération des codes TOTP.
+            $_SESSION['2fa_attempts'] = (int) ($_SESSION['2fa_attempts'] ?? 0) + 1;
+            if ($_SESSION['2fa_attempts'] >= self::MAX_2FA_ATTEMPTS) {
+                unset($_SESSION['2fa_pending'], $_SESSION['2fa_attempts'], $_SESSION['2fa_remember']);
+                flash('danger', 'Trop de codes invalides. Reconnectez-vous.');
+                return new RedirectResponse('/login');
+            }
             flash('danger', 'Code TOTP invalide.');
             return new RedirectResponse('/two-factor');
         }
-        $this->authService->login($user, (bool) ($_SESSION['remember'] ?? false), $request->ip(), $request->userAgent());
+        $remember = (bool) ($_SESSION['2fa_remember'] ?? false);
+        $this->authService->login($user, $remember, $request->ip(), $request->userAgent());
+        unset($_SESSION['2fa_attempts'], $_SESSION['2fa_remember']);
         flash('success', 'Double authentification validée.');
         return new RedirectResponse('/dashboard');
     }
@@ -102,7 +120,8 @@ final class AuthController extends Controller
             \App\Core\Application::container()->get(\App\Services\MailerService::class)->send(
                 (string) $data['email'],
                 'Réinitialisation de votre mot de passe',
-                '<p>Cliquez sur ce lien (valable 1 heure) :</p><p><a href="' . $link . '">' . $link . '</a></p>'
+                '<p>Cliquez sur ce lien (valable 1 heure) :</p><p><a href="' . htmlspecialchars($link, ENT_QUOTES) . '">'
+                . htmlspecialchars($link, ENT_QUOTES) . '</a></p>'
             );
         }
         // Message identique pour ne pas énumérer les comptes.

@@ -47,10 +47,10 @@ final class UserController extends Controller
             'password' => 'required|min:12',
             'is_active' => 'nullable|boolean',
         ]);
-        $roleIds = array_map('intval', (array) $request->input('roles', []));
+        $roleIds = array_values(array_filter(array_map('intval', (array) $request->input('roles', []))));
         $this->userService->createUser(
             [...$data, 'is_active' => (bool) $request->input('is_active', true)],
-            $roleIds === [] ? [0] : $roleIds
+            $roleIds
         );
         flash('success', 'Utilisateur créé.');
         return new RedirectResponse('/settings/users');
@@ -64,8 +64,8 @@ final class UserController extends Controller
             'last_name' => 'required|string|max:100',
             'is_active' => 'nullable|boolean',
         ]);
-        $roleIds = array_map('intval', (array) $request->input('roles', []));
-        $this->userService->updateUser($id, [...$data, 'is_active' => (bool) $request->input('is_active', true)], $roleIds);
+        $roleIds = array_values(array_filter(array_map('intval', (array) $request->input('roles', []))));
+        $this->userService->updateUser($id, [...$data, 'is_active' => (bool) $request->input('is_active', false)], $roleIds);
         flash('success', 'Utilisateur mis à jour.');
         return new RedirectResponse('/settings/users');
     }
@@ -121,10 +121,14 @@ final class UserController extends Controller
         return json_response(['success' => true]);
     }
 
-    public function disableTotp(Request $request): Response
+    /**
+     * CORRECTIF : la route /settings/users/{id}/totp/disable fournit l'identifiant
+     * de l'utilisateur ciblé ; il était ignoré (le TOTP de l'administrateur
+     * lui-même était désactivé à la place).
+     */
+    public function disableTotp(Request $request, int $id): Response
     {
         $this->auth()->requirePermission('users.write');
-        $id = (int) $request->input('user_id', $this->auth()->id());
         $user = \App\Core\Application::container()
             ->get(\Modules\Authentication\Repositories\UserRepository::class)
             ->findWithRights($id);
@@ -132,6 +136,6 @@ final class UserController extends Controller
             $this->userService->disableTotp($user);
         }
         flash('success', 'Double authentification désactivée.');
-        return new RedirectResponse($request->header('referer') ?? '/settings/users');
+        return new RedirectResponse('/settings/users');
     }
 }
