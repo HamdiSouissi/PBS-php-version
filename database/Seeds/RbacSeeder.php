@@ -32,6 +32,7 @@ final class RbacSeeder
         'dividends' => ['dividends.read', 'dividends.write'],
         'compliance' => ['compliance.read', 'compliance.write'],
         'documents' => ['documents.read', 'documents.write'],
+        'mail' => ['mail.read', 'mail.configure'],
         'ai' => ['ai.use', 'ai.settings'],
         'system' => ['settings.manage', 'audit.read', 'backups.manage'],
         'portal' => ['portal.self'],
@@ -64,10 +65,10 @@ final class RbacSeeder
 
         $roles = [
             'admin' => ['Administrateur', 'Accès complet à l\'application', ['*']],
-            'rh' => ['Responsable RH', 'Employés, contrats, congés et documents RH', $this->modulePermissions(['organization','users','employees','hr','documents','portal'])],
-            'paie' => ['Gestionnaire de paie', 'Moteur de paie, bulletins, DSN', $this->modulePermissions(['payroll','employees','hr','documents','portal'])],
-            'comptable' => ['Comptable', 'Comptabilité, trésorerie, facturation, frais', $this->modulePermissions(['accounting','treasury','invoicing','clients','expenses','contracts','subscriptions','dividends','compliance','documents','portal'])],
-            'employe' => ['Salarié', 'Portail salarié en self-service', ['portal.self', 'hr.leaves.request', 'documents.read']],
+            'rh' => ['Responsable RH', 'Employés, contrats, congés et documents RH', array_merge($this->modulePermissions(['organization','users','employees','hr','documents','portal']), ['mail.read'])],
+            'paie' => ['Gestionnaire de paie', 'Moteur de paie, bulletins, DSN', array_merge($this->modulePermissions(['payroll','employees','hr','documents','portal']), ['mail.read'])],
+            'comptable' => ['Comptable', 'Comptabilité, trésorerie, facturation, frais', array_merge($this->modulePermissions(['accounting','treasury','invoicing','clients','expenses','contracts','subscriptions','dividends','compliance','documents','portal']), ['mail.read'])],
+            'employe' => ['Salarié', 'Portail salarié en self-service', ['portal.self', 'hr.leaves.request', 'documents.read', 'mail.read']],
         ];
 
         foreach ($roles as $code => [$label, $description, $permissions]) {
