@@ -45,7 +45,9 @@ final class ExceptionHandler
             $this->logger->warning($exception->getMessage(), $context);
         }
 
-        if ($request->isApi()) {
+        // Les requêtes AJAX navigateur (X-Requested-With) reposent sur la
+        // session et le CSRF mais attendent une charge JSON exploitable.
+        if ($request->isApi() || $request->isAjax()) {
             return $this->jsonResponse($exception, $status);
         }
         return $this->htmlResponse($exception, $status);

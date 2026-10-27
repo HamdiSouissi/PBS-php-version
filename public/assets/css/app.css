@@ -1775,3 +1775,69 @@ thead.table-light th {
     .card { box-shadow: none; border-color: #ccc; }
     body { background: #fff; }
 }
+
+/* =============================================================================
+   Module Chat : messagerie collaborative deux panneaux
+   ========================================================================== */
+.chat-card {
+    height: calc(100vh - 240px);
+    min-height: 480px;
+    overflow: hidden;
+}
+.chat-layout { height: 100%; }
+.chat-sidebar { display: flex; flex-direction: column; min-height: 0; }
+.chat-conversation-list { overflow-y: auto; flex: 1 1 auto; }
+.chat-conversation {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border-bottom: 1px solid var(--c-border-subtle) !important;
+    text-align: left;
+    transition: background-color var(--dur-fast) var(--ease-out);
+}
+.chat-conversation:hover { background: var(--c-surface-2); }
+.chat-conversation.active { background: var(--accent-subtle); }
+.chat-conversation-name { font-weight: 600; color: var(--c-ink); }
+.chat-conversation-preview { max-width: 100%; }
+.chat-main { min-height: 0; }
+.chat-thread-header { background: var(--c-surface); }
+.chat-thread {
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: var(--c-surface-2);
+}
+.chat-bubble {
+    max-width: 78%;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--r-md);
+    background: var(--c-surface);
+    border: 1px solid var(--c-border-subtle);
+    box-shadow: var(--shadow-xs);
+}
+.chat-bubble .chat-meta {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--c-muted);
+    margin-top: 0.25rem;
+}
+.chat-bubble.mine {
+    align-self: flex-end;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border-color: transparent;
+}
+.chat-bubble.mine .chat-meta { color: color-mix(in srgb, var(--accent-contrast) 75%, transparent); }
+.chat-bubble-body { white-space: pre-wrap; word-break: break-word; }
+.chat-composer { background: var(--c-surface); }
+.chat-composer textarea { resize: none; max-height: 140px; }
+.chat-user-picklist { max-height: 240px; overflow-y: auto; }
+.chat-empty { margin: auto; }
+@media (max-width: 991.98px) {
+    .chat-card { height: auto; min-height: 0; }
+    .chat-layout .chat-sidebar { border-right: 0 !important; border-bottom: 1px solid var(--c-border); max-height: 320px; }
+    .chat-main { min-height: 420px; }
+}
