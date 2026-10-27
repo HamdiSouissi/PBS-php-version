@@ -31,6 +31,13 @@ $navSections = [
         ],
     ],
     [
+        'label' => 'Communication',
+        'items' => [
+            ['/mail', 'Boîte mail', 'envelope', 'mail.read'],
+            ['/mail/admin/accounts', 'Comptes mail', 'gear', 'mail.configure'],
+        ],
+    ],
+    [
         'label' => 'Finances',
         'items' => [
             ['/clients', 'Clients', 'people-fill', 'clients.read'],
@@ -67,6 +74,7 @@ $lucideMap = [
     'pie-chart' => 'pie-chart', 'shield-check' => 'shield-check',
     'folder2-open' => 'folder-open', 'stars' => 'sparkles',
     'shield-lock' => 'shield-lock', 'clock-history' => 'history',
+    'envelope' => 'mail', 'gear' => 'settings',
 ];
 $palette = [
     ['group' => 'Navigation', 'label' => 'Tableau de bord', 'href' => '/dashboard', 'icon' => 'gauge', 'hint' => ''],
@@ -86,6 +94,7 @@ foreach ($navSections as $section) {
     }
 }
 $quickActions = [
+    ['/mail/compose', 'Nouveau message', 'mail-plus', 'mail.read'],
     ['/invoicing/invoices/new', 'Nouvelle facture', 'receipt', 'invoicing.write'],
     ['/invoicing/quotes/new', 'Nouveau devis', 'file-text', 'invoicing.write'],
     ['/clients/new', 'Nouveau client', 'user-plus', 'clients.write'],
