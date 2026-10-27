@@ -7,6 +7,7 @@ namespace App\Services\Pdf;
 use App\Core\Database\Connection;
 use App\Core\Exception\NotFoundException;
 use App\Core\Pdf\PdfDocument;
+use App\Core\Pdf\PdfLabels;
 
 /**
  * Contrat commercial de prestations PDF. Le document reprend les données
@@ -56,7 +57,7 @@ final class ClientContractPdf implements PdfTemplate
             ['Date de signature', $contract['signed_on'] ? date('d/m/Y', strtotime((string) $contract['signed_on'])) : '—'],
             ['Date d\'effet', date('d/m/Y', strtotime((string) $contract['starts_on']))],
             ['Date de fin', $contract['ends_on'] ? date('d/m/Y', strtotime((string) $contract['ends_on'])) : 'Reconduction'],
-            ['Statut', $this->statusLabel((string) $contract['status'])],
+            ['Statut', PdfLabels::contractStatus((string) $contract['status'])],
         ]);
 
         $pdf->article('1', 'Parties',
@@ -110,7 +111,7 @@ final class ClientContractPdf implements PdfTemplate
         $pdf->keyValueTable([
             ['Montant annuel HT', money_format((float) $contract['amount_ht'])],
             ['TVA', 'Taux en vigueur applicable au jour de la facturation'],
-            ['Cycle de facturation', $this->cycleLabel((string) $contract['billing_cycle'])],
+            ['Cycle de facturation', PdfLabels::billingCycle((string) $contract['billing_cycle'])],
             ['Modalités de règlement', '30 jours nets à réception de facture, par virement bancaire'],
         ]);
 
@@ -207,28 +208,5 @@ final class ClientContractPdf implements PdfTemplate
         );
 
         return $title;
-    }
-
-    private function cycleLabel(string $cycle): string
-    {
-        return match ($cycle) {
-            'monthly' => 'Mensuel',
-            'quarterly' => 'Trimestriel',
-            'half_yearly' => 'Semestriel',
-            'yearly' => 'Annuel',
-            'one_shot' => 'Ponctuel',
-            default => $cycle,
-        };
-    }
-
-    private function statusLabel(string $status): string
-    {
-        return match ($status) {
-            'draft' => 'Brouillon',
-            'active' => 'Actif',
-            'terminated' => 'Résilié',
-            'expired' => 'Expiré',
-            default => $status,
-        };
     }
 }

@@ -7,6 +7,7 @@ namespace App\Services\Pdf;
 use App\Core\Database\Connection;
 use App\Core\Exception\NotFoundException;
 use App\Core\Pdf\PdfDocument;
+use App\Core\Pdf\PdfLabels;
 
 /**
  * Devis client PDF.
@@ -42,7 +43,7 @@ final class QuotePdf implements PdfTemplate
             ['Numéro', (string) $quote['quote_number']],
             ["Date d'émission", date('d/m/Y', strtotime((string) $quote['issue_date']))],
             ['Validité', $quote['valid_until'] ? date('d/m/Y', strtotime((string) $quote['valid_until'])) : '—'],
-            ['Statut', $this->statusLabel((string) $quote['status'])],
+            ['Statut', PdfLabels::quoteStatus((string) $quote['status'])],
         ]);
 
         $pdf->h2('Adresse de facturation');
@@ -85,18 +86,5 @@ final class QuotePdf implements PdfTemplate
         $pdf->signatureBlock('Fait à ……………………, le ……………………', 'Signature du client (précédée de « Bon pour accord »)');
 
         return $title;
-    }
-
-    private function statusLabel(string $status): string
-    {
-        return match ($status) {
-            'draft' => 'Brouillon',
-            'sent' => 'Envoyé',
-            'accepted' => 'Accepté',
-            'rejected' => 'Refusé',
-            'invoiced' => 'Facturé',
-            'expired' => 'Expiré',
-            default => $status,
-        };
     }
 }

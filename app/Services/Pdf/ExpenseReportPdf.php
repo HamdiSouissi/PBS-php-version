@@ -7,6 +7,7 @@ namespace App\Services\Pdf;
 use App\Core\Database\Connection;
 use App\Core\Exception\NotFoundException;
 use App\Core\Pdf\PdfDocument;
+use App\Core\Pdf\PdfLabels;
 
 /**
  * Note de frais PDF : en-tête salarié, lignes de dépenses et totaux.
@@ -43,7 +44,7 @@ final class ExpenseReportPdf implements PdfTemplate
             ['Référence', 'NF-' . str_pad((string) $entityId, 4, '0', STR_PAD_LEFT)],
             ['Salarié', $report['first_name'] . ' ' . mb_strtoupper((string) $report['last_name']) . ' (' . $report['employee_number'] . ')'],
             ['Intitulé', (string) $report['title']],
-            ['Statut', $this->statusLabel((string) $report['status'])],
+            ['Statut', PdfLabels::expenseStatus((string) $report['status'])],
             ['Date de soumission', $report['submitted_at'] ? date('d/m/Y', strtotime((string) $report['submitted_at'])) : '—'],
             ['Date de paiement', $report['paid_on'] ? date('d/m/Y', strtotime((string) $report['paid_on'])) : '—'],
         ]);
@@ -54,7 +55,7 @@ final class ExpenseReportPdf implements PdfTemplate
             $totalVat += (float) $line['vat_amount'];
             $rows[] = [
                 date('d/m/Y', strtotime((string) $line['spent_on'])),
-                $this->categoryLabel((string) $line['category']),
+                PdfLabels::expenseCategory((string) $line['category']),
                 (string) $line['label'],
                 money_format((float) $line['amount']),
                 money_format((float) $line['vat_amount']),
@@ -81,30 +82,5 @@ final class ExpenseReportPdf implements PdfTemplate
         $pdf->signatureBlock('Signature du salarié', 'Validation du manager');
 
         return $title;
-    }
-
-    private function statusLabel(string $status): string
-    {
-        return match ($status) {
-            'draft' => 'Brouillon',
-            'submitted' => 'Soumise',
-            'approved' => 'Validée',
-            'rejected' => 'Rejetée',
-            'paid' => 'Payée',
-            default => $status,
-        };
-    }
-
-    private function categoryLabel(string $category): string
-    {
-        return match ($category) {
-            'transport' => 'Transport',
-            'meal' => 'Repas',
-            'accommodation' => 'Hébergement',
-            'fuel' => 'Carburant',
-            'kilometric' => 'Frais kilométriques',
-            'supplies' => 'Fournitures',
-            default => 'Autre',
-        };
     }
 }
