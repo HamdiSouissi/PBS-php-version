@@ -1084,3 +1084,32 @@ SELECT i.id, i.invoice_number, i.third_party_id, tp.name AS third_party_name,
 FROM invoices i
 JOIN third_parties tp ON tp.id = i.third_party_id
 WHERE i.type = 'sale' AND i.status NOT IN ('draft','cancelled');
+
+-- =============================================================================
+-- Boîtes mail d'entreprise (miroir de la migration 20261027_000014_mailbox.sql)
+-- Secrets chiffrés au repos par la couche applicative (libsodium, enc::).
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS mail_accounts (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id          INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    email            TEXT NOT NULL,
+    display_name     TEXT NOT NULL DEFAULT '',
+    imap_host        TEXT NOT NULL,
+    imap_port        INTEGER NOT NULL DEFAULT 993,
+    imap_encryption  TEXT NOT NULL DEFAULT 'ssl'
+        CHECK (imap_encryption IN ('ssl','tls','none')),
+    imap_username    TEXT NOT NULL,
+    imap_secret      TEXT NOT NULL,
+    smtp_host        TEXT NOT NULL,
+    smtp_port        INTEGER NOT NULL DEFAULT 465,
+    smtp_encryption  TEXT NOT NULL DEFAULT 'ssl'
+        CHECK (smtp_encryption IN ('ssl','tls','none')),
+    smtp_username    TEXT NOT NULL,
+    smtp_secret      TEXT NOT NULL,
+    is_active        INTEGER NOT NULL DEFAULT 1,
+    last_sync_at     TEXT,
+    created_at       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_mail_accounts_email ON mail_accounts(email);
+CREATE INDEX IF NOT EXISTS idx_mail_accounts_active ON mail_accounts(is_active);
