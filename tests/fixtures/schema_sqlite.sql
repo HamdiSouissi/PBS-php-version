@@ -1113,3 +1113,34 @@ CREATE TABLE IF NOT EXISTS mail_accounts (
 );
 CREATE INDEX IF NOT EXISTS idx_mail_accounts_email ON mail_accounts(email);
 CREATE INDEX IF NOT EXISTS idx_mail_accounts_active ON mail_accounts(is_active);
+
+-- =============================================================================
+-- Messagerie collaborative (miroir de la migration 20261027_000015_chat.sql)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS chat_conversations (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    type        TEXT NOT NULL CHECK (type IN ('direct', 'group')),
+    name        TEXT NOT NULL DEFAULT '',
+    created_by  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS chat_participants (
+    id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id       INTEGER NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+    user_id               INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    last_read_message_id  INTEGER,
+    joined_at             TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (conversation_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_chat_participants_user ON chat_participants(user_id);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id  INTEGER NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+    sender_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body             TEXT NOT NULL CHECK (length(trim(body)) > 0),
+    created_at       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages(conversation_id, id);
