@@ -7,48 +7,43 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $outbox
  */
 $badges = ['draft' => 'secondary', 'issued' => 'primary', 'partial' => 'warning', 'paid' => 'success', 'overdue' => 'danger', 'cancelled' => 'dark'];
-?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h4 mb-0">Facture <?= e($invoice['invoice_number']) ?>
-        <span class="badge text-bg-<?= e($badges[$invoice['status']] ?? 'secondary') ?>"><?= e($invoice['status']) ?></span>
-        <span class="badge text-bg-info"><?= e($invoice['electronic_status']) ?></span>
-    </h2>
-    <div class="btn-group">
-        <?php if ($invoice['status'] === 'draft'): ?>
-            <form method="post" action="/invoicing/invoices/<?= (int) $invoice['id'] ?>/issue" class="d-inline">
-                <?= csrf_field() ?><button class="btn btn-success btn-sm">Émettre</button>
-            </form>
-        <?php endif; ?>
-        <form method="post" action="/invoicing/invoices/<?= (int) $invoice['id'] ?>/pdf" class="d-inline">
-            <?= csrf_field() ?>
-            <button class="btn btn-outline-primary btn-sm"><i class="bi bi-file-earmark-pdf me-1"></i>Régénérer PDF</button>
-        </form>
-        <?php if (!empty($pdfDoc)): ?>
-            <a class="btn btn-outline-secondary btn-sm" target="_blank" href="/pdf/<?= (int) $pdfDoc['id'] ?>/preview">
-                <i class="bi bi-eye me-1"></i>Aperçu
-            </a>
-            <a class="btn btn-outline-secondary btn-sm" href="/pdf/<?= (int) $pdfDoc['id'] ?>/download">
-                <i class="bi bi-download me-1"></i>PDF
-            </a>
-        <?php endif; ?>
-        <?php if (!in_array($invoice['status'], ['draft', 'cancelled', 'paid'], true)): ?>
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">Encaisser</button>
-        <?php endif; ?>
-        <?php if (in_array($invoice['status'], ['issued', 'partial', 'overdue'], true)): ?>
-            <form method="post" action="/invoicing/invoices/<?= (int) $invoice['id'] ?>/credit-note" class="d-inline"
-                  onsubmit="return confirm('Créer un avoir pour cette facture ?')">
-                <?= csrf_field() ?><button class="btn btn-outline-warning btn-sm">Avoir</button>
-            </form>
-        <?php endif; ?>
-        <?php if ($invoice['status'] !== 'cancelled' && $invoice['status'] !== 'paid'): ?>
-            <form method="post" action="/invoicing/invoices/<?= (int) $invoice['id'] ?>/cancel" class="d-inline"
-                  onsubmit="return confirm('Annuler cette facture ?')">
-                <?= csrf_field() ?><button class="btn btn-outline-danger btn-sm">Annuler</button>
-            </form>
-        <?php endif; ?>
-    </div>
-</div>
 
+$actions = '<span class="badge text-bg-' . e($badges[$invoice['status']] ?? 'secondary') . '">' . e($invoice['status']) . '</span>'
+    . '<span class="badge text-bg-info">' . e($invoice['electronic_status']) . '</span>';
+if ($invoice['status'] === 'draft') {
+    $actions .= '<form method="post" action="/invoicing/invoices/' . (int) $invoice['id'] . '/issue">'
+        . csrf_field() . '<button class="btn btn-success btn-sm"><i data-lucide="send"></i>Émettre</button></form>';
+}
+$actions .= '<form method="post" action="/invoicing/invoices/' . (int) $invoice['id'] . '/pdf">'
+    . csrf_field() . '<button class="btn btn-outline-primary btn-sm"><i data-lucide="file-text"></i>Régénérer PDF</button></form>';
+if (!empty($pdfDoc)) {
+    $actions .= '<a class="btn btn-outline-secondary btn-sm" target="_blank" href="/pdf/' . (int) $pdfDoc['id'] . '/preview">'
+        . '<i data-lucide="eye"></i>Aperçu</a>';
+    $actions .= '<a class="btn btn-outline-secondary btn-sm" href="/pdf/' . (int) $pdfDoc['id'] . '/download">'
+        . '<i data-lucide="download"></i>PDF</a>';
+}
+if (!in_array($invoice['status'], ['draft', 'cancelled', 'paid'], true)) {
+    $actions .= '<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">'
+        . '<i data-lucide="banknote"></i>Encaisser</button>';
+}
+if (in_array($invoice['status'], ['issued', 'partial', 'overdue'], true)) {
+    $actions .= '<form method="post" action="/invoicing/invoices/' . (int) $invoice['id'] . '/credit-note"'
+        . ' data-confirm="Créer un avoir pour cette facture ?" data-confirm-title="Création d\'un avoir">'
+        . csrf_field() . '<button class="btn btn-outline-warning btn-sm">Avoir</button></form>';
+}
+if ($invoice['status'] !== 'cancelled' && $invoice['status'] !== 'paid') {
+    $actions .= '<form method="post" action="/invoicing/invoices/' . (int) $invoice['id'] . '/cancel"'
+        . ' data-confirm="Annuler cette facture ?" data-confirm-title="Annulation de facture">'
+        . csrf_field() . '<button class="btn btn-outline-danger btn-sm">Annuler</button></form>';
+}
+?>
+<?= $viewRenderer->pageHeader(
+    'Facture ' . $invoice['invoice_number'],
+    [['label' => 'Facturation'], ['label' => 'Factures', 'href' => '/invoicing/invoices']],
+    $actions
+) ?>
+
+<div class="page-body">
 <div class="row g-3">
     <div class="col-lg-8">
         <div class="card mb-3">
@@ -146,11 +141,11 @@ $badges = ['draft' => 'secondary', 'issued' => 'primary', 'partial' => 'warning'
     </div>
 </div>
 
-<div class="modal fade" id="paymentModal" tabindex="-1">
+<div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
     <div class="modal-dialog">
         <form class="modal-content" method="post" action="/invoicing/invoices/<?= (int) $invoice['id'] ?>/payments">
             <?= csrf_field() ?>
-            <div class="modal-header"><h5 class="modal-title">Encaisser un paiement</h5>
+            <div class="modal-header"><h5 class="modal-title" id="paymentModalTitle">Encaisser un paiement</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body row g-3">
                 <div class="col-6"><label class="form-label">Montant (€)</label>
@@ -173,4 +168,5 @@ $badges = ['draft' => 'secondary', 'issued' => 'primary', 'partial' => 'warning'
             <div class="modal-footer"><button class="btn btn-primary btn-sm">Valider l'encaissement</button></div>
         </form>
     </div>
+</div>
 </div>

@@ -9,7 +9,7 @@ declare(strict_types=1);
     <div class="mb-3">
         <label class="form-label">Adresse e-mail</label>
         <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+            <span class="input-group-text"><i data-lucide="mail"></i></span>
             <input type="email" name="email" class="form-control" required autofocus
                    value="<?= e(old('email')) ?>" autocomplete="username">
         </div>
@@ -17,7 +17,7 @@ declare(strict_types=1);
     <div class="mb-3">
         <label class="form-label">Mot de passe</label>
         <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <span class="input-group-text"><i data-lucide="lock"></i></span>
             <input type="password" name="password" class="form-control" required autocomplete="current-password">
         </div>
     </div>
@@ -29,7 +29,7 @@ declare(strict_types=1);
         <a href="/forgot-password" class="small">Mot de passe oublié ?</a>
     </div>
     <button class="btn btn-primary w-100" type="submit">
-        <i class="bi bi-box-arrow-in-right me-1"></i>Se connecter
+        <i data-lucide="log-in"></i>Se connecter
     </button>
 </form>
 <p class="text-muted small mt-3 mb-0">

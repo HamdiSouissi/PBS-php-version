@@ -167,16 +167,7 @@ $pageTitle = $title ?? 'Prime Business Suite';
                 <i data-lucide="panel-left"></i>
             </button>
 
-            <div class="me-auto d-none d-md-block">
-                <nav aria-label="Fil d'Ariane">
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="/dashboard">Accueil</a></li>
-                        <li class="breadcrumb-item active" aria-current="page"><?= e($pageTitle) ?></li>
-                    </ol>
-                </nav>
-                <h1><?= e($pageTitle) ?></h1>
-            </div>
-            <h1 class="d-md-none h6 mb-0 me-auto"><?= e($pageTitle) ?></h1>
+            <div class="me-auto"></div>
 
             <button type="button" class="search-trigger" data-palette-open aria-label="Recherche globale">
                 <i data-lucide="search"></i>
@@ -222,7 +213,9 @@ $pageTitle = $title ?? 'Prime Business Suite';
             </div>
         </main>
         <footer class="app-footer">
-            Prime Business Suite — PHP natif · données sensibles protégées<?php if ($authManager->hasPermission('compliance.read')): ?> · <a href="/compliance">espace conformité</a><?php endif; ?>
+            <div>
+                Prime Business Suite — PHP natif · données sensibles protégées<?php if ($authManager->hasPermission('compliance.read')): ?> · <a href="/compliance">espace conformité</a><?php endif; ?>
+            </div>
         </footer>
     </div>
 </div>

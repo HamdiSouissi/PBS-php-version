@@ -9,7 +9,12 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $payslips
  */
 ?>
-<h2 class="h4 mb-3">Mon portail — <?= e($employee['first_name'] . ' ' . $employee['last_name']) ?></h2>
+<?= $viewRenderer->pageHeader(
+    'Mon portail — ' . $employee['first_name'] . ' ' . $employee['last_name'],
+    [['label' => 'Portail salarié']]
+) ?>
+
+<div class="page-body">
 <div class="row g-3">
     <div class="col-lg-4">
         <div class="card mb-3">
@@ -86,4 +91,5 @@ declare(strict_types=1);
             </ul>
         </div>
     </div>
+</div>
 </div>

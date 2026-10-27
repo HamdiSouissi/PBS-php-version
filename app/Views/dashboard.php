@@ -108,13 +108,14 @@ $statusBadges = [
     'draft' => 'secondary', 'issued' => 'primary', 'partial' => 'warning',
     'paid' => 'success', 'overdue' => 'danger', 'cancelled' => 'dark',
 ];
+$greeting = $displayName !== '' ? 'Bonjour, ' . $displayName : 'Tableau de bord';
 ?>
-<div class="page-header">
-    <div>
-        <h2 class="page-title"><?= $displayName !== '' ? 'Bonjour, ' . e($displayName) : 'Tableau de bord' ?></h2>
-        <p class="page-subtitle"><?= e($dateLabel) ?> · vue d'ensemble de l'activité et des échéances clés.</p>
-    </div>
-</div>
+<?= $viewRenderer->pageHeader(
+    $greeting,
+    [],
+    '',
+    $dateLabel . ' · vue d\'ensemble de l\'activité et des échéances clés.'
+) ?>
 
 <?php $visibleQuick = array_filter($quickLinks, static fn (array $q): bool => $auth->hasPermission($q[3])); ?>
 <?php if ($visibleQuick !== []): ?>
@@ -129,7 +130,7 @@ $statusBadges = [
 
 <section class="kpi-grid mb-4" aria-label="Indicateurs clés">
     <?php foreach ($kpiCards as $i => $card): ?>
-        <article class="kpi-card" style="--i: <?= $i ?>">
+        <article class="kpi-card">
             <div class="kpi-top">
                 <span class="kpi-icon <?= e($card['tone']) ?>">
                     <i data-lucide="<?= e($card['icon']) ?>"></i>
@@ -269,12 +270,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const readTokens = () => {
         const css = getComputedStyle(document.documentElement);
         return {
-            accent: css.getPropertyValue('--accent').trim() || '#0071e3',
-            muted: css.getPropertyValue('--c-muted').trim() || '#6b7482',
-            border: css.getPropertyValue('--c-border-subtle').trim() || '#eceef2',
-            body: css.getPropertyValue('--c-body').trim() || '#2b3038',
+            accent: css.getPropertyValue('--accent').trim() || '#ce3f2b',
+            muted: css.getPropertyValue('--c-muted').trim() || '#746d61',
+            border: css.getPropertyValue('--c-border-subtle').trim() || '#edebe6',
+            body: css.getPropertyValue('--c-body').trim() || '#2d2922',
             surface: css.getPropertyValue('--c-surface').trim() || '#ffffff',
-            ink: css.getPropertyValue('--c-ink').trim() || '#101318',
+            ink: css.getPropertyValue('--c-ink').trim() || '#17140f',
         };
     };
 
@@ -282,9 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let revenueChart;
 
     const buildConfig = (t) => {
-        const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-        gradient.addColorStop(0, hexToRgba(t.accent, 0.16));
-        gradient.addColorStop(1, hexToRgba(t.accent, 0));
         return {
             type: 'line',
             data: {
@@ -293,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     label: 'CA HT (€)',
                     data: <?= json_encode(array_map(static fn (array $r) => (float) $r['total'], $revenueSeries)) ?>,
                     borderColor: t.accent,
-                    backgroundColor: gradient,
+                    backgroundColor: hexToRgba(t.accent, 0.10),
                     fill: true,
                     tension: 0.4,
                     borderWidth: 2,
@@ -353,11 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('pbs:theme-changed', () => {
         const t = readTokens();
         const dataset = revenueChart.data.datasets[0];
-        const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-        gradient.addColorStop(0, hexToRgba(t.accent, 0.16));
-        gradient.addColorStop(1, hexToRgba(t.accent, 0));
         dataset.borderColor = t.accent;
-        dataset.backgroundColor = gradient;
+        dataset.backgroundColor = hexToRgba(t.accent, 0.10);
         dataset.pointHoverBackgroundColor = t.accent;
         dataset.pointHoverBorderColor = t.surface;
         revenueChart.options.scales.y.grid.color = t.border;

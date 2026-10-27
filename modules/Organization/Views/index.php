@@ -2,17 +2,27 @@
 
 declare(strict_types=1);
 /** @var ?array<string,mixed> $company @var list<array<string,mixed>> $establishments @var list<array<string,mixed>> $departments */
-if ($company === null) {
-    echo '<div class="alert alert-warning">Aucune société configurée. Lancez les données de référence (db:seed).</div>';
-    return;
-}
 ?>
+<?php
+$orgActions = '<button form="company-form" class="btn btn-primary btn-sm" type="submit"><i data-lucide="save"></i>Enregistrer</button>';
+?>
+<?= $viewRenderer->pageHeader(
+    'Entreprise & organisation',
+    [],
+    $orgActions,
+    'Identité légale, établissements et services.'
+) ?>
+<?php if ($company === null): ?>
+    <div class="page-body"><div class="alert alert-warning">Aucune société configurée. Lancez les données de référence (db:seed).</div></div>
+    <?php return; ?>
+<?php endif; ?>
+<div class="page-body">
 <div class="row g-3">
     <div class="col-lg-7">
         <div class="card">
             <div class="card-header bg-white fw-semibold">Société — informations légales</div>
             <div class="card-body">
-                <form method="post" action="/organization/company/<?= (int) $company['id'] ?>" class="row g-2">
+                <form method="post" action="/organization/company/<?= (int) $company['id'] ?>" class="row g-2" id="company-form">
                     <?= csrf_field() ?>
                     <?php
                     $fields = [
@@ -29,9 +39,6 @@ if ($company === null) {
                                    value="<?= e($company[$name] ?? '') ?>">
                         </div>
                     <?php endforeach; ?>
-                    <div class="col-12 mt-2">
-                        <button class="btn btn-primary btn-sm"><i class="bi bi-save me-1"></i>Enregistrer</button>
-                    </div>
                 </form>
             </div>
         </div>
@@ -78,4 +85,5 @@ if ($company === null) {
             </div>
         </div>
     </div>
+</div>
 </div>

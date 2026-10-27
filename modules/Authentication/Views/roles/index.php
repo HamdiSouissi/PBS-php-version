@@ -11,18 +11,19 @@ declare(strict_types=1);
 $checked = static fn (array $permission): string => (
     $editing !== null && in_array($permission['code'], $editing['permission_codes'], true)
 ) ? 'checked' : '';
+$actions = '<button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#newRoleCard" aria-expanded="false" aria-controls="newRoleCard">
+        <i data-lucide="shield-plus"></i>Nouveau rôle
+    </button>';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h2 class="h4 mb-1">Rôles &amp; permissions</h2>
-        <p class="text-muted mb-0">Chaque utilisateur hérite des permissions des rôles qui lui sont attribués. Les entrées du menu latéral suivent ces mêmes permissions.</p>
-    </div>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#newRoleCard">
-        <i class="bi bi-shield-plus me-1"></i>Nouveau rôle
-    </button>
-</div>
+<?= $viewRenderer->pageHeader(
+    'Rôles & permissions',
+    [['label' => 'Gouvernance']],
+    $actions,
+    'Chaque utilisateur hérite des permissions des rôles qui lui sont attribués. Les entrées du menu latéral suivent ces mêmes permissions.'
+) ?>
 
-<div class="collapse mb-3" id="newRoleCard">
+<div class="page-body">
+<div class="collapse" id="newRoleCard">
     <div class="card">
         <div class="card-header">Créer un rôle</div>
         <form method="post" action="/settings/roles" data-guard>
@@ -68,10 +69,10 @@ $checked = static fn (array $permission): string => (
     </div>
 </div>
 
-<div class="card mb-3">
+<div class="card">
     <div class="card-header">Rôles existants</div>
     <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle mb-0">
+        <table class="table table-sm table-hover align-middle mb-0" data-sortable>
             <thead class="table-light">
             <tr><th>Libellé</th><th>Code</th><th>Description</th><th class="text-end">Permissions</th><th class="text-end">Utilisateurs</th><th class="text-end">Actions</th></tr>
             </thead>
@@ -85,13 +86,14 @@ $checked = static fn (array $permission): string => (
                     <td class="text-end"><span class="badge text-bg-<?= (int) $role['user_count'] > 0 ? 'info' : 'secondary' ?>"><?= (int) $role['user_count'] ?></span></td>
                     <td class="text-end">
                         <a class="btn btn-sm btn-outline-primary" href="/settings/roles?edit=<?= (int) $role['id'] ?>">
-                            <i class="bi bi-pencil me-1"></i>Modifier
+                            <i data-lucide="pencil"></i>Modifier
                         </a>
                         <?php if ((int) $role['user_count'] === 0): ?>
                             <form method="post" action="/settings/roles/<?= (int) $role['id'] ?>/delete" class="d-inline"
-                                  onsubmit="return confirm('Supprimer le rôle « <?= e($role['label']) ?> » ?');">
+                                  data-confirm="Supprimer le rôle « <?= e($role['label']) ?> » ?"
+                                  data-confirm-title="Suppression d'un rôle">
                                 <?= csrf_field() ?>
-                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" aria-label="Supprimer le rôle"><i data-lucide="trash-2"></i></button>
                             </form>
                         <?php endif; ?>
                     </td>
@@ -103,7 +105,7 @@ $checked = static fn (array $permission): string => (
 </div>
 
 <?php if ($editing !== null): ?>
-<div class="card" id="edit-card">
+<div class="card" id="edit-card" data-scroll-into-view>
     <div class="card-header d-flex justify-content-between align-items-center">
         <span>Modifier le rôle « <?= e($editing['label']) ?> » <code class="small"><?= e($editing['code']) ?></code></span>
         <a class="btn btn-sm btn-outline-secondary" href="/settings/roles">Fermer</a>
@@ -141,11 +143,9 @@ $checked = static fn (array $permission): string => (
             <?php endforeach; ?>
         </div>
         <div class="card-footer">
-            <button class="btn btn-primary btn-sm"><i class="bi bi-check2-circle me-1"></i>Enregistrer les permissions</button>
+            <button class="btn btn-primary btn-sm"><i data-lucide="circle-check"></i>Enregistrer les permissions</button>
         </div>
     </form>
 </div>
-<script>document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('edit-card').scrollIntoView({behavior: 'smooth'});
-});</script>
 <?php endif; ?>
+</div>

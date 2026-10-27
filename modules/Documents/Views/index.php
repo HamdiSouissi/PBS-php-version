@@ -9,12 +9,11 @@ declare(strict_types=1);
  */
 $categories = ['autre' => 'Autre', 'rh' => 'RH', 'paie' => 'Paie', 'facture' => 'Facture', 'contrat' => 'Contrat', 'juridique' => 'Juridique', 'comptable' => 'Comptable'];
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h4 mb-0">Documents</h2>
-</div>
+<?= $viewRenderer->pageHeader('Documents', [], '', 'Centre documentaire : dépôts, classement et exports générés.') ?>
 
+<div class="page-body">
 <?php if ($canWrite): ?>
-<div class="card mb-3">
+<div class="card">
     <div class="card-header bg-white fw-semibold">Déposer un document</div>
     <div class="card-body">
         <form method="post" action="/documents/upload" enctype="multipart/form-data" class="row g-2">
@@ -26,7 +25,7 @@ $categories = ['autre' => 'Autre', 'rh' => 'RH', 'paie' => 'Paie', 'facture' => 
                     <?php foreach ($categories as $code => $label): ?><option value="<?= e($code) ?>"><?= e($label) ?></option><?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-2 d-grid"><button class="btn btn-primary btn-sm"><i class="bi bi-upload me-1"></i>Envoyer</button></div>
+            <div class="col-md-2 d-grid"><button class="btn btn-primary btn-sm"><i data-lucide="upload"></i>Envoyer</button></div>
             <div class="col-12 text-muted small">Max <?= (int) $maxSizeMb ?> Mo — formats : <?= e(implode(', ', $extensions)) ?></div>
         </form>
     </div>
@@ -47,11 +46,11 @@ $categories = ['autre' => 'Autre', 'rh' => 'RH', 'paie' => 'Paie', 'facture' => 
                     <td class="small"><?= e($document['uploader'] ?? 'système') ?></td>
                     <td class="small"><?= e(date('d/m/Y H:i', strtotime((string) $document['created_at']))) ?></td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-outline-primary" href="/documents/download/<?= (int) $document['id'] ?>"><i class="bi bi-download"></i></a>
+                        <a class="btn btn-sm btn-outline-primary" href="/documents/download/<?= (int) $document['id'] ?>"><i data-lucide="download"></i></a>
                         <?php if ($canWrite): ?>
                             <form method="post" action="/documents/<?= (int) $document['id'] ?>/delete" class="d-inline" data-confirm="Supprimer ce document ?">
                                 <?= csrf_field() ?>
-                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" aria-label="Supprimer le document"><i data-lucide="trash-2"></i></button>
                             </form>
                         <?php endif; ?>
                     </td>
@@ -60,4 +59,6 @@ $categories = ['autre' => 'Autre', 'rh' => 'RH', 'paie' => 'Paie', 'facture' => 
             </tbody>
         </table>
     </div>
+</div>
+
 </div>

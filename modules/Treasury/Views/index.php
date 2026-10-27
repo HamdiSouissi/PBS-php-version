@@ -6,20 +6,15 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $accounts
  * @var list<array<string,mixed>> $transactions
  */
+$actions = '<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#txModal">'
+    . '<i data-lucide="plus"></i>Nouveau mouvement</button>';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h2 class="h4 mb-1">Trésorerie</h2>
-        <p class="text-muted mb-0">Comptes bancaires, mouvements et rapprochements.</p>
-    </div>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#txModal">
-        <i class="bi bi-plus-lg me-1"></i>Nouveau mouvement
-    </button>
-</div>
+<?= $viewRenderer->pageHeader('Trésorerie', [], $actions, 'Comptes bancaires, mouvements et rapprochements.') ?>
 
-<div class="kpi-grid mb-4">
+<div class="page-body">
+<div class="kpi-grid">
     <?php foreach ($accounts as $i => $account): ?>
-        <article class="kpi-card" style="--i: <?= $i ?>">
+        <article class="kpi-card">
             <div class="kpi-top">
                 <span class="kpi-icon is-success"><i data-lucide="landmark"></i></span>
             </div>
@@ -33,7 +28,7 @@ declare(strict_types=1);
 <div class="card">
     <div class="card-header">50 derniers mouvements</div>
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
+        <table class="table table-sm table-hover mb-0" data-sortable>
             <thead class="table-light">
             <tr><th>Date</th><th>Compte</th><th>Libellé</th><th>Sens</th><th class="text-end">Montant</th><th>Rapproché</th></tr>
             </thead>
@@ -62,7 +57,7 @@ declare(strict_types=1);
                         <form method="post" action="/treasury/transactions/<?= (int) $tx['id'] ?>/reconcile">
                             <?= csrf_field() ?>
                             <button class="btn btn-sm <?= (int) $tx['is_reconciled'] === 1 ? 'btn-success' : 'btn-outline-secondary' ?>">
-                                <i class="bi bi-check2-circle me-1"></i><?= (int) $tx['is_reconciled'] === 1 ? 'Rapproché' : 'Rapprocher' ?>
+                                <i data-lucide="circle-check"></i><?= (int) $tx['is_reconciled'] === 1 ? 'Rapproché' : 'Rapprocher' ?>
                             </button>
                         </form>
                     </td>
@@ -72,12 +67,13 @@ declare(strict_types=1);
         </table>
     </div>
 </div>
+</div>
 
-<div class="modal fade" id="txModal" tabindex="-1">
+<div class="modal fade" id="txModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="txModalTitle">
     <div class="modal-dialog">
         <form class="modal-content" method="post" action="/treasury/transactions">
             <?= csrf_field() ?>
-            <div class="modal-header"><h5 class="modal-title">Nouveau mouvement bancaire</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><h5 class="modal-title" id="txModalTitle">Nouveau mouvement bancaire</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body row g-2">
                 <div class="col-12">
                     <label class="form-label small">Compte *</label>

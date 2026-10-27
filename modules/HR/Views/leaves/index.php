@@ -8,13 +8,14 @@ declare(strict_types=1);
  */
 $badges = ['draft' => 'secondary', 'submitted' => 'warning', 'approved' => 'success', 'rejected' => 'danger', 'cancelled' => 'dark'];
 ?>
-<h2 class="h4 mb-3">Demandes de congés</h2>
+<?= $viewRenderer->pageHeader('Demandes de congés', [['label' => 'Ressources humaines']]) ?>
 
+<div class="page-body">
 <?php if ($pending !== []): ?>
-<div class="card border-warning mb-3">
+<div class="card border-warning">
     <div class="card-header bg-warning-subtle fw-semibold">À valider (<?= count($pending) ?>)</div>
     <div class="table-responsive">
-        <table class="table table-sm mb-0">
+        <table class="table table-sm mb-0" data-sortable>
             <thead><tr><th>Salarié</th><th>Type</th><th>Période</th><th>Jours</th><th>Motif</th><th class="text-end">Décision</th></tr></thead>
             <tbody>
             <?php foreach ($pending as $request): ?>
@@ -43,7 +44,7 @@ $badges = ['draft' => 'secondary', 'submitted' => 'warning', 'approved' => 'succ
 </div>
 <?php endif; ?>
 
-<form class="mb-2" method="get">
+<form class="table-toolbar mb-0" method="get">
     <select class="form-select form-select-sm d-inline w-auto" name="status" onchange="this.form.submit()">
         <option value="">Tous statuts</option>
         <?php foreach (['submitted' => 'Soumises', 'approved' => 'Approuvées', 'rejected' => 'Rejetées', 'cancelled' => 'Annulées'] as $code => $label): ?>
@@ -53,7 +54,7 @@ $badges = ['draft' => 'secondary', 'submitted' => 'warning', 'approved' => 'succ
 </form>
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
+        <table class="table table-sm table-hover mb-0" data-sortable>
             <thead class="table-light"><tr><th>Salarié</th><th>Type</th><th>Période</th><th>Jours</th><th>Statut</th><th>Date</th></tr></thead>
             <tbody>
             <?php if ($requests === []): ?><tr><td colspan="6" class="text-center text-muted py-3">Aucune demande.</td></tr><?php endif; ?>
@@ -70,4 +71,5 @@ $badges = ['draft' => 'secondary', 'submitted' => 'warning', 'approved' => 'succ
             </tbody>
         </table>
     </div>
+</div>
 </div>
