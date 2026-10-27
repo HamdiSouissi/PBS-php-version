@@ -58,8 +58,15 @@ repose sur un utilisateur sans droits chargés.
 ### Permissions
 
 45 permissions codées par module (ex. `invoicing.write`, `hr.leaves.approve`,
-`employees.delete`, `invoicing.einvoice`, `audit.read`). La liaison se fait via
-les tables `roles`, `permissions`, `role_permission`, `role_user`.
+`employees.delete`, `invoicing.einvoice`, `audit.read`, `mail.read`,
+`mail.configure`). La liaison se fait via les tables `roles`, `permissions`,
+`role_permission`, `role_user`.
+
+Le module Mail illustre la séparation lecture/administration : tous les rôles
+disposent de `mail.read` (chacun n'accède qu'à la boîte affectée à son compte),
+tandis que `mail.configure` n'est accordé qu'à l'admin via le wildcard `*`.
+Les mots de passe IMAP/SMTP sont chiffrés au repos (préfixe `enc::`) et ne
+sortent jamais de la couche de service.
 
 Protection des routes (web et API) :
 

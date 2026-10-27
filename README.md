@@ -26,6 +26,7 @@ Sonde de santé : `GET /health`.
 | Organization | Société, établissements, départements, journal d'audit |
 | Employees | Fiches, contrats (unicité du contrat actif), portail salarié |
 | HR | Congés, workflow de validation, soldes, jours ouvrés |
+| Mail | Boîtes IMAP/SMTP (hébergeur type IONOS) : réception, dossiers, recherche, écriture/envoi, pièces jointes, secrets chiffrés et administration réservée au gestionnaire |
 | Invoicing | Factures, devis, avoirs, facturation récurrente, TVA, e-facturation UBL/CII, API REST |
 | Payroll, Accounting, Treasury, Contracts, Subscriptions, Expenses, Dividends, Compliance, Documents, AI | Socle SQL posé (tables, vues, seeders) ; développements en cours |
 
