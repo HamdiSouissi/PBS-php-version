@@ -66,11 +66,14 @@ final class ViewRenderer
             return '';
         }
         $current = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
-        $active = $current === $url || str_starts_with($current, rtrim($url, '/') . '/') ? 'active' : '';
+        $isActive = $current === $url || str_starts_with($current, rtrim($url, '/') . '/');
+        $active = $isActive ? 'active' : '';
+        $ariaCurrent = $isActive ? ' aria-current="page"' : '';
         return sprintf(
-            '<a class="nav-link %s" href="%s"><i class="bi bi-%s me-2"></i><span>%s</span></a>',
+            '<a class="nav-link %s" href="%s"%s><i class="bi bi-%s"></i><span>%s</span></a>',
             $active,
             htmlspecialchars($url, ENT_QUOTES),
+            $ariaCurrent,
             htmlspecialchars($icon, ENT_QUOTES),
             htmlspecialchars($label, ENT_QUOTES)
         );
@@ -78,7 +81,7 @@ final class ViewRenderer
 
     public function navSection(string $label): string
     {
-        return '<div class="nav-section text-uppercase small text-secondary mt-3 mb-1 px-2">'
+        return '<div class="nav-section">'
             . htmlspecialchars($label, ENT_QUOTES) . '</div>';
     }
 

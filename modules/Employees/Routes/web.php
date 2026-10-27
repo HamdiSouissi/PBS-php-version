@@ -17,5 +17,9 @@ return static function (Router $router): void {
         $router->post('/{id}/contracts', [EmployeeController::class, 'storeContract'])->middleware('permission:employees.write');
         $router->post('/{id}/contracts/{contractId}/activate', [EmployeeController::class, 'activateContract'])
             ->middleware('permission:employees.write');
+        $router->post('/{id}/contracts/{contractId}/pdf', [EmployeeController::class, 'regenerateContractPdf'])
+            ->middleware('permission:employees.write')->name('employees.contract.pdf');
+        $router->post('/{id}/sheet-pdf', [EmployeeController::class, 'employeeSheetPdf'])
+            ->middleware('permission:employees.read')->name('employees.sheet.pdf');
     });
 };

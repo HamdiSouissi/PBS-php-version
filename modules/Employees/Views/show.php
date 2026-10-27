@@ -14,7 +14,16 @@ $contractLabels = ['CDI' => 'CDI', 'CDD' => 'CDD', 'apprentissage' => 'Apprentis
         <h2 class="h4 mb-0"><?= e(mb_strtoupper((string) $employee['last_name']) . ' ' . $employee['first_name']) ?></h2>
         <span class="text-muted small"><?= e($employee['employee_number']) ?> · <?= e($employee['job_title']) ?></span>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+        <form method="post" action="/employees/<?= (int) $employee['id'] ?>/sheet-pdf">
+            <?= csrf_field() ?>
+            <button class="btn btn-primary btn-sm"><i class="bi bi-file-earmark-pdf me-1"></i>Fiche PDF</button>
+        </form>
+        <?php if ($sheetPdf !== null): ?>
+            <a class="btn btn-outline-secondary btn-sm" target="_blank" href="/pdf/<?= (int) $sheetPdf['id'] ?>/preview">
+                <i class="bi bi-eye me-1"></i>Aperçu
+            </a>
+        <?php endif; ?>
         <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#portalModal">
             <i class="bi bi-person-badge me-1"></i>Portail salarié
         </button>
@@ -62,12 +71,29 @@ $contractLabels = ['CDI' => 'CDI', 'CDD' => 'CDD', 'apprentissage' => 'Apprentis
                             <td><?= e(money_format($contract['monthly_gross'])) ?></td>
                             <td><span class="badge text-bg-<?= $contract['status'] === 'active' ? 'success' : 'secondary' ?>"><?= e($contract['status']) ?></span></td>
                             <td>
-                                <?php if ($contract['status'] !== 'active'): ?>
-                                    <form method="post" action="/employees/<?= (int) $employee['id'] ?>/contracts/<?= (int) $contract['id'] ?>/activate">
+                                <div class="d-flex gap-1 flex-wrap">
+                                    <?php if ($contract['status'] !== 'active'): ?>
+                                        <form method="post" action="/employees/<?= (int) $employee['id'] ?>/contracts/<?= (int) $contract['id'] ?>/activate">
+                                            <?= csrf_field() ?>
+                                            <button class="btn btn-sm btn-outline-success">Activer</button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <form method="post" action="/employees/<?= (int) $employee['id'] ?>/contracts/<?= (int) $contract['id'] ?>/pdf">
                                         <?= csrf_field() ?>
-                                        <button class="btn btn-sm btn-outline-success">Activer</button>
+                                        <button class="btn btn-sm btn-outline-primary" title="Générer / régénérer le PDF">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                                        </button>
                                     </form>
-                                <?php endif; ?>
+                                    <?php if (!empty($contractPdfs[(int) $contract['id']])): ?>
+                                        <?php $pdfDoc = $contractPdfs[(int) $contract['id']]; ?>
+                                        <a class="btn btn-sm btn-outline-secondary" target="_blank" href="/pdf/<?= (int) $pdfDoc['id'] ?>/preview" title="Aperçu">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-secondary" href="/pdf/<?= (int) $pdfDoc['id'] ?>/download" title="Télécharger">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -83,6 +109,24 @@ $contractLabels = ['CDI' => 'CDI', 'CDD' => 'CDD', 'apprentissage' => 'Apprentis
                     <li class="list-group-item d-flex justify-content-between">
                         <span><?= e($document['name']) ?></span>
                         <span class="text-muted"><?= e(date('d/m/Y', strtotime((string) $document['created_at']))) ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span>Documents PDF générés</span>
+                <span class="badge text-bg-light rounded-pill"><?= count($generatedPdfs) ?></span>
+            </div>
+            <ul class="list-group list-group-flush small">
+                <?php if ($generatedPdfs === []): ?><li class="list-group-item text-muted">Aucun PDF généré pour le moment.</li><?php endif; ?>
+                <?php foreach ($generatedPdfs as $pdfRow): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-file-earmark-pdf text-danger me-1"></i><?= e($pdfRow['name']) ?></span>
+                        <span class="d-flex gap-1">
+                            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="/pdf/<?= (int) $pdfRow['id'] ?>/preview">Aperçu</a>
+                            <a class="btn btn-sm btn-outline-primary" href="/pdf/<?= (int) $pdfRow['id'] ?>/download">Télécharger</a>
+                        </span>
                     </li>
                 <?php endforeach; ?>
             </ul>

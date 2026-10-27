@@ -8,7 +8,7 @@ declare(strict_types=1);
  */
 ?>
 <h2 class="h4 mb-3">Nouvelle facture</h2>
-<form method="post" action="/invoicing/invoices" id="invoice-form">
+<form method="post" action="/invoicing/invoices" id="invoice-form" data-guard>
     <?= csrf_field() ?>
     <div class="card mb-3">
         <div class="card-body row g-3">

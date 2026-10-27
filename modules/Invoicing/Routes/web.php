@@ -34,6 +34,8 @@ return static function (Router $router): void {
             ->middleware('permission:invoicing.validate');
         $router->post('/invoices/{id}/cancel', [InvoiceController::class, 'cancel'])
             ->middleware('permission:invoicing.validate');
+        $router->post('/invoices/{id}/pdf', [InvoiceController::class, 'regeneratePdf'])
+            ->middleware('permission:invoicing.read')->name('invoices.pdf');
         $router->post('/invoices/{id}/e-invoice', [InvoiceController::class, 'generateEInvoice'])
             ->middleware('permission:invoicing.einvoice');
         $router->get('/e-invoice/{outboxId}/download', [InvoiceController::class, 'downloadEInvoice'])
@@ -58,5 +60,7 @@ return static function (Router $router): void {
             ->middleware('permission:invoicing.validate');
         $router->post('/quotes/{id}/convert', [QuoteController::class, 'convert'])
             ->middleware('permission:invoicing.validate');
+        $router->post('/quotes/{id}/pdf', [QuoteController::class, 'regeneratePdf'])
+            ->middleware('permission:invoicing.read')->name('quotes.pdf');
     });
 };

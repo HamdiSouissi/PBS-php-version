@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Subscriptions\Services;
 
 use App\Core\Database\Connection;
+use App\Core\Event\EventDispatcher;
 use Modules\Invoicing\Services\InvoiceService;
+use Modules\Subscriptions\Events\SubscriptionInvoiceGenerated;
 
 /**
  * Génération des factures d'abonnements dus (commande `subscriptions:generate`
@@ -23,7 +25,8 @@ final class SubscriptionScheduler
 
     public function __construct(
         private readonly Connection $db,
-        private readonly InvoiceService $invoices
+        private readonly InvoiceService $invoices,
+        private readonly EventDispatcher $events
     ) {
     }
 
@@ -92,6 +95,7 @@ final class SubscriptionScheduler
             $totalTtc += $ttc;
             $details[] = ['subscription_id' => (int) $subscription['id'], 'invoice_id' => $invoiceId, 'total_ttc' => $ttc];
             audit('subscription.invoice', 'Subscription', (int) $subscription['id'], ['invoice_id' => $invoiceId]);
+            $this->events->dispatch(new SubscriptionInvoiceGenerated((int) $subscription['id'], $invoiceId, $ttc));
         }
 
         if ($details !== []) {

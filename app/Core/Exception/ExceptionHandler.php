@@ -100,6 +100,9 @@ final class ExceptionHandler
         if ($exception instanceof HttpException) {
             return $exception->getStatusCode();
         }
+        if ($exception instanceof AppException) {
+            return 422;
+        }
         return 500;
     }
 }

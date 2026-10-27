@@ -19,6 +19,18 @@ $badges = ['draft' => 'secondary', 'issued' => 'primary', 'partial' => 'warning'
                 <?= csrf_field() ?><button class="btn btn-success btn-sm">Émettre</button>
             </form>
         <?php endif; ?>
+        <form method="post" action="/invoicing/invoices/<?= (int) $invoice['id'] ?>/pdf" class="d-inline">
+            <?= csrf_field() ?>
+            <button class="btn btn-outline-primary btn-sm"><i class="bi bi-file-earmark-pdf me-1"></i>Régénérer PDF</button>
+        </form>
+        <?php if (!empty($pdfDoc)): ?>
+            <a class="btn btn-outline-secondary btn-sm" target="_blank" href="/pdf/<?= (int) $pdfDoc['id'] ?>/preview">
+                <i class="bi bi-eye me-1"></i>Aperçu
+            </a>
+            <a class="btn btn-outline-secondary btn-sm" href="/pdf/<?= (int) $pdfDoc['id'] ?>/download">
+                <i class="bi bi-download me-1"></i>PDF
+            </a>
+        <?php endif; ?>
         <?php if (!in_array($invoice['status'], ['draft', 'cancelled', 'paid'], true)): ?>
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">Encaisser</button>
         <?php endif; ?>

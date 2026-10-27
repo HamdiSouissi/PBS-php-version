@@ -25,6 +25,7 @@ final class RbacSeeder
         'accounting' => ['accounting.read', 'accounting.write', 'accounting.close'],
         'treasury' => ['treasury.read', 'treasury.write'],
         'invoicing' => ['invoicing.read', 'invoicing.write', 'invoicing.validate', 'invoicing.payments', 'invoicing.einvoice'],
+        'clients' => ['clients.read', 'clients.write'],
         'contracts' => ['contracts.read', 'contracts.write'],
         'subscriptions' => ['subscriptions.read', 'subscriptions.write'],
         'expenses' => ['expenses.read', 'expenses.request', 'expenses.approve', 'expenses.pay'],
@@ -65,7 +66,7 @@ final class RbacSeeder
             'admin' => ['Administrateur', 'Accès complet à l\'application', ['*']],
             'rh' => ['Responsable RH', 'Employés, contrats, congés et documents RH', $this->modulePermissions(['organization','users','employees','hr','documents','portal'])],
             'paie' => ['Gestionnaire de paie', 'Moteur de paie, bulletins, DSN', $this->modulePermissions(['payroll','employees','hr','documents','portal'])],
-            'comptable' => ['Comptable', 'Comptabilité, trésorerie, facturation, frais', $this->modulePermissions(['accounting','treasury','invoicing','expenses','contracts','subscriptions','dividends','compliance','documents','portal'])],
+            'comptable' => ['Comptable', 'Comptabilité, trésorerie, facturation, frais', $this->modulePermissions(['accounting','treasury','invoicing','clients','expenses','contracts','subscriptions','dividends','compliance','documents','portal'])],
             'employe' => ['Salarié', 'Portail salarié en self-service', ['portal.self', 'hr.leaves.request', 'documents.read']],
         ];
 

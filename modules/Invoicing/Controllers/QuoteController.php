@@ -10,6 +10,7 @@ use App\Core\Http\Controller;
 use App\Core\Http\RedirectResponse;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
+use App\Core\Pdf\PdfManager;
 use Modules\Invoicing\Services\QuoteService;
 use Modules\Invoicing\Services\VatService;
 
@@ -17,7 +18,8 @@ final class QuoteController extends Controller
 {
     public function __construct(
         private readonly QuoteService $quotes,
-        private readonly Connection $db
+        private readonly Connection $db,
+        private readonly PdfManager $pdf
     ) {
     }
 
@@ -123,6 +125,19 @@ final class QuoteController extends Controller
             'SELECT * FROM quote_lines WHERE quote_id = :id ORDER BY sort_order, id',
             ['id' => $id]
         );
-        return $this->view('Invoicing::quotes/show', ['title' => 'Devis ' . $quote['quote_number'], 'quote' => $quote]);
+        return $this->view('Invoicing::quotes/show', [
+            'title' => 'Devis ' . $quote['quote_number'],
+            'quote' => $quote,
+            'pdfDoc' => $this->pdf->latestFor('quote', $id),
+        ]);
+    }
+
+    /** Génère ou régénère le PDF du devis. */
+    public function regeneratePdf(Request $request, int $id): Response
+    {
+        $this->auth()->requirePermission('invoicing.read');
+        $this->pdf->generate('quote', $id, $this->auth()->id());
+        flash('success', 'PDF du devis généré.');
+        return new RedirectResponse("/invoicing/quotes/{$id}");
     }
 }

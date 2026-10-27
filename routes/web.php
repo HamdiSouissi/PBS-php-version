@@ -9,6 +9,7 @@ declare(strict_types=1);
  */
 
 use App\Controllers\DashboardController;
+use App\Controllers\GeneratedDocumentController;
 use App\Controllers\HealthController;
 use App\Controllers\HomeController;
 use App\Core\Router\Router;
@@ -39,5 +40,11 @@ $router->group(['auth', 'permission:documents.read'], '/documents', static funct
     $router->post('/{id}/delete', [DocumentController::class, 'delete'])
         ->middleware('csrf', 'permission:documents.write')
         ->name('documents.delete');
+});
+
+// Documents PDF générés (aperçu inline / export).
+$router->group(['auth'], '/pdf', static function (Router $router): void {
+    $router->get('/{id}/preview', [GeneratedDocumentController::class, 'preview'])->name('pdf.preview');
+    $router->get('/{id}/download', [GeneratedDocumentController::class, 'download'])->name('pdf.download');
 });
 };

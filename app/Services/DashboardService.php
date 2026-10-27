@@ -44,7 +44,7 @@ final class DashboardService
     public function recentInvoices(int $limit = 6): array
     {
         return $this->db->fetchAll(
-            "SELECT i.invoice_number, i.total_ttc, i.status, i.due_date, t.name
+            "SELECT i.id, i.invoice_number, i.total_ttc, i.status, i.due_date, t.name
              FROM invoices i JOIN third_parties t ON t.id = i.third_party_id
              WHERE i.type = 'sale' ORDER BY i.created_at DESC LIMIT {$limit}"
         );

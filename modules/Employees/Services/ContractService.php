@@ -35,7 +35,6 @@ final class ContractService
                     ['start' => $data['start_date'], 'e' => $employeeId]
                 );
             }
-            $id = $db->lastInsertId();
             $db->execute(
                 'INSERT INTO employment_contracts
                     (employee_id, type, start_date, end_date, trial_period_end, weekly_hours, is_part_time,

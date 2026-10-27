@@ -9,6 +9,7 @@ declare(strict_types=1);
  */
 
 use Modules\Authentication\Controllers\AuthController;
+use Modules\Authentication\Controllers\RoleController;
 use Modules\Authentication\Controllers\UserController;
 
 return static function (\App\Core\Router\Router $router): void {
@@ -39,6 +40,15 @@ $router->group(['auth', 'csrf'], '', static function (\App\Core\Router\Router $r
     $router->post('/settings/users/{id}/update', [UserController::class, 'update'])
         ->middleware('permission:users.write');
     $router->post('/settings/users/{id}/totp/disable', [UserController::class, 'disableTotp'])
+        ->middleware('permission:users.write');
+
+    $router->get('/settings/roles', [RoleController::class, 'index'])
+        ->middleware('permission:users.read')->name('roles.index');
+    $router->post('/settings/roles', [RoleController::class, 'store'])
+        ->middleware('permission:users.write');
+    $router->post('/settings/roles/{id}/update', [RoleController::class, 'update'])
+        ->middleware('permission:users.write');
+    $router->post('/settings/roles/{id}/delete', [RoleController::class, 'delete'])
         ->middleware('permission:users.write');
 });
 };
