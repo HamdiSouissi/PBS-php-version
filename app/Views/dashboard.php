@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const readTokens = () => {
         const css = getComputedStyle(document.documentElement);
         return {
-            accent: css.getPropertyValue('--accent').trim() || '#ce3f2b',
+            accent: css.getPropertyValue('--accent').trim() || '#0b55bd',
             muted: css.getPropertyValue('--c-muted').trim() || '#746d61',
             border: css.getPropertyValue('--c-border-subtle').trim() || '#edebe6',
             body: css.getPropertyValue('--c-body').trim() || '#2d2922',

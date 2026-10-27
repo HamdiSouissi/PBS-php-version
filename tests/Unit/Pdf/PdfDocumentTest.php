@@ -10,7 +10,7 @@ use App\Core\Pdf\PdfSection;
 use Tests\Core\TestCase;
 
 /**
- * Tests unitaires du moteur PDF : encodage Windows-1252, palette sans bleu,
+ * Tests unitaires du moteur PDF : encodage Windows-1252, accent bleu de marque,
  * pagination, compactage mono-page et validité des binaires produits.
  */
 final class PdfDocumentTest extends TestCase
@@ -58,22 +58,16 @@ final class PdfDocumentTest extends TestCase
         );
     }
 
-    public function testPaletteHasNoBlueishColor(): void
+    public function testPaletteUsesBrandBlueAccent(): void
     {
         $reflection = new \ReflectionClass(PdfDocument::class);
-        foreach ($reflection->getConstants() as $name => $rgb) {
-            if (!is_array($rgb) || count($rgb) !== 3) {
-                continue;
-            }
-            [$red, $green, $blue] = array_map('intval', $rgb);
-            self::assertTrue(
-                $blue <= $red,
-                "La constante de couleur {$name} est bleutée (composante bleue dominante)."
-            );
-        }
+        $accent = $reflection->getConstant('ACCENT');
+        self::assertSame([11, 85, 189], $accent);
+        // Le bleu est la composante dominante de l'accent de marque.
+        self::assertGreaterThan($accent[0], $accent[2], "L'accent PDF doit être un bleu (composante bleue dominante).");
     }
 
-    public function testRenderedStreamsContainNoBlueishColorOperator(): void
+    public function testRenderedStreamsContainBrandBlueOperator(): void
     {
         $pdf = new PdfDocument();
         $pdf->setDocumentTitle('Test')->addPage();
@@ -81,11 +75,35 @@ final class PdfDocumentTest extends TestCase
         $pdf->totalsTable([['Total TTC', '5 040,00 €', true]]);
         $binary = $pdf->output();
 
+        $expected = [11 / 255, 85 / 255, 189 / 255];
+        $found = false;
         foreach ($this->extractColorOperators($binary) as [$red, $green, $blue]) {
-            self::assertTrue(
-                $blue <= $red + 0.02,
-                "Opérateur couleur bleuté détecté dans le flux PDF : {$red} {$green} {$blue}."
-            );
+            if (abs($red - $expected[0]) < 0.01 && abs($green - $expected[1]) < 0.01 && abs($blue - $expected[2]) < 0.01) {
+                $found = true;
+                break;
+            }
+        }
+        self::assertTrue($found, 'L\'opérateur de couleur bleu de marque doit apparaître dans le flux PDF.');
+    }
+
+    public function testHeaderHasNoColoredSeparatorLine(): void
+    {
+        // Le filet coloré entre l'en-tête et le corps a été supprimé : sur une
+        // page sans contenu accentué, aucune opération de couleur bleue de
+        // marque ne doit être émise (l'en-tête ne dessine plus de trait).
+        $accent = (new \ReflectionClass(PdfDocument::class))->getConstant('ACCENT');
+        $expected = array_map(static fn (int $channel): float => $channel / 255, $accent);
+
+        $pdf = new PdfDocument();
+        $pdf->setCompany(['legal_name' => 'Société test']);
+        $pdf->setDocumentTitle('Test')->addPage();
+        $binary = $pdf->output();
+
+        foreach ($this->extractColorOperators($binary) as [$red, $green, $blue]) {
+            $matchesAccent = abs($red - $expected[0]) < 0.01
+                && abs($green - $expected[1]) < 0.01
+                && abs($blue - $expected[2]) < 0.01;
+            self::assertFalse($matchesAccent, 'Un trait ou remplissage bleu de marque subsiste dans l\'en-tête.');
         }
     }
 
