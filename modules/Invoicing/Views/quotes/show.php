@@ -1,9 +1,28 @@
 <?php
 
 declare(strict_types=1);
-/** @var array<string,mixed> $quote */
+/**
+ * @var array<string,mixed> $quote
+ * @var ?array<string,mixed> $pdfDoc
+ */
 ?>
-<h2 class="h4 mb-3">Devis <?= e($quote['quote_number']) ?> <span class="badge text-bg-info"><?= e($quote['status']) ?></span></h2>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 mb-0">Devis <?= e($quote['quote_number']) ?> <span class="badge text-bg-info"><?= e($quote['status']) ?></span></h2>
+    <div class="d-flex gap-2">
+        <form method="post" action="/invoicing/quotes/<?= (int) $quote['id'] ?>/pdf">
+            <?= csrf_field() ?>
+            <button class="btn btn-outline-primary btn-sm"><i class="bi bi-file-earmark-pdf me-1"></i>Régénérer PDF</button>
+        </form>
+        <?php if (!empty($pdfDoc)): ?>
+            <a class="btn btn-outline-secondary btn-sm" target="_blank" href="/pdf/<?= (int) $pdfDoc['id'] ?>/preview">
+                <i class="bi bi-eye me-1"></i>Aperçu
+            </a>
+            <a class="btn btn-outline-secondary btn-sm" href="/pdf/<?= (int) $pdfDoc['id'] ?>/download">
+                <i class="bi bi-download me-1"></i>PDF
+            </a>
+        <?php endif; ?>
+    </div>
+</div>
 <div class="card mb-3">
     <div class="card-header bg-white fw-semibold"><?= e($quote['third_party_name']) ?>
         <span class="small text-muted float-end">Émis le <?= e(date('d/m/Y', strtotime((string) $quote['issue_date']))) ?></span></div>

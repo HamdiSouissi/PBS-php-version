@@ -9,6 +9,7 @@ use App\Core\Http\JsonResponse;
 use App\Core\Http\RedirectResponse;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
+use App\Core\Pdf\PdfManager;
 use Modules\Employees\Repositories\EmployeeRepository;
 use Modules\Employees\Services\ContractService;
 use Modules\Employees\Services\EmployeeService;
@@ -23,7 +24,8 @@ final class EmployeeController extends Controller
         private readonly EmployeeService $employees,
         private readonly EmployeeRepository $repository,
         private readonly ContractService $contracts,
-        private readonly OrganizationService $organization
+        private readonly OrganizationService $organization,
+        private readonly PdfManager $pdf
     ) {
     }
 
@@ -70,15 +72,33 @@ final class EmployeeController extends Controller
     {
         $this->auth()->requirePermission('employees.read');
         $employee = $this->employees->getOrFail($id);
+        $contracts = $this->repository->contracts($id);
+        // Dernier PDF généré pour chaque contrat (aperçu/téléchargement).
+        $contractPdfs = [];
+        foreach ($contracts as $contract) {
+            $contractPdfs[(int) $contract['id']] = $this->pdf->latestFor('employee_contract', (int) $contract['id']);
+        }
         return $this->view('Employees::show', [
             'title' => $employee['first_name'] . ' ' . $employee['last_name'],
             'employee' => $employee,
-            'contracts' => $this->repository->contracts($id),
+            'contracts' => $contracts,
             'activeContract' => $this->repository->activeContract($id),
             // CORRECTIF : $this->db() n'existe pas dans Controller (erreur fatale) ;
             // on utilise le helper global db().
             'documents' => db()->fetchAll(
                 'SELECT * FROM employee_documents WHERE employee_id = :e ORDER BY created_at DESC',
+                ['e' => $id]
+            ),
+            'contractPdfs' => $contractPdfs,
+            'sheetPdf' => $this->pdf->latestFor('employee_sheet', $id),
+            'generatedPdfs' => db()->fetchAll(
+                "SELECT * FROM documents
+                 WHERE (
+                        entity_type = 'employment_contract'
+                        AND entity_id IN (SELECT id FROM employment_contracts WHERE employee_id = :e)
+                       )
+                    OR (entity_type = 'employee' AND entity_id = :e)
+                 ORDER BY id DESC LIMIT 20",
                 ['e' => $id]
             ),
         ]);
@@ -128,15 +148,45 @@ final class EmployeeController extends Controller
         ]);
         // CORRECTIF : « end_date » vide (CDI) était envoyé comme '' à une colonne DATE (erreur SQL).
         $data = $this->nullifyEmpty($data);
-        $this->contracts->create($id, $data, $this->auth()->id());
-        flash('success', 'Contrat enregistré.');
+        $contractId = $this->contracts->create($id, $data, $this->auth()->id());
+        $this->safePdf('employee_contract', $contractId, 'Contrat de travail');
+        flash('success', 'Contrat enregistré et document PDF généré.');
         return new RedirectResponse('/employees/' . $id);
+    }
+
+    /** Régénère le PDF d'un contrat de travail. */
+    public function regenerateContractPdf(Request $request, int $id, int $contractId): Response
+    {
+        $this->auth()->requirePermission('employees.write');
+        $this->safePdf('employee_contract', $contractId, 'Contrat de travail');
+        return new RedirectResponse('/employees/' . $id);
+    }
+
+    /** Génère la fiche synthétique PDF du salarié. */
+    public function employeeSheetPdf(Request $request, int $id): Response
+    {
+        $this->auth()->requirePermission('employees.read');
+        $this->safePdf('employee_sheet', $id, 'Fiche salarié');
+        return new RedirectResponse('/employees/' . $id);
+    }
+
+    /** Génération PDF tolérante : une anomalie ne casse pas l'action métier. */
+    private function safePdf(string $kind, int $entityId, string $label): void
+    {
+        try {
+            $this->pdf->generate($kind, $entityId, $this->auth()->id());
+            flash('success', $label . ' PDF disponible dans le centre documentaire.');
+        } catch (\Throwable $exception) {
+            logger()->error('Génération PDF impossible', ['kind' => $kind, 'id' => $entityId, 'error' => $exception->getMessage()]);
+            flash('error', $label . ' : génération PDF indisponible, réessayez.');
+        }
     }
 
     public function activateContract(Request $request, int $id, int $contractId): Response
     {
         $this->auth()->requirePermission('employees.write');
         $this->contracts->activate($contractId);
+        $this->safePdf('employee_contract', $contractId, 'Contrat de travail');
         flash('success', 'Contrat activé (les autres contrats actifs sont clôturés).');
         return new RedirectResponse('/employees/' . $id);
     }

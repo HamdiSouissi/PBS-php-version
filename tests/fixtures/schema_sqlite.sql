@@ -973,18 +973,21 @@ JOIN employees e ON e.id = c.employee_id
 WHERE c.status = 'active'
   AND (c.end_date IS NULL OR c.end_date >= CURRENT_DATE);
 
-CREATE VIEW IF NOT EXISTS v_account_balances AS
+DROP VIEW IF EXISTS v_account_balances;
+CREATE VIEW v_account_balances AS
 SELECT a.code,
        a.label,
        a.account_class,
        a.account_type,
-       COALESCE(SUM(l.debit), 0)  AS total_debit,
-       COALESCE(SUM(l.credit), 0) AS total_credit,
-       COALESCE(SUM(l.debit), 0) - COALESCE(SUM(l.credit), 0) AS solde_debit,
-       COALESCE(SUM(l.credit), 0) - COALESCE(SUM(l.debit), 0) AS solde_credit
+       COALESCE(SUM(CASE WHEN e.status = 'posted' THEN l.debit  ELSE 0 END), 0) AS total_debit,
+       COALESCE(SUM(CASE WHEN e.status = 'posted' THEN l.credit ELSE 0 END), 0) AS total_credit,
+       COALESCE(SUM(CASE WHEN e.status = 'posted' THEN l.debit  ELSE 0 END), 0)
+         - COALESCE(SUM(CASE WHEN e.status = 'posted' THEN l.credit ELSE 0 END), 0) AS solde_debit,
+       COALESCE(SUM(CASE WHEN e.status = 'posted' THEN l.credit ELSE 0 END), 0)
+         - COALESCE(SUM(CASE WHEN e.status = 'posted' THEN l.debit  ELSE 0 END), 0) AS solde_credit
 FROM chart_accounts a
 LEFT JOIN journal_entry_lines l ON l.account_code = a.code
-LEFT JOIN journal_entries e ON e.id = l.entry_id AND e.status = 'posted'
+LEFT JOIN journal_entries e ON e.id = l.entry_id
 GROUP BY a.code, a.label, a.account_class, a.account_type;
 
 CREATE VIEW IF NOT EXISTS v_general_ledger AS
