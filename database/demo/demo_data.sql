@@ -198,11 +198,11 @@ INSERT INTO payslips
      total_employer, net_social, net_taxable, net_payable, general_reduction, is_paid,
      payment_date, generated_by, validated_by, validated_at, created_at, updated_at)
 VALUES
-    (1, 1, 1, 1, 'locked',    151.67, 3200.00, 704.00, 1344.00, 2496.00, 2690.40, 2496.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:00:00', '2026-10-06 10:00:00', '2026-10-07 18:00:00'),
-    (2, 1, 2, 2, 'locked',    151.67, 3600.00, 792.00, 1512.00, 2808.00, 3026.70, 2808.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:05:00', '2026-10-06 10:05:00', '2026-10-07 18:00:00'),
-    (3, 1, 3, 3, 'locked',    151.67, 2900.00, 638.00, 1218.00, 2262.00, 2438.05, 2262.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:10:00', '2026-10-06 10:10:00', '2026-10-07 18:00:00'),
-    (4, 1, 4, 4, 'locked',    151.67, 3100.00, 682.00, 1302.00, 2418.00, 2606.20, 2418.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:15:00', '2026-10-06 10:15:00', '2026-10-07 18:00:00'),
-    (5, 1, 5, 5, 'locked',    151.67, 3500.00, 770.00, 1470.00, 2730.00, 2942.95, 2730.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:20:00', '2026-10-06 10:20:00', '2026-10-07 18:00:00'),
+    (1, 1, 1, 1, 'locked',    151.67, 3200.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:00:00', '2026-10-06 10:00:00', '2026-10-07 18:00:00'),
+    (2, 1, 2, 2, 'locked',    151.67, 3600.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:05:00', '2026-10-06 10:05:00', '2026-10-07 18:00:00'),
+    (3, 1, 3, 3, 'locked',    151.67, 2900.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:10:00', '2026-10-06 10:10:00', '2026-10-07 18:00:00'),
+    (4, 1, 4, 4, 'locked',    151.67, 3100.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:15:00', '2026-10-06 10:15:00', '2026-10-07 18:00:00'),
+    (5, 1, 5, 5, 'locked',    151.67, 3500.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0, 1, '2026-10-05', 2, 2, '2026-10-06 10:20:00', '2026-10-06 10:20:00', '2026-10-07 18:00:00'),
     (6, 2, 1, 1, 'draft',     151.67, 3200.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0, 0, NULL, 2, NULL, NULL, '2026-10-25 09:00:00', '2026-10-25 09:00:00'),
     (7, 2, 2, 2, 'draft',     151.67, 3600.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0, 0, NULL, 2, NULL, NULL, '2026-10-25 09:05:00', '2026-10-25 09:05:00'),
     (8, 2, 8, 8, 'draft',     151.67, 2000.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0, 0, NULL, 2, NULL, NULL, '2026-10-25 09:10:00', '2026-10-25 09:10:00');
@@ -212,23 +212,23 @@ INSERT INTO payslip_lines (payslip_id, rule_code, label, base_amount, rate_emplo
 SELECT p.id, r.code, r.label,
     CASE r.base_type
         WHEN 'csg' THEN ROUND(p.gross_salary * 0.9825, 2)
-        WHEN 'plafond' THEN MIN(p.gross_salary, COALESCE(r.ceiling_month, p.gross_salary))
-        WHEN 'brut_et_plafond' THEN MIN(p.gross_salary, COALESCE(r.ceiling_month, p.gross_salary))
+        WHEN 'plafond' THEN (CASE WHEN r.ceiling_month IS NULL OR p.gross_salary <= r.ceiling_month THEN p.gross_salary ELSE r.ceiling_month END)
+        WHEN 'brut_et_plafond' THEN (CASE WHEN r.ceiling_month IS NULL OR p.gross_salary <= r.ceiling_month THEN p.gross_salary ELSE r.ceiling_month END)
         ELSE p.gross_salary
     END AS base_amount,
     r.rate_employee, r.rate_employer,
     ROUND(
         CASE r.base_type
             WHEN 'csg' THEN ROUND(p.gross_salary * 0.9825, 2)
-            WHEN 'plafond' THEN MIN(p.gross_salary, COALESCE(r.ceiling_month, p.gross_salary))
-            WHEN 'brut_et_plafond' THEN MIN(p.gross_salary, COALESCE(r.ceiling_month, p.gross_salary))
+            WHEN 'plafond' THEN (CASE WHEN r.ceiling_month IS NULL OR p.gross_salary <= r.ceiling_month THEN p.gross_salary ELSE r.ceiling_month END)
+            WHEN 'brut_et_plafond' THEN (CASE WHEN r.ceiling_month IS NULL OR p.gross_salary <= r.ceiling_month THEN p.gross_salary ELSE r.ceiling_month END)
             ELSE p.gross_salary
         END * r.rate_employee / 100, 2) AS amount_employee,
     ROUND(
         CASE r.base_type
             WHEN 'csg' THEN ROUND(p.gross_salary * 0.9825, 2)
-            WHEN 'plafond' THEN MIN(p.gross_salary, COALESCE(r.ceiling_month, p.gross_salary))
-            WHEN 'brut_et_plafond' THEN MIN(p.gross_salary, COALESCE(r.ceiling_month, p.gross_salary))
+            WHEN 'plafond' THEN (CASE WHEN r.ceiling_month IS NULL OR p.gross_salary <= r.ceiling_month THEN p.gross_salary ELSE r.ceiling_month END)
+            WHEN 'brut_et_plafond' THEN (CASE WHEN r.ceiling_month IS NULL OR p.gross_salary <= r.ceiling_month THEN p.gross_salary ELSE r.ceiling_month END)
             ELSE p.gross_salary
         END * r.rate_employer / 100, 2) AS amount_employer,
     (ROW_NUMBER() OVER (PARTITION BY p.id ORDER BY r.id) - 1) AS sort_order
@@ -236,6 +236,38 @@ FROM payslips p
 JOIN payroll_rule_versions r
   ON r.effective_from <= '2026-09-30' AND (r.effective_to IS NULL OR r.effective_to >= '2026-09-01')
 WHERE p.period_id = 1;
+
+-- Totaux des bulletins verrouillés calculés à partir de leurs lignes, comme le
+-- fait PayrollService::buildLines (sommes des cotisations, net imposable sur
+-- cotisations déductibles, net social = net à payer = brut - total salarié).
+UPDATE payslips
+SET total_employee = (
+        SELECT ROUND(COALESCE(SUM(l.amount_employee), 0), 2)
+        FROM payslip_lines l WHERE l.payslip_id = payslips.id
+    ),
+    total_employer = (
+        SELECT ROUND(COALESCE(SUM(l.amount_employer), 0), 2)
+        FROM payslip_lines l WHERE l.payslip_id = payslips.id
+    ),
+    net_taxable = (
+        SELECT ROUND(payslips.gross_salary - COALESCE(SUM(
+                   CASE WHEN r.is_deductible = 1 THEN l.amount_employee ELSE 0 END), 0), 2)
+        FROM payslip_lines l
+        JOIN payroll_rule_versions r
+          ON r.code = l.rule_code
+         AND r.effective_from <= '2026-09-30'
+         AND (r.effective_to IS NULL OR r.effective_to >= '2026-09-01')
+        WHERE l.payslip_id = payslips.id
+    ),
+    net_social = gross_salary - (
+        SELECT ROUND(COALESCE(SUM(l.amount_employee), 0), 2)
+        FROM payslip_lines l WHERE l.payslip_id = payslips.id
+    ),
+    net_payable = gross_salary - (
+        SELECT ROUND(COALESCE(SUM(l.amount_employee), 0), 2)
+        FROM payslip_lines l WHERE l.payslip_id = payslips.id
+    )
+WHERE period_id = 1;
 
 INSERT INTO dsn_preparations (id, company_id, period_id, status, file_path, declared_at, notes, created_by)
 VALUES
@@ -258,8 +290,17 @@ INSERT INTO bank_transactions
      is_reconciled, reconciled_at, source_type, category)
 VALUES
     (1, 1, '2026-10-03', '2026-10-03', 'Règlement facture F-2026-0004 — Nord Industrie SA', 4800.00, 'credit', 'VIR-2026-10-001', 1, '2026-10-05 10:00:00', 'manual', 'client'),
-    (2, 1, '2026-10-04', '2026-10-04', 'Cotisations URSSAF septembre', 12450.00, 'debit', 'URSSAF-09-2026', 1, '2026-10-06 09:30:00', 'manual', 'cotisations'),
-    (3, 1, '2026-10-07', '2026-10-07', 'Salaire net septembre — virements salariés', 12714.00, 'debit', 'PAIE-09-2026', 1, '2026-10-07 18:00:00', 'manual', 'salaires'),
+    (2, 1, '2026-10-04', '2026-10-04', 'Cotisations URSSAF septembre',
+     -- Hors retraite complémentaire Agirc-Arrco, encaissée directement par la caisse de retraite.
+     (SELECT ROUND(SUM(l.amount_employee + l.amount_employer), 2)
+      FROM payslip_lines l
+      JOIN payroll_rule_versions r
+        ON r.code = l.rule_code
+       AND r.effective_from <= '2026-09-30'
+       AND (r.effective_to IS NULL OR r.effective_to >= '2026-09-01')
+      WHERE r.category <> 'retraite_complementaire'),
+     'debit', 'URSSAF-09-2026', 1, '2026-10-06 09:30:00', 'manual', 'cotisations'),
+    (3, 1, '2026-10-07', '2026-10-07', 'Salaire net septembre — virements salariés', (SELECT ROUND(SUM(net_payable), 2) FROM payslips WHERE period_id = 1), 'debit', 'PAIE-09-2026', 1, '2026-10-07 18:00:00', 'manual', 'salaires'),
     (4, 2, '2026-10-10', '2026-10-10', 'Règlement facture F-2026-0005 — Méditerranée Conseil', 2880.00, 'credit', 'VIR-2026-10-005', 1, '2026-10-12 11:00:00', 'manual', 'client'),
     (5, 2, '2026-10-12', '2026-10-12', 'Facture Hexa Cloud — infogérance octobre', 1440.00, 'debit', 'HC-2026-10', 1, '2026-10-14 08:45:00', 'manual', 'fournisseur'),
     (6, 1, '2026-10-15', '2026-10-15', 'Loyer bureaux — Régie Immobilière du Port', 3200.00, 'debit', 'LOY-10-2026', 1, '2026-10-16 10:00:00', 'manual', 'loyer'),
@@ -295,8 +336,8 @@ VALUES
     (3, '615600', 'Locations infogérance', 1200.00, 0.00, 'Hexa Cloud SAS'),
     (3, '445660', 'TVA déductible 20 %', 240.00, 0.00, 'Hexa Cloud SAS'),
     (3, '401000', 'Fournisseurs — Hexa Cloud', 0.00, 1440.00, 'Hexa Cloud SAS'),
-    (4, '641100', 'Salaires (provisoire)', 12714.00, 0.00, ''),
-    (4, '421000', 'Personnel — rémunérations dues', 0.00, 12714.00, ''),
+    (4, '641100', 'Salaires (provisoire)', (SELECT ROUND(SUM(net_payable), 2) FROM payslips WHERE period_id = 1), 0.00, ''),
+    (4, '421000', 'Personnel — rémunérations dues', 0.00, (SELECT ROUND(SUM(net_payable), 2) FROM payslips WHERE period_id = 1), ''),
     (5, '512000', 'Banque — report à nouveau', 42000.00, 0.00, ''),
     (5, '101000', 'Capital social', 0.00, 42000.00, '');
 
@@ -330,7 +371,7 @@ FROM fiscal_years fy
 JOIN (
     SELECT '615600' AS account_code, 10 AS period_month, 'Informatique' AS category, 1500.00 AS planned, 1440.00 AS actual
     UNION ALL SELECT '613200', 10, 'Immobilier', 3200.00, 3200.00
-    UNION ALL SELECT '641100', 10, 'Masse salariale', 13500.00, 12714.00
+    UNION ALL SELECT '641100', 10, 'Masse salariale', 13500.00, (SELECT ROUND(SUM(net_payable), 2) FROM payslips WHERE period_id = 1)
     UNION ALL SELECT '606400', 10, 'Fournitures', 350.00, 312.50
 ) b ON fy.label = 'Exercice 2026';
 
