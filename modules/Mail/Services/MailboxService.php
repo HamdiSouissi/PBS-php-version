@@ -109,6 +109,19 @@ final class MailboxService
         }
     }
 
+    /**
+     * Récupère une pièce jointe précise d'un message (vérification de
+     * l'appartenance à la boîte de l'utilisateur via l'ouverture de session).
+     */
+    public function attachment(int $userId, string $folder, int $sequence, int $position): \Modules\Mail\Models\MailAttachment
+    {
+        $message = $this->message($userId, $folder, $sequence);
+        if (!isset($message->attachments[$position])) {
+            throw new \App\Core\Exception\NotFoundException('Pièce jointe introuvable.');
+        }
+        return $message->attachments[$position];
+    }
+
     public function markRead(int $userId, string $folder, int $sequence, bool $read): void
     {
         [$client] = $this->openImap($userId);

@@ -59,6 +59,15 @@ final class UploadedFile
         return bin2hex(random_bytes(16)) . '.' . $this->extension();
     }
 
+    /**
+     * Contenu brut du fichier téléversé (pour transmission directe, ex. pièce jointe mail).
+     */
+    public function contents(): string
+    {
+        $contents = file_get_contents($this->file['tmp_name']);
+        return $contents === false ? '' : $contents;
+    }
+
     public function moveTo(string $targetDirectory, ?string $name = null): string
     {
         if (!is_dir($targetDirectory) && !mkdir($targetDirectory, 0775, true) && !is_dir($targetDirectory)) {
