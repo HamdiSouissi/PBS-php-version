@@ -314,11 +314,19 @@ final class Connection
     /**
      * Concaténation agrégée (GROUP_CONCAT MySQL, aussi disponible en SQLite).
      * L'expression peut contenir DISTINCT, ex : groupConcat('DISTINCT r.code').
+     *
+     * Différence dialectale : SQLite n'accepte qu'un seul argument en
+     * présence de DISTINCT (le séparateur virgule est alors son défaut) ;
+     * MySQL accepte toujours la clause SEPARATOR.
      */
     public function groupConcat(string $expression, string $separator = ','): string
     {
         $separator = str_replace("'", "''", $separator);
         if ($this->isSqlite()) {
+            $hasDistinct = stripos($expression, 'DISTINCT') !== false;
+            if ($hasDistinct || $separator === ',') {
+                return "GROUP_CONCAT({$expression})";
+            }
             return "GROUP_CONCAT({$expression}, '{$separator}')";
         }
         return "GROUP_CONCAT({$expression} SEPARATOR '{$separator}')";
