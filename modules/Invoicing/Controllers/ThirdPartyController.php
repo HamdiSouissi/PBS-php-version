@@ -32,7 +32,7 @@ final class ThirdPartyController extends Controller
             $params['both'] = 'both';
         }
         if ($search !== '') {
-            $sql .= ' AND (name ILIKE :q OR code ILIKE :q OR siret ILIKE :q)';
+            $sql .= ' AND (' . $this->db->like('name') . ' :q OR ' . $this->db->like('code') . ' :q OR ' . $this->db->like('siret') . ' :q)';
             $params['q'] = '%' . $search . '%';
         }
         $sql .= ' ORDER BY name LIMIT 200';

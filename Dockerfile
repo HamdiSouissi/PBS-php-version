@@ -1,23 +1,22 @@
 # =============================================================================
 # Prime Business Suite — Image applicative PHP-FPM 8.4 (production + dev)
-# Framework : aucun. PHP natif OO, PostgreSQL via PDO.
+# Framework : aucun. PHP natif OO, MySQL/MariaDB via PDO (driver mysqlnd).
 # =============================================================================
 FROM php:8.4-fpm-bookworm AS base
 
 # ---- Dépendances système ----------------------------------------------------
 # Dépendances de compilation des extensions PHP :
-#   libpq-dev      -> pdo_pgsql, pgsql
+#   (pdo_mysql utilise mysqlnd, intégré à PHP : aucune lib cliente externe)
 #   libonig-dev    -> mbstring (expressions régulières multioctets)
 #   libicu-dev     -> intl
 #   libzip-dev     -> zip
 #   libpng/libjpeg/libfreetype/libwebp -> gd
 #   libxml2-dev    -> dom, xml
 #   libsodium-dev  -> sodium
-# Outils runtime : tesseract-ocr (OCR notes de frais), postgresql-client
-# (pg_dump/psql des sauvegardes), git/unzip pour Composer.
+# Outils runtime : tesseract-ocr (OCR notes de frais), default-mysql-client
+# (mysqldump/mysql des sauvegardes), git/unzip pour Composer.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        libpq-dev \
         libonig-dev \
         libicu-dev \
         libzip-dev \
@@ -31,14 +30,13 @@ RUN apt-get update \
         unzip \
         git \
         tesseract-ocr \
-        postgresql-client \
+        default-mysql-client \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
         --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
-        pdo_pgsql \
-        pgsql \
+        pdo_mysql \
         mbstring \
         intl \
         bcmath \

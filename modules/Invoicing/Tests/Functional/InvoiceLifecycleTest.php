@@ -16,14 +16,17 @@ final class InvoiceLifecycleTest extends DatabaseTestCase
 {
     private function fixtures(): array
     {
-        $companyId = (int) $this->db->fetchScalar(
+        // INSERT puis lastInsertId : portable SQLite (tests) comme MySQL.
+        $this->db->execute(
             "INSERT INTO companies (legal_name, siren, siret, legal_form, city, postal_code, is_default)
-             VALUES ('PBS Test SAS', '123456789', '12345678901234', 'SAS', 'Paris', '75001', true) RETURNING id"
+             VALUES ('PBS Test SAS', '123456789', '12345678901234', 'SAS', 'Paris', '75001', true)"
         );
-        $partyId = (int) $this->db->fetchScalar(
+        $companyId = (int) $this->db->lastInsertId();
+        $this->db->execute(
             "INSERT INTO third_parties (type, code, name, siret, payment_terms_days)
-             VALUES ('client', 'CLI-0001', 'Client Test SARL', '98765432109876', 30) RETURNING id"
+             VALUES ('client', 'CLI-0001', 'Client Test SARL', '98765432109876', 30)"
         );
+        $partyId = (int) $this->db->lastInsertId();
         return [$companyId, $partyId];
     }
 

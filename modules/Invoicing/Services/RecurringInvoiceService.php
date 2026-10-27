@@ -38,8 +38,7 @@ final class RecurringInvoiceService
         $templates = $this->db->fetchAll(
             'SELECT * FROM recurring_invoice_templates
              WHERE is_active AND next_run_on <= :today
-             ORDER BY next_run_on, id
-             FOR UPDATE SKIP LOCKED',
+             ORDER BY next_run_on, id' . $this->db->skipLockedClause(),
             ['today' => $today]
         );
 
@@ -65,7 +64,7 @@ final class RecurringInvoiceService
             $nextRun = date('Y-m-d', strtotime($today . ' ' . self::INTERVALS[$template['frequency']]));
             $this->db->execute(
                 'UPDATE recurring_invoice_templates
-                    SET last_run_on = :today, next_run_on = :next, updated_at = now()
+                    SET last_run_on = :today, next_run_on = :next, updated_at = ' . $this->db->nowExpression() . '
                   WHERE id = :id',
                 ['today' => $today, 'next' => $nextRun, 'id' => $template['id']]
             );

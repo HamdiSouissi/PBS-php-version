@@ -116,9 +116,17 @@ final class AuthService
     {
         $userId = $this->auth->id();
         if ($userId !== null) {
+            // Sous-requête corrélée portable (MySQL et SQLite n'acceptent pas
+            // tous deux ORDER BY/LIMIT directement dans un UPDATE).
             $this->db->execute(
-                'UPDATE auth_login_logs SET logout_at = NOW()
-                 WHERE user_id = :u AND logout_at IS NULL ORDER BY id DESC LIMIT 1',
+                'UPDATE auth_login_logs SET logout_at = ' . $this->db->nowExpression() . '
+                 WHERE id = (
+                     SELECT latest_id FROM (
+                         SELECT id AS latest_id FROM auth_login_logs
+                         WHERE user_id = :u AND logout_at IS NULL
+                         ORDER BY id DESC LIMIT 1
+                     ) AS latest
+                 )',
                 ['u' => $userId]
             );
             $this->db->execute('DELETE FROM remember_tokens WHERE user_id = :u', ['u' => $userId]);

@@ -6,8 +6,11 @@ namespace App\Core\Database;
 
 /**
  * Exécute les migrations SQL versionnées (database/migrations/*.sql).
- * PostgreSQL autorise le DDL transactionnel : chaque migration est jouée
- * dans une transaction, avec table de suivi schema_migrations.
+ * Chaque migration est jouée dans une transaction, avec table de suivi
+ * schema_migrations. Attention : MySQL/MariaDB provoquent un commit implicite
+ * sur le DDL — en cas d'échec d'une migration, les objets déjà créés peuvent
+ * rester présents et doivent être corrigés manuellement avant nouvelle tentative.
+ * SQLite, utilisé par la suite de tests, conserve un DDL transactionnel.
  */
 final class MigrationRunner
 {
@@ -33,11 +36,11 @@ final class MigrationRunner
         }
         $this->db->exec(
             "CREATE TABLE IF NOT EXISTS {$this->table} (
-                id BIGSERIAL PRIMARY KEY,
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 migration VARCHAR(255) NOT NULL UNIQUE,
                 checksum CHAR(64) NOT NULL,
-                applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            )"
+                applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
     }
 
@@ -64,7 +67,7 @@ final class MigrationRunner
             $sql = (string) file_get_contents($file);
             $checksum = hash('sha256', $sql);
             $this->db->transaction(function (Connection $connection) use ($sql, $name, $checksum): void {
-                // PDO PGSQL et SQLite acceptent les scripts multi-statements.
+                // PDO MySQL (mysqlnd) et SQLite acceptent les scripts multi-statements.
                 $connection->pdo()->exec($sql);
                 $connection->execute(
                     "INSERT INTO {$this->table} (migration, checksum) VALUES (:m, :c)",

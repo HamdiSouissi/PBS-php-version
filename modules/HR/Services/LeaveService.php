@@ -99,7 +99,7 @@ final class LeaveService
         $this->db->transaction(function (Connection $db) use ($request, $approved, $reviewerId, $note): void {
             $status = $approved ? 'approved' : 'rejected';
             $db->execute(
-                'UPDATE leave_requests SET status = :s, reviewed_by = :r, reviewed_at = NOW(), review_note = :n
+                'UPDATE leave_requests SET status = :s, reviewed_by = :r, reviewed_at = ' . $db->nowExpression() . ', review_note = :n
                  WHERE id = :id',
                 ['s' => $status, 'r' => $reviewerId, 'n' => $note, 'id' => $request['id']]
             );
@@ -130,12 +130,18 @@ final class LeaveService
     {
         $types = $this->db->fetchAll('SELECT * FROM leave_types WHERE is_paid = TRUE');
         foreach ($types as $type) {
-            $this->db->execute(
-                'INSERT INTO leave_balances
-                    (employee_id, leave_type_id, period_year, initial_days, acquired_days, taken_days, remaining_days)
-                 VALUES (:e, :t, :y, :i, 0, 0, :i)
-                 ON CONFLICT (employee_id, leave_type_id, period_year) DO NOTHING',
-                ['e' => $employeeId, 't' => $type['id'], 'y' => $year, 'i' => $type['default_days']]
+            $this->db->insertIgnore(
+                'leave_balances',
+                [
+                    'employee_id' => $employeeId,
+                    'leave_type_id' => $type['id'],
+                    'period_year' => $year,
+                    'initial_days' => $type['default_days'],
+                    'acquired_days' => 0,
+                    'taken_days' => 0,
+                    'remaining_days' => $type['default_days'],
+                ],
+                ['employee_id', 'leave_type_id', 'period_year']
             );
         }
     }
@@ -190,18 +196,24 @@ final class LeaveService
     {
         $year = (int) (new \DateTimeImmutable((string) $request['starts_on']))->format('Y');
         $days = (float) $request['days_count'];
-        $db->execute(
-            'INSERT INTO leave_balances (employee_id, leave_type_id, period_year, initial_days, acquired_days, taken_days, remaining_days)
-             VALUES (:e, :t, :y, 0, 0, :d, :neg)
-             ON CONFLICT (employee_id, leave_type_id, period_year) DO UPDATE
-                SET taken_days = leave_balances.taken_days + :d,
-                    remaining_days = leave_balances.remaining_days - :d',
+        // En conflit (solde déjà initialisé), on ajoute la consommation ;
+        // sinon la ligne est créée avec les valeurs entrantes.
+        $db->upsert(
+            'leave_balances',
             [
-                'e' => $request['employee_id'],
-                't' => $request['leave_type_id'],
-                'y' => $year,
-                'd' => $days,
-                'neg' => -$days,
+                'employee_id' => $request['employee_id'],
+                'leave_type_id' => $request['leave_type_id'],
+                'period_year' => $year,
+                'initial_days' => 0,
+                'acquired_days' => 0,
+                'taken_days' => $days,
+                'remaining_days' => -$days,
+            ],
+            ['employee_id', 'leave_type_id', 'period_year'],
+            [],
+            [
+                'taken_days' => 'taken_days + ' . $db->conflictValue('taken_days'),
+                'remaining_days' => 'remaining_days + ' . $db->conflictValue('remaining_days'),
             ]
         );
     }

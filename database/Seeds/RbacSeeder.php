@@ -47,18 +47,18 @@ final class RbacSeeder
         // Permissions.
         foreach (self::PERMISSIONS as $module => $codes) {
             foreach ($codes as $code) {
-                $db->execute(
-                    'INSERT INTO permissions (code, label, module)
-                     VALUES (:code, :label, :module)
-                     ON CONFLICT (code) DO NOTHING',
-                    ['code' => $code, 'label' => ucfirst(str_replace('.', ' ', $code)), 'module' => $module]
+                $db->insertIgnore(
+                    'permissions',
+                    ['code' => $code, 'label' => ucfirst(str_replace('.', ' ', $code)), 'module' => $module],
+                    ['code']
                 );
             }
         }
         // Permission super-administrateur.
-        $db->execute(
-            'INSERT INTO permissions (code, label, module) VALUES (\'*\', \'Toutes permissions\', \'system\')
-             ON CONFLICT (code) DO NOTHING'
+        $db->insertIgnore(
+            'permissions',
+            ['code' => '*', 'label' => 'Toutes permissions', 'module' => 'system'],
+            ['code']
         );
 
         $roles = [
@@ -70,10 +70,12 @@ final class RbacSeeder
         ];
 
         foreach ($roles as $code => [$label, $description, $permissions]) {
-            $db->execute(
-                'INSERT INTO roles (code, label, description) VALUES (:c, :l, :d)
-                 ON CONFLICT (code) DO UPDATE SET label = EXCLUDED.label, description = EXCLUDED.description',
-                ['c' => $code, 'l' => $label, 'd' => $description]
+            // Idempotent : la ligne est créée si absente, ses libellés mis à jour sinon.
+            $db->upsert(
+                'roles',
+                ['code' => $code, 'label' => $label, 'description' => $description],
+                ['code'],
+                ['label', 'description']
             );
             $roleId = (int) $db->fetchScalar('SELECT id FROM roles WHERE code = :c', ['c' => $code]);
             foreach ($permissions as $permissionCode) {
@@ -81,10 +83,10 @@ final class RbacSeeder
                 if ($permissionId === false || $permissionId === null) {
                     continue;
                 }
-                $db->execute(
-                    'INSERT INTO role_permission (role_id, permission_id) VALUES (:r, :p)
-                     ON CONFLICT DO NOTHING',
-                    ['r' => $roleId, 'p' => (int) $permissionId]
+                $db->insertIgnore(
+                    'role_permission',
+                    ['role_id' => $roleId, 'permission_id' => (int) $permissionId],
+                    ['role_id', 'permission_id']
                 );
             }
         }
@@ -107,9 +109,10 @@ final class RbacSeeder
             );
             $userId = (int) $db->lastInsertId();
             $adminRoleId = (int) $db->fetchScalar('SELECT id FROM roles WHERE code = \'admin\'');
-            $db->execute(
-                'INSERT INTO role_user (role_id, user_id) VALUES (:r, :u) ON CONFLICT DO NOTHING',
-                ['r' => $adminRoleId, 'u' => $userId]
+            $db->insertIgnore(
+                'role_user',
+                ['role_id' => $adminRoleId, 'user_id' => $userId],
+                ['role_id', 'user_id']
             );
         }
     }

@@ -13,14 +13,17 @@ final class LeaveWorkflowTest extends DatabaseTestCase
 {
     private function createEmployee(): int
     {
-        $companyId = (int) $this->db->fetchScalar(
+        // INSERT puis lastInsertId : portable SQLite (tests) comme MySQL.
+        $this->db->execute(
             "INSERT INTO companies (legal_name, siren, siret, legal_form, city, postal_code)
-             VALUES ('Test', '123456789', '12345678901234', 'SAS', 'Paris', '75001') RETURNING id"
+             VALUES ('Test', '123456789', '12345678901234', 'SAS', 'Paris', '75001')"
         );
-        return (int) $this->db->fetchScalar(
+        $companyId = (int) $this->db->lastInsertId();
+        $this->db->execute(
             "INSERT INTO employees (company_id, employee_number, last_name, first_name, status)
-             VALUES ({$companyId}, 'EMP-T-0001', 'Test', 'User', 'active') RETURNING id"
+             VALUES ({$companyId}, 'EMP-T-0001', 'Test', 'User', 'active')"
         );
+        return (int) $this->db->lastInsertId();
     }
 
     public function testWorkingDaysExcludeWeekends(): void

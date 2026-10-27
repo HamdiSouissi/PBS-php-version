@@ -80,7 +80,7 @@ Certaines vérifications dépendent de binaires externes et ne sont pas dans la
 suite automatisée :
 
 ```bash
-# Sauvegarde / restauration (pg_dump et psql requis dans le PATH)
+# Sauvegarde / restauration (mysqldump et mysql requis dans le PATH)
 php bin/console backup:run
 php bin/console backup:restore --file=pbs-AAAAMMJJ-HHMMSS.sql.gz
 
@@ -92,5 +92,6 @@ php bin/health.php
 
 - les tests ne doivent jamais pointer sur la base de production ;
 - la variable `PBS_TEST_DB` ne désigne qu'une base jetable ;
-- en CI, monter un conteneur PostgreSQL éphémère et lancer
-  `migrate:run` + `test:run unit`.
+- en CI, monter un conteneur MySQL 8 éphémère (base `pbs_test`,
+  `DB_CONNECTION=mysql`) et lancer `migrate:run` + `test:run functional`,
+  ou utiliser la suite SQLite par défaut sans service externe.

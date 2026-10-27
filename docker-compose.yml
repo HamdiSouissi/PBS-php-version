@@ -11,22 +11,26 @@
 # =============================================================================
 services:
   db:
-    image: postgres:18-alpine
+    image: mysql:8.4
     container_name: pbs-db
     restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     environment:
-      POSTGRES_DB: ${DB_DATABASE:-pbs}
-      POSTGRES_USER: ${DB_USERNAME:-pbs}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changez_moi}
+      MYSQL_DATABASE: ${DB_DATABASE:-pbs}
+      MYSQL_USER: ${DB_USERNAME:-pbs}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-changez_moi}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-changez_moi_root}
       TZ: Europe/Paris
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mysqldata:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-pbs} -d ${DB_DATABASE:-pbs}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 10s
+      retries: 12
+      start_period: 20s
     networks:
       - pbs-net
 
@@ -40,7 +44,7 @@ services:
       - .env
     environment:
       DB_HOST: db
-      DB_PORT: 5432
+      DB_PORT: 3306
       CACHE_DRIVER: ${CACHE_DRIVER:-file}
       QUEUE_DRIVER: ${QUEUE_DRIVER:-file}
     depends_on:
@@ -105,6 +109,6 @@ networks:
     driver: bridge
 
 volumes:
-  pgdata:
+  mysqldata:
   storage:
   redisdata:

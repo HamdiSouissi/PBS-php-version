@@ -1,15 +1,15 @@
 # Prime Business Suite (PBS)
 
 ERP intégré modulaire pour **Prime Vision Solutions**, développé en **PHP 8.4
-natif orienté objet, sans framework backend**, avec PostgreSQL exclusif via PDO
-(aucun ORM). Interface web HTML5/CSS3/JavaScript ES2024 avec Bootstrap 5, et
-API REST JSON authentifiée par JWT.
+natif orienté objet, sans framework backend**, avec MySQL 8 / MariaDB exclusif
+via PDO (aucun ORM). Interface web HTML5/CSS3/JavaScript ES2024 avec Bootstrap 5,
+et API REST JSON authentifiée par JWT.
 
 ## Démarrage en 3 commandes (Docker)
 
 ```bash
-cp .env.example .env          # ajuster DB_PASSWORD
-docker compose up -d --build  # PHP-FPM 8.4 + Nginx + PostgreSQL 18 (+ Redis optionnel)
+cp .env.example .env          # ajuster DB_PASSWORD et DB_ROOT_PASSWORD
+docker compose up -d --build  # PHP-FPM 8.4 + Nginx + MySQL 8.4 (+ Redis optionnel)
 # http://localhost:8080 — migrations et seeders exécutés automatiquement
 ```
 
@@ -44,10 +44,11 @@ sécurité/conformité et exploitation.
 php bin/console test:run unit
 ```
 
-Suite actuelle : **30 tests, 30 réussis** (sécurité JWT/TOTP, validation,
+Suite actuelle : **35 tests, 35 réussis** (sécurité JWT/TOTP, validation,
 cycle RH et contrats, TVA et cycle complet de facturation, génération
-UBL/CII). Les tests d'intégration s'exécutent sur une base PostgreSQL dédiée
-`pbs_test`, tronquée et reseedée entre chaque test.
+UBL/CII). La suite par défaut s'exécute sur SQLite (schéma miroir des
+migrations MySQL, aucun serveur requis) ; elle peut aussi cibler une base
+MySQL dédiée `pbs_test`, tronquée et reseedée entre chaque test.
 
 ## Limites assumées
 

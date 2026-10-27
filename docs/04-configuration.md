@@ -29,18 +29,17 @@ invalide tous les jetons d'accès émis ; les utilisateurs se reconnectent.
 | `APP_LOCALE` | fr | Langue de l'interface |
 | `APP_KEY` | — | Clé de chiffrement, obligatoire |
 
-### PostgreSQL
+### MySQL / MariaDB
 
 | Variable | Défaut | Rôle |
 |----------|--------|------|
-| `DB_CONNECTION` | pgsql | Seul driver officiel (sqlite réservé aux tests) |
-| `DB_HOST` | db (Docker) / 127.0.0.1 | Hôte PostgreSQL |
-| `DB_PORT` | 5432 | Port TCP |
+| `DB_CONNECTION` | mysql | Seul driver officiel (sqlite réservé aux tests) |
+| `DB_HOST` | db (Docker) / 127.0.0.1 | Hôte MySQL |
+| `DB_PORT` | 3306 | Port TCP |
 | `DB_DATABASE` | pbs | Nom de la base applicative |
-| `DB_USERNAME` | pbs | Rôle applicatif |
+| `DB_USERNAME` | pbs | Utilisateur applicatif |
 | `DB_PASSWORD` | — | Mot de passe (jamais commité) |
-| `DB_SCHEMA` | public | Schéma par défaut |
-| `DB_SSLMODE` | prefer | Mode SSL (`disable`, `require`, `verify-full`…) |
+| `DB_ROOT_PASSWORD` | — | Mot de passe root, utilisé par le service `db` de Docker Compose |
 
 ### Sessions et sécurité
 

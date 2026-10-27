@@ -1,12 +1,9 @@
 -- =============================================================================
 -- Migration 011 - Correctif : libellé de genre ('non_renseigne' = 13 caractères)
+-- MySQL/MariaDB : MODIFY COLUMN élargit le type. La contrainte nommée
+-- employees_gender_check (créée en 002) reste attachée à la colonne et
+-- continue de s'appliquer, sa liste de valeurs étant indépendante de la taille.
 -- =============================================================================
 
-ALTER TABLE employees ALTER COLUMN gender TYPE VARCHAR(20);
-
 ALTER TABLE employees
-    DROP CONSTRAINT IF EXISTS employees_gender_check;
-
-ALTER TABLE employees
-    ADD CONSTRAINT employees_gender_check
-    CHECK (gender IN ('m','f','non_renseigne'));
+    MODIFY COLUMN gender VARCHAR(20) NOT NULL DEFAULT 'non_renseigne';

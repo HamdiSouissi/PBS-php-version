@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration 010 - Vues SQL métier (PostgreSQL)
+-- Migration 010 - Vues SQL métier (MySQL 8 / MariaDB 10.11+)
 -- =============================================================================
 
 CREATE OR REPLACE VIEW v_active_contracts AS

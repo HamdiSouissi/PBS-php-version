@@ -109,29 +109,28 @@ final class ChartOfAccountsSeeder
             ['AN', 'À-nouveaux', 'closing'],
         ];
         foreach ($journals as [$code, $label, $type]) {
-            $db->execute(
-                'INSERT INTO journals (code, label, type) VALUES (:c, :l, :t)
-                 ON CONFLICT (code) DO NOTHING',
-                ['c' => $code, 'l' => $label, 't' => $type]
+            $db->insertIgnore(
+                'journals',
+                ['code' => $code, 'label' => $label, 'type' => $type],
+                ['code']
             );
         }
 
         foreach (self::accounts() as $account) {
             [$code, $label, $class, $type] = $account;
             $auxiliary = $account[4] ?? false;
-            $db->execute(
-                'INSERT INTO chart_accounts
-                    (code, label, account_class, account_type, is_auxiliary, allow_entries, parent_code)
-                 VALUES
-                    (:code, :label, :class, :type, :aux, TRUE, NULL)
-                 ON CONFLICT (code) DO NOTHING',
+            $db->insertIgnore(
+                'chart_accounts',
                 [
                     'code' => $code,
                     'label' => $label,
-                    'class' => $class,
-                    'type' => $type,
-                    'aux' => $auxiliary,
-                ]
+                    'account_class' => $class,
+                    'account_type' => $type,
+                    'is_auxiliary' => $auxiliary,
+                    'allow_entries' => true,
+                    'parent_code' => null,
+                ],
+                ['code']
             );
         }
     }

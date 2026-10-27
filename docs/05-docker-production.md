@@ -13,10 +13,10 @@
                         │  PHP-FPM, extensions, OCR    │
                         │  entrypoint : migrations     │
                         └───────────────┬──────────────┘
-                                        │ PDO pgsql :5432
+                                        │ PDO mysql :3306
                         ┌───────────────▼──────────────┐
-                        │ db (postgres:18-alpine)      │
-                        │  volume pgdata               │
+                        │ db (mysql:8.4)               │
+                        │  volume mysqldata            │
                         └──────────────────────────────┘
       redis:7-alpine (profil "redis", cache/queue optionnels)
 ```
@@ -25,7 +25,7 @@
 
 | Service | Image | Rôle | Healthcheck |
 |---------|-------|------|-------------|
-| `db` | postgres:18-alpine | Données métier | `pg_isready` |
+| `db` | mysql:8.4 | Données métier (utf8mb4) | `mysqladmin ping` |
 | `app` | build local (Dockerfile) | PHP-FPM + console | `php bin/health.php` |
 | `nginx` | nginx:1.27-alpine | HTTP 80 → hôte 8080 | `wget /health` |
 | `redis` | redis:7-alpine | Cache/queue, profil `redis` | `redis-cli ping` |
@@ -39,14 +39,15 @@ Le `Dockerfile` :
 
 - part de `php:8.4-fpm-bookworm` ;
 - installe les bibliothèques système nécessaires aux extensions :
-  `libpq-dev` (PostgreSQL), `libonig-dev` (mbstring), `libicu-dev` (intl),
+  `libonig-dev` (mbstring), `libicu-dev` (intl),
   `libzip-dev` (zip), `libpng/libjpeg/libfreetype/libwebp` (gd),
-  `libsodium-dev` (sodium), `libxml2-dev` (dom/xml) ;
-- compile les extensions `pdo_pgsql, pgsql, mbstring, intl, bcmath, gd, zip,
+  `libsodium-dev` (sodium), `libxml2-dev` (dom/xml). L'extension
+  `pdo_mysql` utilise mysqlnd, intégré à PHP, sans bibliothèque externe ;
+- compile les extensions `pdo_mysql, mbstring, intl, bcmath, gd, zip,
   exif, sodium, opcache` puis **vérifie leur chargement** (échec de build
   explicite si une extension requise manque) ;
-- installe Tesseract (OCR des notes de frais) et le client PostgreSQL
-  (`pg_dump`/`psql` pour les sauvegardes) ;
+- installe Tesseract (OCR des notes de frais) et le client MySQL
+  (`mysqldump`/`mysql` pour les sauvegardes) ;
 - copie Composer 2 et installe les dépendances ;
 - expose le port 9000 (FastCGI, jamais exposé à l'hôte) ;
 - déclare un `HEALTHCHECK` et un entrypoint idempotent.
@@ -119,7 +120,7 @@ opcache.validate_timestamps=0
 
 | Volume | Contenu | Sauvegarde |
 |--------|---------|------------|
-| `pgdata` | Cluster PostgreSQL | `pg_dump` logique ou snapshot |
+| `mysqldata` | Données MySQL | `mysqldump` logique ou snapshot |
 | `storage` | Bulletins, exports, e-facturation, uploads, sessions | copie incrémentale |
 | `redisdata` | Cache/queue (reconstituable) | non critique |
 
@@ -132,7 +133,7 @@ docker compose exec app php bin/console migrate:status
 docker compose exec app php bin/console test:run unit
 docker compose exec app php bin/console schedule:run
 docker compose exec app php bin/console queue:work
-docker compose exec db psql -U pbs -d pbs
+docker compose exec db sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"'
 docker compose logs -f app nginx db
 ```
 

@@ -27,11 +27,11 @@ final class AuditLogController extends Controller
         $filters = [];
         $params = [];
         if ($request->query('entity_type')) {
-            $filters[] = 'a.entity_type ILIKE :entity';
+            $filters[] = $this->db->like('a.entity_type') . ' :entity';
             $params['entity'] = '%' . $request->query('entity_type') . '%';
         }
         if ($request->query('action')) {
-            $filters[] = 'a.action ILIKE :action';
+            $filters[] = $this->db->like('a.action') . ' :action';
             $params['action'] = '%' . $request->query('action') . '%';
         }
         $where = $filters === [] ? '' : 'WHERE ' . implode(' AND ', $filters);

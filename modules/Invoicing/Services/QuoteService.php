@@ -117,7 +117,7 @@ final class QuoteService
                 $userId
             );
             $this->db->execute(
-                "UPDATE quotes SET status = 'invoiced', converted_invoice_id = :invoice, updated_at = now()
+                "UPDATE quotes SET status = 'invoiced', converted_invoice_id = :invoice, updated_at = {$this->db->nowExpression()}
                  WHERE id = :id",
                 ['invoice' => $invoiceId, 'id' => $quoteId]
             );
@@ -136,7 +136,7 @@ final class QuoteService
             throw new AppException("Transition {$quote['status']} → {$to} impossible pour le devis {$quote['quote_number']}.");
         }
         $this->db->execute(
-            'UPDATE quotes SET status = :status, updated_at = now() WHERE id = :id',
+            'UPDATE quotes SET status = :status, updated_at = ' . $this->db->nowExpression() . ' WHERE id = :id',
             ['status' => $to, 'id' => $quoteId]
         );
         audit('quote.' . $to, 'Quote', $quoteId);

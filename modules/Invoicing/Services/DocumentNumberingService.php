@@ -33,14 +33,14 @@ final class DocumentNumberingService
         $date ??= new \DateTimeImmutable();
         $period = $date->format('Y');
 
-        $this->db->execute(
-            'INSERT INTO document_sequences (kind, period, last_value) VALUES (:k, :p, 0)
-             ON CONFLICT (kind, period) DO NOTHING',
-            ['k' => $kind, 'p' => $period]
+        $this->db->insertIgnore(
+            'document_sequences',
+            ['kind' => $kind, 'period' => $period, 'last_value' => 0],
+            ['kind', 'period']
         );
 
         $row = $this->db->fetchOne(
-            'SELECT last_value FROM document_sequences WHERE kind = :k AND period = :p FOR UPDATE',
+            'SELECT last_value FROM document_sequences WHERE kind = :k AND period = :p' . $this->db->rowLockClause(),
             ['k' => $kind, 'p' => $period]
         );
         if ($row === null) {
@@ -49,7 +49,7 @@ final class DocumentNumberingService
 
         $next = (int) $row['last_value'] + 1;
         $this->db->execute(
-            'UPDATE document_sequences SET last_value = :v, updated_at = now()
+            'UPDATE document_sequences SET last_value = :v, updated_at = ' . $this->db->nowExpression() . '
              WHERE kind = :k AND period = :p',
             ['v' => $next, 'k' => $kind, 'p' => $period]
         );

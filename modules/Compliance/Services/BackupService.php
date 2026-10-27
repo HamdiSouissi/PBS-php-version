@@ -8,18 +8,20 @@ use App\Core\Database\Connection;
 use App\Core\Exception\AppException;
 
 /**
- * Sauvegarde et restauration de la base PostgreSQL.
+ * Sauvegarde et restauration de la base MySQL/MariaDB.
  *
  * Stratégie :
- *  - dump SQL cohérent via pg_dump (binaire du client PostgreSQL), compressé
- *    en gzip directement depuis PHP (pas de dépendance au binaire gzip) ;
+ *  - dump SQL cohérent via mysqldump (--single-transaction pour InnoDB,
+ *    sans verrou long), compressé en gzip directement depuis PHP (pas de
+ *    dépendance au binaire gzip) ;
  *  - archive ZIP optionnelle des documents générés (uploads, exports,
  *    e-facturation), via ext-zip ;
  *  - purge selon la rétention BACKUP_RETENTION_DAYS ;
  *  - toute exécution est tracée dans le journal d'audit.
  *
- * Prérequis : les binaires pg_dump / psql doivent être dans le PATH
- * (paquet postgresql-client dans l'image Docker).
+ * Prérequis : les binaires mysqldump / mysql doivent être dans le PATH
+ * (paquet default-mysql-client dans l'image Docker, ou client MySQL/MariaDB
+ * fourni avec Laragon / les distributions).
  */
 final class BackupService
 {
@@ -39,15 +41,21 @@ final class BackupService
         $stamp = date('Ymd-His');
         $sqlFile = $directory . '/pbs-' . $stamp . '.sql.gz';
 
+        // --single-transaction : instantané cohérent InnoDB sans bloquer les
+        // écritures ; --routines/--triggers/--events couvrent les objets programmés.
         $command = [
-            $this->binary('pg_dump'),
+            $this->binary('mysqldump'),
             '--host=' . $config['host'],
             '--port=' . (string) $config['port'],
-            '--username=' . $config['user'],
-            '--dbname=' . $config['dbname'],
-            '--no-password',
-            '--clean',
-            '--if-exists',
+            '--user=' . $config['user'],
+            '--single-transaction',
+            '--quick',
+            '--routines',
+            '--triggers',
+            '--events',
+            '--add-drop-table',
+            '--default-character-set=utf8mb4',
+            $config['dbname'],
         ];
 
         $pipes = [];
@@ -59,7 +67,7 @@ final class BackupService
             $this->processEnv($config['password'])
         );
         if (!is_resource($process)) {
-            throw new AppException('Impossible de lancer pg_dump. Le client PostgreSQL est-il installé ?');
+            throw new AppException('Impossible de lancer mysqldump. Le client MySQL est-il installé ?');
         }
         fclose($pipes[0]);
 
@@ -76,7 +84,7 @@ final class BackupService
 
         if ($exitCode !== 0 || !is_file($sqlFile) || filesize($sqlFile) === 0) {
             @unlink($sqlFile);
-            throw new AppException('Échec de pg_dump : ' . trim((string) $error));
+            throw new AppException('Échec de mysqldump : ' . trim((string) $error));
         }
 
         $this->archiveDocuments($directory . '/pbs-' . $stamp . '-documents.zip');
@@ -104,15 +112,15 @@ final class BackupService
         }
 
         $config = $this->config();
+        // Le client mysql applique le script en entrée standard. --force est
+        // volontairement absent : toute erreur doit interrompre la restauration.
         $command = [
-            $this->binary('psql'),
+            $this->binary('mysql'),
             '--host=' . $config['host'],
             '--port=' . (string) $config['port'],
-            '--username=' . $config['user'],
-            '--dbname=' . $config['dbname'],
-            '--no-password',
-            '--set=ON_ERROR_STOP=1',
-            '--quiet',
+            '--user=' . $config['user'],
+            '--default-character-set=utf8mb4',
+            $config['dbname'],
         ];
 
         $pipes = [];
@@ -124,7 +132,7 @@ final class BackupService
             $this->processEnv($config['password'])
         );
         if (!is_resource($process)) {
-            throw new AppException('Impossible de lancer psql. Le client PostgreSQL est-il installé ?');
+            throw new AppException('Impossible de lancer mysql. Le client MySQL est-il installé ?');
         }
 
         $gz = gzopen($path, 'rb');
@@ -143,7 +151,7 @@ final class BackupService
         $exitCode = proc_close($process);
 
         if ($exitCode !== 0) {
-            throw new AppException('Échec de la restauration : ' . trim((string) $error));
+            throw new AppException('Échec de la restauration : ' . trim((string) $error . ' ' . (string) $output));
         }
 
         audit('backup.restore', 'Backup', null, ['file' => basename($fileName)]);
@@ -172,10 +180,10 @@ final class BackupService
      */
     private function config(): array
     {
-        $config = config('database.connections.pgsql');
+        $config = config('database.connections.mysql');
         return [
             'host' => (string) ($config['host'] ?? '127.0.0.1'),
-            'port' => (int) ($config['port'] ?? 5432),
+            'port' => (int) ($config['port'] ?? 3306),
             'dbname' => (string) ($config['dbname'] ?? 'pbs'),
             'user' => (string) ($config['user'] ?? 'pbs'),
             'password' => (string) ($config['password'] ?? ''),
@@ -183,6 +191,9 @@ final class BackupService
     }
 
     /**
+     * Le mot de passe est transmis par variable d'environnement (MYSQL_PWD),
+     * jamais en argument de ligne de commande (visible dans la liste des process).
+     *
      * @return array<string,string>
      */
     private function processEnv(string $password): array
@@ -193,7 +204,7 @@ final class BackupService
                 $env[(string) $key] = (string) $value;
             }
         }
-        $env['PGPASSWORD'] = $password;
+        $env['MYSQL_PWD'] = $password;
         return $env;
     }
 

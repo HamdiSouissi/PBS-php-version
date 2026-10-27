@@ -30,7 +30,7 @@ final class ContractService
             if ($status === 'active') {
                 $db->execute(
                     "UPDATE employment_contracts SET status = 'ended',
-                        end_date = COALESCE(end_date, :start), updated_at = NOW()
+                        end_date = COALESCE(end_date, :start), updated_at = {$db->nowExpression()}
                      WHERE employee_id = :e AND status = 'active'",
                     ['start' => $data['start_date'], 'e' => $employeeId]
                 );
@@ -68,7 +68,7 @@ final class ContractService
             $newId = (int) $db->lastInsertId();
             if ($status === 'active') {
                 $db->execute(
-                    "UPDATE employees SET status = 'active', hire_date = COALESCE(hire_date, :d), updated_at = NOW()
+                    "UPDATE employees SET status = 'active', hire_date = COALESCE(hire_date, :d), updated_at = {$db->nowExpression()}
                      WHERE id = :e",
                     ['d' => $data['start_date'], 'e' => $employeeId]
                 );
@@ -87,16 +87,16 @@ final class ContractService
         $this->db->transaction(function (Connection $db) use ($contract): void {
             $db->execute(
                 "UPDATE employment_contracts SET status = 'ended',
-                    end_date = COALESCE(end_date, :start), updated_at = NOW()
+                    end_date = COALESCE(end_date, :start), updated_at = {$db->nowExpression()}
                  WHERE employee_id = :e AND status = 'active' AND id <> :id",
                 ['start' => $contract['start_date'], 'e' => $contract['employee_id'], 'id' => $contract['id']]
             );
             $db->execute(
-                "UPDATE employment_contracts SET status = 'active', updated_at = NOW() WHERE id = :id",
+                "UPDATE employment_contracts SET status = 'active', updated_at = {$db->nowExpression()} WHERE id = :id",
                 ['id' => $contract['id']]
             );
             $db->execute(
-                "UPDATE employees SET status = 'active', hire_date = COALESCE(hire_date, :d), updated_at = NOW()
+                "UPDATE employees SET status = 'active', hire_date = COALESCE(hire_date, :d), updated_at = {$db->nowExpression()}
                  WHERE id = :e",
                 ['d' => $contract['start_date'], 'e' => $contract['employee_id']]
             );

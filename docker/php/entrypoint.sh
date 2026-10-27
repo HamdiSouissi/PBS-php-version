@@ -2,7 +2,7 @@
 # =============================================================================
 # Point d'entrée du conteneur applicatif PBS.
 #  1. Prépare .env et les clés secrètes (APP_KEY, JWT_SECRET)
-#  2. Attend PostgreSQL
+#  2. Attend MySQL/MariaDB
 #  3. Exécute les migrations SQL (idempotent) puis les seeds de référence
 #  4. Lance la commande du conteneur (php-fpm par défaut)
 # =============================================================================
@@ -28,19 +28,19 @@ if ! grep -qE '^APP_KEY=[[:space:]]*[^[:space:]#]' .env \
     php bin/console app:key-generate
 fi
 
-# ---- 2. Attente de PostgreSQL ------------------------------------------------
-log "Attente de PostgreSQL (${DB_HOST:-db}:${DB_PORT:-5432})…"
+# ---- 2. Attente de MySQL/MariaDB ---------------------------------------------
+log "Attente de MySQL (${DB_HOST:-db}:${DB_PORT:-3306})…"
 attempts=0
 max_attempts=60
 until php bin/health.php >/dev/null 2>&1; do
     attempts=$((attempts + 1))
     if [ "$attempts" -ge "$max_attempts" ]; then
-        log "ERREUR : PostgreSQL injoignable après ${max_attempts} tentatives"
+        log "ERREUR : MySQL injoignable après ${max_attempts} tentatives"
         exit 1
     fi
     sleep 1
 done
-log "PostgreSQL accessible."
+log "MySQL accessible."
 
 # ---- 3. Migrations et données de référence -----------------------------------
 log "Exécution des migrations…"

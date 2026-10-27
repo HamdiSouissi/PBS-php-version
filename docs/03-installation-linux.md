@@ -20,7 +20,7 @@ curl http://localhost:8080/health
 ```
 
 Aucun autre paquet n'est nécessaire sur l'hôte : PHP, les extensions, Nginx,
-PostgreSQL et Tesseract sont dans les images. Pour ajouter Redis :
+MySQL et Tesseract sont dans les images. Pour ajouter Redis :
 
 ```bash
 docker compose --profile redis up -d --build
@@ -40,32 +40,34 @@ curl -sSL https://packages.sury.org/php/README.txt | sudo bash -x
 
 sudo apt install -y \
     php8.4-fpm php8.4-cli \
-    php8.4-pgsql php8.4-mbstring php8.4-intl php8.4-xml \
+    php8.4-mysql php8.4-mbstring php8.4-intl php8.4-xml \
     php8.4-zip php8.4-gd php8.4-bcmath php8.4-opcache \
     php8.4-curl php8.4-sodium
 php -v
 ```
 
-Extensions vérifiées par `composer.json` : `pdo_pgsql`, `mbstring`, `json`,
+Extensions vérifiées par `composer.json` : `pdo_mysql`, `mbstring`, `json`,
 `openssl`, `sodium`, `zip`, `dom`, `xml`, `gd`, `intl`, `bcmath`, `fileinfo`.
 
-### 2. PostgreSQL 18
+### 2. MySQL 8 (ou MariaDB 10.11+)
 
 ```bash
-# Dépôt officiel PGDG
-sudo install -d /usr/share/postgresql-common/pgdg
-curl -o /tmp/pgdg.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
-gpg --dearmor < /tmp/pgdg.asc | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
-echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
-  | sudo tee /etc/apt/sources.list.d/pgdg.list
-sudo apt update && sudo apt install -y postgresql-18
+# MySQL 8 via le dépôt officiel APT
+sudo apt install -y mysql-server
+sudo systemctl enable --now mysql
 
-sudo -u postgres psql <<'SQL'
-CREATE USER pbs WITH PASSWORD 'changez_moi';
-CREATE DATABASE pbs OWNER pbs;
-CREATE DATABASE pbs_test OWNER pbs;
+sudo mysql <<'SQL'
+CREATE DATABASE pbs CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE pbs_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'pbs'@'localhost' IDENTIFIED BY 'changez_moi';
+GRANT ALL PRIVILEGES ON pbs.* TO 'pbs'@'localhost';
+GRANT ALL PRIVILEGES ON pbs_test.* TO 'pbs'@'localhost';
+FLUSH PRIVILEGES;
 SQL
 ```
+
+Pour MariaDB (défaut de Debian), remplacer `mysql-server` par `mariadb-server`
+et la connexion par `sudo mariadb` : le SQL est identique.
 
 ### 3. Composer et dépendances
 
@@ -89,8 +91,9 @@ nano .env
 ```
 
 ```ini
+DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
-DB_PORT=5432
+DB_PORT=3306
 DB_DATABASE=pbs
 DB_USERNAME=pbs
 DB_PASSWORD=changez_moi
@@ -126,8 +129,13 @@ chmod -R 770 storage
 ### 6. Tests
 
 ```bash
-export PBS_TEST_DB=pbs_test      # nom de la base dédiée (défaut : pbs_test)
+# Suite par défaut sur SQLite : aucun serveur requis
 php bin/console test:run unit
+
+# Variante contre MySQL (base pbs_test)
+export DB_CONNECTION=mysql
+export PBS_TEST_DB=pbs_test
+php bin/console test:run functional
 ```
 
 ### 7. OCR Tesseract (facultatif)

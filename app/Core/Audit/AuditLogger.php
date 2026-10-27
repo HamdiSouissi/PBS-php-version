@@ -28,7 +28,7 @@ final class AuditLogger
         try {
             $this->db->execute(
                 'INSERT INTO audit_logs (user_id, action, entity_type, entity_id, changes, ip_address, created_at)
-                 VALUES (:user_id, :action, :entity_type, :entity_id, :changes, :ip, NOW())',
+                 VALUES (:user_id, :action, :entity_type, :entity_id, :changes, :ip, ' . $this->db->nowExpression() . ')',
                 [
                     'user_id' => $this->auth->id(),
                     'action' => substr($action, 0, 100),

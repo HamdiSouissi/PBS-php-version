@@ -1,7 +1,7 @@
 # Documentation Prime Business Suite (PBS)
 
 ERP modulaire en PHP 8.4 natif orienté objet, sans framework backend, pour
-Prime Vision Solutions. PostgreSQL exclusif via PDO (aucun ORM).
+Prime Vision Solutions. MySQL 8 / MariaDB exclusif via PDO (aucun ORM).
 
 ## Guides
 

@@ -79,7 +79,7 @@ final class EInvoiceService
         );
         $outboxId = (int) $this->db->lastInsertId();
         $this->db->execute(
-            "UPDATE invoices SET electronic_status = 'generated', updated_at = now() WHERE id = :id",
+            "UPDATE invoices SET electronic_status = 'generated', updated_at = {$this->db->nowExpression()} WHERE id = :id",
             ['id' => $invoiceId]
         );
         audit('einvoice.generate', 'EInvoiceOutbox', $outboxId, ['invoice' => $invoice['invoice_number'], 'format' => $format]);
@@ -98,12 +98,12 @@ final class EInvoiceService
         }
         $this->db->execute(
             "UPDATE e_invoice_outbox
-                SET status = 'exported', external_reference = :ref, updated_at = now()
+                SET status = 'exported', external_reference = :ref, updated_at = {$this->db->nowExpression()}
               WHERE id = :id",
             ['ref' => $externalReference, 'id' => $outboxId]
         );
         $this->db->execute(
-            "UPDATE invoices SET electronic_status = 'submitted', updated_at = now()
+            "UPDATE invoices SET electronic_status = 'submitted', updated_at = {$this->db->nowExpression()}
              WHERE id = (SELECT invoice_id FROM e_invoice_outbox WHERE id = :id)",
             ['id' => $outboxId]
         );
@@ -116,12 +116,12 @@ final class EInvoiceService
     public function markRejected(int $outboxId, string $errorMessage): void
     {
         $this->db->execute(
-            "UPDATE e_invoice_outbox SET status = 'rejected', error_message = :err, updated_at = now()
+            "UPDATE e_invoice_outbox SET status = 'rejected', error_message = :err, updated_at = {$this->db->nowExpression()}
              WHERE id = :id",
             ['err' => $errorMessage, 'id' => $outboxId]
         );
         $this->db->execute(
-            "UPDATE invoices SET electronic_status = 'rejected', updated_at = now()
+            "UPDATE invoices SET electronic_status = 'rejected', updated_at = {$this->db->nowExpression()}
              WHERE id = (SELECT invoice_id FROM e_invoice_outbox WHERE id = :id)",
             ['id' => $outboxId]
         );

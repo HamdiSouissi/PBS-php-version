@@ -108,7 +108,7 @@ final class SessionManager
     {
         $this->connection->execute(
             'INSERT INTO auth_login_logs (user_id, session_id, ip_address, user_agent, remember_me, created_at)
-             VALUES (:user_id, :sid, :ip, :ua, :remember, NOW())',
+             VALUES (:user_id, :sid, :ip, :ua, :remember, ' . $this->connection->nowExpression() . ')',
             [
                 'user_id' => $userId,
                 'sid' => $this->getId(),

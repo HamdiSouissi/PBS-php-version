@@ -59,7 +59,7 @@ final class DashboardService
             "SELECT title, authority, due_on, status, frequency
              FROM compliance_obligations
              WHERE status IN ('pending','overdue')
-             ORDER BY due_on NULLS LAST LIMIT {$limit}"
+             ORDER BY (due_on IS NULL), due_on LIMIT {$limit}"
         );
     }
 
@@ -73,9 +73,9 @@ final class DashboardService
         return array_map(
             static fn (array $row) => ['month' => (string) $row['month'], 'total' => (float) $row['total']],
             $this->db->fetchAll(
-                "SELECT TO_CHAR(issue_date, 'YYYY-MM') AS month, COALESCE(SUM(total_ht), 0) AS total
+                "SELECT " . $this->db->yearMonth('issue_date') . " AS month, COALESCE(SUM(total_ht), 0) AS total
                  FROM invoices
-                 WHERE type = 'sale' AND issue_date >= CURRENT_DATE - INTERVAL '12 months'
+                 WHERE type = 'sale' AND issue_date >= " . $this->db->dateSub('CURRENT_DATE', 12, 'month') . "
                  GROUP BY month ORDER BY month"
             )
         );

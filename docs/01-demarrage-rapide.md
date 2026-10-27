@@ -1,13 +1,13 @@
 # 01 — Démarrage rapide avec Docker
 
 Le moyen le plus rapide d'obtenir une instance PBS complète : PHP-FPM 8.4,
-Nginx, PostgreSQL 18 et (facultatif) Redis, orchestrés par Docker Compose.
+Nginx, MySQL 8.4 et (facultatif) Redis, orchestrés par Docker Compose.
 
 ## Prérequis
 
 - Docker Engine 24+ et le plugin Compose v2 (`docker compose version`)
 - 2 Go de mémoire disponible, 10 Go d'espace disque
-- Ports 8080 (HTTP) et 5432 (PostgreSQL, interne par défaut) libres
+- Ports 8080 (HTTP) et 3306 (MySQL, interne par défaut) libres
 
 ## Étapes
 
@@ -33,7 +33,7 @@ Le point d'entrée du conteneur applicatif (`docker/php/entrypoint.sh`) :
 
 1. crée `.env` depuis `.env.example` s'il n'existe pas ;
 2. génère `APP_KEY` et `JWT_SECRET` si l'un d'eux est vide ;
-3. attend que PostgreSQL réponde (`php bin/health.php`, 60 tentatives) ;
+3. attend que MySQL réponde (`php bin/health.php`, 60 tentatives) ;
 4. exécute `php bin/console migrate:run` (migrations SQL versionnées) ;
 5. exécute `php bin/console db:seed` (seeders idempotents : rôles, PCG, règles) ;
 6. lance PHP-FPM.
@@ -82,7 +82,7 @@ Puis dans `.env` : `CACHE_DRIVER=redis` et `QUEUE_DRIVER=redis`.
 
 | Symptôme | Cause probable | Remède |
 |----------|---------------|--------|
-| `app` redémarre en boucle | PostgreSQL injoignable | `docker compose logs db`, vérifier `DB_HOST=db` |
+| `app` redémarre en boucle | MySQL injoignable | `docker compose logs db`, vérifier `DB_HOST=db` |
 | HTTP 502 sur nginx | PHP-FPM pas encore prêt | attendre la fin des migrations (healthcheck) |
 | `APP_KEY absent` | `.env` sans clé et génération impossible | `php bin/console app:key-generate` dans le conteneur |
 | Port 8080 occupé | autre service | changer `APP_HTTP_PORT` dans `.env` |

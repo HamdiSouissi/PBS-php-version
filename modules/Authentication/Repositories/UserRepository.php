@@ -13,15 +13,18 @@ use Modules\Authentication\Models\User;
  */
 final class UserRepository extends BaseRepository
 {
-    private const SELECT_WITH_RIGHTS = "
+    private function selectWithRights(): string
+    {
+        return "
         SELECT u.*,
-               STRING_AGG(DISTINCT r.code, ',') AS roles,
-               STRING_AGG(DISTINCT p.code, ',') AS permissions
+               " . $this->db->groupConcat('DISTINCT r.code') . " AS roles,
+               " . $this->db->groupConcat('DISTINCT p.code') . " AS permissions
         FROM users u
         LEFT JOIN role_user ru ON ru.user_id = u.id
         LEFT JOIN roles r ON r.id = ru.role_id
         LEFT JOIN role_permission rp ON rp.role_id = r.id
         LEFT JOIN permissions p ON p.id = rp.permission_id";
+    }
 
     public function __construct(Connection $db)
     {
@@ -36,7 +39,7 @@ final class UserRepository extends BaseRepository
     public function findByEmail(string $email): ?User
     {
         $row = $this->db->fetchOne(
-            self::SELECT_WITH_RIGHTS . ' WHERE u.email = :email GROUP BY u.id',
+            $this->selectWithRights() . ' WHERE u.email = :email GROUP BY u.id',
             ['email' => mb_strtolower(trim($email))]
         );
         return $row === null ? null : User::fromRow($row);
@@ -45,7 +48,7 @@ final class UserRepository extends BaseRepository
     public function findWithRights(int $id): ?User
     {
         $row = $this->db->fetchOne(
-            self::SELECT_WITH_RIGHTS . ' WHERE u.id = :id GROUP BY u.id',
+            $this->selectWithRights() . ' WHERE u.id = :id GROUP BY u.id',
             ['id' => $id]
         );
         return $row === null ? null : User::fromRow($row);
@@ -58,7 +61,7 @@ final class UserRepository extends BaseRepository
     {
         $offset = ($page - 1) * $perPage;
         return $this->db->fetchAll(
-            "SELECT u.*, STRING_AGG(r.code, ',') AS role_codes
+            "SELECT u.*, " . $this->db->groupConcat('r.code') . " AS role_codes
              FROM users u
              LEFT JOIN role_user ru ON ru.user_id = u.id
              LEFT JOIN roles r ON r.id = ru.role_id
@@ -95,9 +98,10 @@ final class UserRepository extends BaseRepository
     {
         $this->db->execute('DELETE FROM role_user WHERE user_id = :u', ['u' => $userId]);
         foreach (array_unique(array_map('intval', $roleIds)) as $roleId) {
-            $this->db->execute(
-                'INSERT INTO role_user (role_id, user_id) VALUES (:r, :u) ON CONFLICT DO NOTHING',
-                ['r' => $roleId, 'u' => $userId]
+            $this->db->insertIgnore(
+                'role_user',
+                ['role_id' => $roleId, 'user_id' => $userId],
+                ['role_id', 'user_id']
             );
         }
     }
@@ -106,7 +110,7 @@ final class UserRepository extends BaseRepository
     {
         $this->db->execute(
             'UPDATE users SET failed_attempts = failed_attempts + 1,
-                locked_until = CASE WHEN failed_attempts + 1 >= :max THEN NOW() + INTERVAL \'15 minutes\' ELSE locked_until END
+                locked_until = CASE WHEN failed_attempts + 1 >= :max THEN ' . $this->db->nowPlus(15, 'minute') . ' ELSE locked_until END
              WHERE id = :id',
             ['max' => $maxAttempts, 'id' => $userId]
         );
@@ -115,7 +119,7 @@ final class UserRepository extends BaseRepository
     public function resetFailedAttempts(int $userId): void
     {
         $this->db->execute(
-            'UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login_at = NOW() WHERE id = :id',
+            'UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login_at = ' . $this->db->nowExpression() . ' WHERE id = :id',
             ['id' => $userId]
         );
     }
@@ -133,7 +137,7 @@ final class UserRepository extends BaseRepository
         $row = $this->db->fetchOne(
             "SELECT u.* FROM users u
              JOIN remember_tokens rt ON rt.user_id = u.id
-             WHERE rt.token_hash = :h AND rt.expires_at > NOW() AND u.is_active = TRUE",
+             WHERE rt.token_hash = :h AND rt.expires_at > " . $this->db->nowExpression() . " AND u.is_active = TRUE",
             ['h' => hash('sha256', $token)]
         );
         return $row === null ? null : $this->findWithRights((int) $row['id']);
@@ -141,7 +145,8 @@ final class UserRepository extends BaseRepository
 
     public function purgeExpiredTokens(): void
     {
-        $this->db->exec('DELETE FROM remember_tokens WHERE expires_at < NOW()');
-        $this->db->exec('DELETE FROM password_resets WHERE expires_at < NOW()');
+        $now = $this->db->nowExpression();
+        $this->db->exec("DELETE FROM remember_tokens WHERE expires_at < {$now}");
+        $this->db->exec("DELETE FROM password_resets WHERE expires_at < {$now}");
     }
 }

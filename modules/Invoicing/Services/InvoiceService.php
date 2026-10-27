@@ -85,7 +85,7 @@ final class InvoiceService
         $this->db->beginTransaction();
         try {
             $this->db->execute(
-                "UPDATE invoices SET status = 'issued', updated_at = now() WHERE id = :id",
+                "UPDATE invoices SET status = 'issued', updated_at = {$this->db->nowExpression()} WHERE id = :id",
                 ['id' => $invoiceId]
             );
             $this->db->commit();
@@ -160,7 +160,7 @@ final class InvoiceService
             $newBalance = round((float) $invoice['total_ttc'] - $newPaid, 2);
             $newStatus = $newBalance <= 0.001 ? 'paid' : 'partial';
             $this->db->execute(
-                'UPDATE invoices SET amount_paid = :paid, balance = :balance, status = :status, updated_at = now()
+                'UPDATE invoices SET amount_paid = :paid, balance = :balance, status = :status, updated_at = ' . $this->db->nowExpression() . '
                  WHERE id = :id',
                 ['paid' => $newPaid, 'balance' => max(0.0, $newBalance), 'status' => $newStatus, 'id' => $invoiceId]
             );
@@ -223,7 +223,7 @@ final class InvoiceService
             throw new AppException('Une facture soldée ne peut être annulée ; émettez un avoir.');
         }
         $this->db->execute(
-            "UPDATE invoices SET status = 'cancelled', updated_at = now() WHERE id = :id",
+            "UPDATE invoices SET status = 'cancelled', updated_at = {$this->db->nowExpression()} WHERE id = :id",
             ['id' => $invoiceId]
         );
         audit('invoice.cancel', 'Invoice', $invoiceId, ['number' => $invoice['invoice_number']]);

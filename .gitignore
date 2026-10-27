@@ -44,7 +44,8 @@ storage/encryption/*.key
 # Bases locales
 *.sqlite
 *.sqlite3
-/pgdata/
+/mysqldata/
+/mariadbdata/
 
 # IDE / OS
 .idea/

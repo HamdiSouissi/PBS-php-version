@@ -30,7 +30,7 @@ final class EmployeeRepository extends BaseRepository
                 WHERE e.company_id = :company';
         $params = ['company' => $companyId];
         if ($term !== '') {
-            $sql .= ' AND (e.last_name ILIKE :term OR e.first_name ILIKE :term OR e.employee_number ILIKE :term)';
+            $sql .= ' AND (' . $this->db->like('e.last_name') . ' :term OR ' . $this->db->like('e.first_name') . ' :term OR ' . $this->db->like('e.employee_number') . ' :term)';
             $params['term'] = '%' . $term . '%';
         }
         if ($status !== '') {

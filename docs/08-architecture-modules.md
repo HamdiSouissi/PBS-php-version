@@ -4,7 +4,7 @@
 
 - PHP 8.4 natif, orienté objet, **aucun framework backend** (ni Laravel, ni
   Symfony, ni autre) ; aucun framework frontend (vanilla JS ES2024, Bootstrap 5) ;
-- PostgreSQL exclusif, PDO, requêtes préparées, transactions, vues et fonctions
+- MySQL 8 / MariaDB exclusif, PDO (pdo_mysql), requêtes préparées, transactions, vues SQL
   SQL. Pas d'ORM ; un constructeur de requêtes maison est disponible mais
   facultatif (`App\Core\Database\QueryBuilder`) ;
 - PSR-1, PSR-4, PSR-12 ; SOLID, DRY, KISS ;

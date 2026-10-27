@@ -14,10 +14,12 @@ final class EmployeeLifecycleTest extends DatabaseTestCase
 {
     private function companyId(): int
     {
-        return (int) $this->db->fetchScalar(
+        // INSERT puis lastInsertId : portable SQLite (tests) comme MySQL.
+        $this->db->execute(
             "INSERT INTO companies (legal_name, siren, siret, legal_form, city, postal_code)
-             VALUES ('Test SAS', '123456789', '12345678901234', 'SAS', 'Paris', '75001') RETURNING id"
+             VALUES ('Test SAS', '123456789', '12345678901234', 'SAS', 'Paris', '75001')"
         );
+        return (int) $this->db->lastInsertId();
     }
 
     public function testEmployeeCreationGeneratesSequentialNumber(): void

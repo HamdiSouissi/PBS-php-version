@@ -21,8 +21,7 @@ $aliases = [
 // Extensions exigées par composer.json + simplexml (génération/lecture XML
 // e-facturation) et json (réponse API, activé par défaut).
 $required = [
-    'pdo_pgsql',
-    'pgsql',
+    'pdo_mysql',
     'mbstring',
     'intl',
     'bcmath',

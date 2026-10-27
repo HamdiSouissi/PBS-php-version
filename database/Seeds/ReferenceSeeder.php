@@ -31,22 +31,22 @@ final class ReferenceSeeder
             ['MAT', 'Congé maternité / paternité', true, '#d63384', 0],
         ];
         foreach ($leaveTypes as [$code, $label, $paid, $color, $days]) {
-            $db->execute(
-                'INSERT INTO leave_types (code, label, is_paid, color, default_days)
-                 VALUES (:c, :l, :p, :col, :d) ON CONFLICT (code) DO NOTHING',
-                ['c' => $code, 'l' => $label, 'p' => $paid, 'col' => $color, 'd' => $days]
+            $db->insertIgnore(
+                'leave_types',
+                ['code' => $code, 'label' => $label, 'is_paid' => $paid, 'color' => $color, 'default_days' => $days],
+                ['code']
             );
         }
 
         // Exercice fiscal courant (année civile).
         $year = (int) date('Y');
-        $db->execute(
-            'INSERT INTO fiscal_years (label, starts_on, ends_on, status)
-             VALUES (:l, :s, :e, \'open\') ON CONFLICT DO NOTHING',
+        $db->insertIgnore(
+            'fiscal_years',
             [
-                'l' => "Exercice {$year}",
-                's' => "{$year}-01-01",
-                'e' => "{$year}-12-31",
+                'label' => "Exercice {$year}",
+                'starts_on' => "{$year}-01-01",
+                'ends_on' => "{$year}-12-31",
+                'status' => 'open',
             ]
         );
 
@@ -64,31 +64,49 @@ final class ReferenceSeeder
             ['DUERP', 'Document unique d\'évaluation des risques professionnels', 'interne', 'yearly', 'Mise à jour annuelle obligatoire'],
         ];
         foreach ($obligations as [$code, $title, $authority, $frequency, $note]) {
-            $db->execute(
-                'INSERT INTO compliance_obligations (code, title, authority, frequency, period_label, notes, status)
-                 VALUES (:c, :t, :a, :f, :p, :n, \'pending\') ON CONFLICT (code) DO NOTHING',
-                ['c' => $code, 't' => $title, 'a' => $authority, 'f' => $frequency, 'p' => '', 'n' => $note]
+            $db->insertIgnore(
+                'compliance_obligations',
+                [
+                    'code' => $code,
+                    'title' => $title,
+                    'authority' => $authority,
+                    'frequency' => $frequency,
+                    'period_label' => '',
+                    'notes' => $note,
+                    'status' => 'pending',
+                ],
+                ['code']
             );
         }
 
         // Paramètres IA par défaut : tout désactivé, l'app reste pleinement utilisable.
-        $db->execute(
-            'INSERT INTO ai_provider_settings (provider, is_enabled, url, model, temperature, timeout, system_prompt)
-             VALUES (\'ollama\', FALSE, :u, \'llama3.1\', 0.70, 60, :prompt)
-             ON CONFLICT (provider) DO NOTHING',
+        $db->insertIgnore(
+            'ai_provider_settings',
             [
-                'u' => 'http://127.0.0.1:11434',
-                'prompt' => 'Tu es un assistant de gestion d\'entreprise. Réponds de façon concise et en français.',
-            ]
+                'provider' => 'ollama',
+                'is_enabled' => false,
+                'url' => 'http://127.0.0.1:11434',
+                'model' => 'llama3.1',
+                'temperature' => 0.70,
+                'timeout' => 60,
+                'system_prompt' => 'Tu es un assistant de gestion d\'entreprise. Réponds de façon concise et en français.',
+                'extra' => '{}',
+            ],
+            ['provider']
         );
-        $db->execute(
-            'INSERT INTO ai_provider_settings (provider, is_enabled, url, model, temperature, timeout, system_prompt)
-             VALUES (\'codecraft\', FALSE, :u, \'\', 0.70, 30, :prompt)
-             ON CONFLICT (provider) DO NOTHING',
+        $db->insertIgnore(
+            'ai_provider_settings',
             [
-                'u' => 'https://codecraftapi.com/v1',
-                'prompt' => 'Tu es un assistant de gestion d\'entreprise. Réponds de façon concise et en français.',
-            ]
+                'provider' => 'codecraft',
+                'is_enabled' => false,
+                'url' => 'https://codecraftapi.com/v1',
+                'model' => '',
+                'temperature' => 0.70,
+                'timeout' => 30,
+                'system_prompt' => 'Tu es un assistant de gestion d\'entreprise. Réponds de façon concise et en français.',
+                'extra' => '{}',
+            ],
+            ['provider']
         );
     }
 }

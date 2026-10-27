@@ -7,7 +7,7 @@
     "require": {
         "php": ">=8.4",
         "ext-pdo": "*",
-        "ext-pgsql": "*",
+        "ext-pdo_mysql": "*",
         "ext-mbstring": "*",
         "ext-json": "*",
         "ext-openssl": "*",

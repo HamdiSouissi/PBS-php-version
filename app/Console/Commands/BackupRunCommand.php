@@ -14,7 +14,7 @@ final class BackupRunCommand extends Command
 {
     protected string $name = 'backup:run';
 
-    protected string $description = 'Réalise une sauvegarde SQL (pg_dump) et des documents';
+    protected string $description = 'Réalise une sauvegarde SQL (mysqldump) et des documents';
 
     public function handle(Input $input, Output $output): int
     {

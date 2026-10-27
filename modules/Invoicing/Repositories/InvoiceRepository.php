@@ -100,7 +100,7 @@ final class InvoiceRepository extends BaseRepository
     public function markOverdue(): int
     {
         return $this->db->execute(
-            "UPDATE invoices SET status = 'overdue', updated_at = now()
+            "UPDATE invoices SET status = 'overdue', updated_at = {$this->db->nowExpression()}
              WHERE type = 'sale' AND balance > 0 AND due_date < CURRENT_DATE
                AND status IN ('issued','partial')"
         );

@@ -2,10 +2,15 @@
 
 ## Choix technologique
 
-PostgreSQL est la **seule** base prise en charge en production. Tous les accès
-passent par PDO avec requêtes préparées paramétrées (`App\Core\Database\Connection`) ;
-aucun ORM n'est utilisé. Le SQL reste explicite, dans les repositories et les
-fichiers de migration.
+MySQL 8.0.16+ (ou MariaDB 10.11+) est la **seule** base prise en charge en
+production. Tous les accès passent par PDO avec requêtes préparées
+paramétrées (`App\Core\Database\Connection`, driver `pdo_mysql` basé sur
+mysqlnd) ; aucun ORM n'est utilisé. Le SQL reste explicite, dans les
+repositories et les fichiers de migration.
+
+Le driver SQLite n'existe que pour faire tourner la suite de tests sans
+serveur (cf. guide 09) : un schéma miroir des migrations MySQL est maintenu
+dans `tests/fixtures/schema_sqlite.sql`.
 
 ## Migrations SQL versionnées
 
@@ -24,11 +29,17 @@ au démarrage du conteneur applicatif.
 Conventions :
 
 - une migration = un changement cohérent et idempotent quand c'est possible
-  (`CREATE TABLE IF NOT EXISTS`, `ON CONFLICT DO NOTHING`) ;
+  (`CREATE TABLE IF NOT EXISTS`, `INSERT IGNORE`) ;
+- syntaxe cible : InnoDB, `utf8mb4` / `utf8mb4_unicode_ci`, clés auto-incrémentées
+  `BIGINT UNSIGNED AUTO_INCREMENT`, booléens `TINYINT(1)`, JSON natif ;
 - les corrections de schéma passent par une **nouvelle** migration, jamais en
   modifiant une migration déjà jouée (voir la migration 011, correctif de
   longueur de colonne) ;
-- les vues SQL sont versionnées dans la migration 010.
+- les vues SQL sont versionnées dans les migrations 010 et 012.
+
+> **Limite MySQL connue** : le DDL provoque un commit implicite. Si une
+> migration échoue en cours, les objets déjà créés peuvent subsister : il faut
+> corriger manuellement avant de relancer `migrate:run`.
 
 ### Rollback — limite actuelle
 
@@ -50,7 +61,8 @@ en attendant, le retour arrière s'appuie sur les sauvegardes décrites ci-desso
 php bin/console db:seed
 ```
 
-Orchestrés par `DatabaseSeeder`, tous idempotents :
+Orchestrés par `DatabaseSeeder`, tous idempotents (upserts `INSERT IGNORE` /
+`ON DUPLICATE KEY UPDATE`, générés par la méthode `Connection::upsert`) :
 
 | Seeder | Contenu |
 |--------|---------|
@@ -65,16 +77,28 @@ Orchestrés par `DatabaseSeeder`, tous idempotents :
 | Base | Rôle |
 |------|------|
 | `pbs` | Base applicative locale |
-| `pbs_test` | Base dédiée aux tests d'intégration (tronquée avant chaque test) |
+| `pbs_test` | Base dédiée aux tests d'intégration sur MySQL (tronquée avant chaque test) |
 
 Le nom de la base de test est surchargeable via la variable d'environnement
 `PBS_TEST_DB` (défaut : `pbs_test`).
+
+Création initiale (SQL) :
+
+```sql
+CREATE DATABASE pbs CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'pbs'@'%' IDENTIFIED BY 'changez_moi';
+GRANT ALL PRIVILEGES ON pbs.* TO 'pbs'@'%';
+CREATE DATABASE pbs_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON pbs_test.* TO 'pbs'@'%';
+FLUSH PRIVILEGES;
+```
 
 ## Sauvegardes
 
 Le service `Modules\Compliance\Services\BackupService` produit :
 
-1. un dump SQL cohérent via `pg_dump`, compressé en gzip depuis PHP
+1. un dump SQL cohérent via `mysqldump --single-transaction` (instantané InnoDB
+   sans verrou long), compressé en gzip depuis PHP
    (`storage/backups/pbs-AAAAMMJJ-HHMMSS.sql.gz`) ;
 2. une archive ZIP des documents générés (`uploads`, `documents`,
    `einvoicing`, `exports`) quand ils existent ;
@@ -83,28 +107,33 @@ Le service `Modules\Compliance\Services\BackupService` produit :
 ```bash
 php bin/console backup:run
 php bin/console backup:restore --file=pbs-20261027-003757.sql.gz
+php bin/console backup:list
 ```
 
-Prérequis : les binaires `pg_dump` et `psql` dans le PATH (paquet
-`postgresql-client`, déjà présent dans l'image Docker). La restauration
-s'exécute avec `ON_ERROR_STOP=1` et n'accepte que des fichiers résidant dans
-le dossier de sauvegarde configuré (protection contre les chemins arbitraires).
+Prérequis : les binaires `mysqldump` et `mysql` dans le PATH (paquet
+`default-mysql-client`, déjà présent dans l'image Docker ; fournis par
+Laragon ou le client MySQL/MariaDB en installation native). Le mot de passe
+est transmis par la variable `MYSQL_PWD`, jamais en argument de ligne de
+commande. La restauration interrompt toute erreur (pas de `--force`) et
+n'accepte que des fichiers résidant dans le dossier de sauvegarde configuré
+(protection contre les chemins arbitraires).
 
 ### Sauvegarde manuelle d'urgence
 
 ```bash
-pg_dump -h "$DB_HOST" -U "$DB_USERNAME" -d "$DB_DATABASE" --clean --if-exists \
+mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USERNAME" \
+  --single-transaction --routines --triggers --events "$DB_DATABASE" \
   | gzip > /tmp/pbs-manuel.sql.gz
 
 # Restauration
-gunzip -c /tmp/pbs-manuel.sql.gz | psql -h "$DB_HOST" -U "$DB_USERNAME" -d "$DB_DATABASE"
+gunzip -c /tmp/pbs-manuel.sql.gz | mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USERNAME" "$DB_DATABASE"
 ```
 
 ### Recommandations d'exploitation
 
-- sauvegarde quotidienne planifiée (cron, voir guide 03) + test mensuel de
+- sauvegarde quotidienne planifiée (cron, voir guide 03/12) + test mensuel de
   restauration sur une base jetable ;
 - déporter les archives hors du serveur (stockage objet, NAS chiffré) ;
 - figer une sauvegarde avant chaque migration de production ;
-- les volumes Docker `pgdata` et `storage` doivent être inclus dans la politique
-  de sauvegarde de l'hôte.
+- les volumes Docker `mysqldata` et `storage` doivent être inclus dans la
+  politique de sauvegarde de l'hôte.

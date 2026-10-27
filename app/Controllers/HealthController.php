@@ -10,7 +10,7 @@ use App\Core\Http\Request;
 
 /**
  * Sonde de vivacité HTTP (sans authentification) pour les orchestrateurs
- * et healthchecks Docker : vérifie le démarrage de PHP et la connectivité PostgreSQL.
+ * et healthchecks Docker : vérifie le démarrage de PHP et la connectivité MySQL.
  */
 final class HealthController
 {

@@ -107,10 +107,10 @@ final class OrganizationService
      */
     public function addDepartment(int $companyId, array $data): void
     {
-        $this->db->execute(
-            'INSERT INTO departments (company_id, code, name) VALUES (:c, :code, :name)
-             ON CONFLICT (company_id, code) DO NOTHING',
-            ['c' => $companyId, 'code' => $data['code'], 'name' => $data['name']]
+        $this->db->insertIgnore(
+            'departments',
+            ['company_id' => $companyId, 'code' => $data['code'], 'name' => $data['name']],
+            ['company_id', 'code']
         );
         audit('department.create', 'Department', null, $data);
     }

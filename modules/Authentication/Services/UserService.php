@@ -89,7 +89,7 @@ final class UserService
             throw new ValidationException(['password' => $errors[0]]);
         }
         $this->db->execute(
-            'UPDATE users SET password_hash = :h, must_change_password = FALSE, updated_at = NOW() WHERE id = :id',
+            'UPDATE users SET password_hash = :h, must_change_password = FALSE, updated_at = ' . $this->db->nowExpression() . ' WHERE id = :id',
             ['h' => $this->password->hash($new), 'id' => $userId]
         );
         audit('user.password_change', 'User', $userId);
@@ -120,7 +120,7 @@ final class UserService
             return false;
         }
         $this->db->execute(
-            'UPDATE users SET totp_enrolled = TRUE, totp_confirmed_at = NOW() WHERE id = :id',
+            'UPDATE users SET totp_enrolled = TRUE, totp_confirmed_at = ' . $this->db->nowExpression() . ' WHERE id = :id',
             ['id' => $user->id]
         );
         audit('user.totp_enabled', 'User', $user->id);

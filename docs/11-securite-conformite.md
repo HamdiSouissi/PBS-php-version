@@ -82,9 +82,9 @@ déclarations (TVA, liasse) nécessitent la relecture d'un **expert-comptable**.
 - [ ] `APP_KEY` et `JWT_SECRET` régénérés, forts, hors Git
 - [ ] Mot de passe administrateur initial changé
 - [ ] HTTPS terminé en frontal, cookies `Secure`
-- [ ] `DB_PASSWORD` fort, utilisateur PostgreSQL applicatif non superuser
+- [ ] `DB_PASSWORD` fort, utilisateur MySQL applicatif sans privilège SUPER
 - [ ] Rate limiting activé, journalisation centralisée
 - [ ] Sauvegardes planifiées et **test de restauration** réalisé
-- [ ] Volumes `pgdata` et `storage` inclus dans la politique de sauvegarde
+- [ ] Volumes `mysqldata` et `storage` inclus dans la politique de sauvegarde
 - [ ] Accès restreint aux fichiers `storage/` (permissions 770, propriétaire applicatif)
 - [ ] Revue des permissions des rôles après création des utilisateurs réels

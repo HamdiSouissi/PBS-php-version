@@ -92,11 +92,11 @@ final class EmployeeService
         $this->db->transaction(function (Connection $db) use ($id, $date, $reason): void {
             $db->execute(
                 "UPDATE employees SET status = 'terminated', termination_date = :d,
-                    termination_reason = :r, updated_at = NOW() WHERE id = :id",
+                    termination_reason = :r, updated_at = {$db->nowExpression()} WHERE id = :id",
                 ['d' => $date, 'r' => $reason, 'id' => $id]
             );
             $db->execute(
-                "UPDATE employment_contracts SET status = 'ended', end_date = :d, updated_at = NOW()
+                "UPDATE employment_contracts SET status = 'ended', end_date = :d, updated_at = {$db->nowExpression()}
                  WHERE employee_id = :id AND status = 'active'",
                 ['d' => $date, 'id' => $id]
             );
@@ -109,7 +109,7 @@ final class EmployeeService
         $this->repository->findOrFail($id);
         $token = bin2hex(random_bytes(24));
         $this->db->execute(
-            'UPDATE employees SET is_portal_enabled = TRUE, portal_token = :t, updated_at = NOW() WHERE id = :id',
+            'UPDATE employees SET is_portal_enabled = TRUE, portal_token = :t, updated_at = ' . $this->db->nowExpression() . ' WHERE id = :id',
             ['t' => hash('sha256', $token), 'id' => $id]
         );
         audit('employee.portal_enable', 'Employee', $id);

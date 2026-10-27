@@ -10,11 +10,14 @@ use PDOStatement;
 use RuntimeException;
 
 /**
- * Connexion PDO principale (PostgreSQL). Un driver SQLite existe
+ * Connexion PDO principale (MySQL 8 / MariaDB). Un driver SQLite existe
  * uniquement pour la suite de tests en environnement hors-ligne.
  *
  * Toutes les requêtes passent par des requêtes préparées (injection SQL
- * impossible par construction).
+ * impossible par construction). Les quelques différences syntaxiques entre
+ * MySQL et SQLite sont isolées dans les méthodes d'expression de cette classe
+ * (nowExpression, groupConcat, yearMonth, upsert...) afin qu'aucun code métier
+ * ne dépende du dialecte.
  */
 final class Connection
 {
@@ -31,7 +34,12 @@ final class Connection
 
     public function driver(): string
     {
-        return (string) ($this->config['default'] ?? 'pgsql');
+        return (string) ($this->config['default'] ?? 'mysql');
+    }
+
+    public function isSqlite(): bool
+    {
+        return $this->driver() === 'sqlite';
     }
 
     /**
@@ -70,11 +78,11 @@ final class Connection
                 $this->pdo->exec('PRAGMA foreign_keys = ON');
             } else {
                 $dsn = sprintf(
-                    'pgsql:host=%s;port=%d;dbname=%s;sslmode=%s',
+                    'mysql:host=%s;port=%d;dbname=%s;charset=%s',
                     $settings['host'],
                     $settings['port'],
                     $settings['dbname'],
-                    $settings['sslmode'] ?? 'prefer'
+                    $settings['charset'] ?? 'utf8mb4'
                 );
                 $this->pdo = new PDO($dsn, $settings['user'], $settings['password'], [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -82,10 +90,7 @@ final class Connection
                     PDO::ATTR_EMULATE_PREPARES => false,
                     PDO::ATTR_PERSISTENT => false,
                 ]);
-                $this->pdo->exec("SET NAMES '{$settings['charset']}'");
-                if (!empty($settings['schema'])) {
-                    $this->pdo->exec('SET search_path TO ' . $this->pdo->quote($settings['schema']));
-                }
+                $this->pdo->exec("SET NAMES " . $this->pdo->quote($settings['charset'] ?? 'utf8mb4'));
             }
         } catch (PDOException $exception) {
             throw new RuntimeException(
@@ -111,8 +116,8 @@ final class Connection
 
     /**
      * Normalise les valeurs PHP pour le driver courant.
-     * PDO_PGSQL natif attend 'true'/'false' pour les booléens ; SQLite utilise
-     * 1/0. Les DateTime sont convertis en chaînes ISO.
+     * MySQL (TINYINT(1)) comme SQLite attendent 1/0 pour les booléens ;
+     * les DateTime sont convertis en chaînes ISO.
      *
      * @param array<string|int,mixed> $params
      * @return array<string|int,mixed>
@@ -121,7 +126,7 @@ final class Connection
     {
         foreach ($params as $key => $value) {
             if (is_bool($value)) {
-                $params[$key] = $this->driver() === 'sqlite' ? ($value ? 1 : 0) : ($value ? 'true' : 'false');
+                $params[$key] = $value ? 1 : 0;
             } elseif ($value instanceof \DateTimeInterface) {
                 $params[$key] = $value->format('Y-m-d H:i:s');
             }
@@ -188,6 +193,8 @@ final class Connection
 
     /**
      * Transaction avec support des points de sauvegarde imbriqués.
+     * Note MySQL : un DDL provoque un commit implicite, cette mécanique
+     * transactionnelle ne protège donc que le DML (cf. MigrationRunner).
      */
     public function transaction(callable $callback): mixed
     {
@@ -235,13 +242,171 @@ final class Connection
         $this->pdo()->exec('ROLLBACK TO SAVEPOINT trans' . $this->transactionDepth);
     }
 
+    /**
+     * Expression date/heure courante du dialecte.
+     */
     public function nowExpression(): string
     {
-        return $this->driver() === 'sqlite' ? "datetime('now')" : 'NOW()';
+        return $this->isSqlite() ? "datetime('now')" : 'NOW()';
     }
 
-    public function boolean(bool $value): bool|int
+    /**
+     * Expression booléenne portable (1/0 en MySQL TINYINT comme en SQLite).
+     */
+    public function boolean(bool $value): int
     {
-        return $this->driver() === 'sqlite' ? ($value ? 1 : 0) : $value;
+        return $value ? 1 : 0;
+    }
+
+    /**
+     * Concaténation agrégée (GROUP_CONCAT MySQL, aussi disponible en SQLite).
+     * L'expression peut contenir DISTINCT, ex : groupConcat('DISTINCT r.code').
+     */
+    public function groupConcat(string $expression, string $separator = ','): string
+    {
+        $separator = str_replace("'", "''", $separator);
+        if ($this->isSqlite()) {
+            return "GROUP_CONCAT({$expression}, '{$separator}')";
+        }
+        return "GROUP_CONCAT({$expression} SEPARATOR '{$separator}')";
+    }
+
+    /**
+     * Mois-année d'une colonne date au format 'YYYY-MM'.
+     */
+    public function yearMonth(string $column): string
+    {
+        return $this->isSqlite()
+            ? "strftime('%Y-%m', {$column})"
+            : "DATE_FORMAT({$column}, '%Y-%m')";
+    }
+
+    /**
+     * Date/heure courante augmentée d'un intervalle (ex : verrou 15 minutes).
+     * Unités supportées : minute, hour, day, month, year.
+     */
+    public function nowPlus(int $value, string $unit): string
+    {
+        if ($this->isSqlite()) {
+            return "datetime('now', '+{$value} {$unit}s')";
+        }
+        return "DATE_ADD(NOW(), INTERVAL {$value} " . strtoupper($unit) . ')';
+    }
+
+    /**
+     * Soustraction d'un intervalle à une colonne/expression date.
+     * Unités supportées : day, month, year.
+     */
+    public function dateSub(string $expression, int $value, string $unit): string
+    {
+        if ($this->isSqlite()) {
+            $modifier = str_contains($expression, 'CURRENT_DATE') || $expression === 'CURRENT_DATE'
+                ? "date('now', '-{$value} {$unit}s')"
+                : "date({$expression}, '-{$value} {$unit}s')";
+            return $modifier;
+        }
+        return "DATE_SUB({$expression}, INTERVAL {$value} " . strtoupper($unit) . ')';
+    }
+
+    /**
+     * Prédicat de recherche insensible à la casse, portable MySQL/SQLite.
+     * Le paramètre lié doit contenir les jokers (ex : '%terme%').
+     */
+    public function like(string $column): string
+    {
+        return "LOWER({$column}) LIKE";
+    }
+
+    /**
+     * Verrou de ligne pessimiste. SQLite (tests, mono-processus) n'en a pas :
+     * la clause est omise ; MySQL/MariaDB reçoivent bien FOR UPDATE.
+     */
+    public function rowLockClause(): string
+    {
+        return $this->isSqlite() ? '' : ' FOR UPDATE';
+    }
+
+    /**
+     * Verrou de ligne avec saut des lignes déjà verrouillées (planification
+     * concurrente). Inopérant et omis sous SQLite.
+     */
+    public function skipLockedClause(): string
+    {
+        return $this->isSqlite() ? '' : ' FOR UPDATE SKIP LOCKED';
+    }
+
+    /**
+     * Insertion idempotente (upsert) sans mise à jour en cas de conflit.
+     *
+     * @param array<string,mixed> $data
+     * @param list<string>        $conflictColumns colonnes de la clé unique (SQLite)
+     */
+    public function insertIgnore(string $table, array $data, array $conflictColumns = []): int
+    {
+        return $this->upsert($table, $data, $conflictColumns, []);
+    }
+
+    /**
+     * Référence la valeur entrante d'une colonne lors d'un conflit d'upsert
+     * (excluded.col en SQLite, VALUES(col) en MySQL).
+     */
+    public function conflictValue(string $column): string
+    {
+        return $this->isSqlite() ? "excluded.{$column}" : "VALUES({$column})";
+    }
+
+    /**
+     * Insertion idempotente (upsert) dialectale.
+     *
+     * MySQL  : INSERT IGNORE / INSERT ... ON DUPLICATE KEY UPDATE
+     * SQLite : INSERT ... ON CONFLICT (colonnes) DO NOTHING / DO UPDATE
+     *
+     * @param array<string,mixed>  $data             colonne => valeur paramétrée
+     * @param list<string>         $conflictColumns  colonnes de la contrainte unique
+     * @param array<string,string> $updateColumns    colonnes à recopier en conflit
+     *                                                (vide = ignorer la ligne)
+     * @param array<string,string> $rawExpressions   expressions SET brutes (colonne => SQL),
+     *                                                utilisables avec conflictValue()
+     */
+    public function upsert(
+        string $table,
+        array $data,
+        array $conflictColumns,
+        array $updateColumns = [],
+        array $rawExpressions = []
+    ): int {
+        $columns = array_keys($data);
+        $placeholders = array_map(static fn (string $column): string => ':' . $column, $columns);
+        $sql = sprintf(
+            'INSERT INTO %s (%s) VALUES (%s)',
+            $table,
+            implode(', ', $columns),
+            implode(', ', $placeholders)
+        );
+
+        $sets = [];
+        foreach ($updateColumns as $column) {
+            $sets[] = $this->isSqlite()
+                ? "{$column} = excluded.{$column}"
+                : "{$column} = VALUES({$column})";
+        }
+        foreach ($rawExpressions as $column => $expression) {
+            $sets[] = "{$column} = {$expression}";
+        }
+
+        if ($sets === []) {
+            if ($this->isSqlite()) {
+                $target = $conflictColumns === [] ? '' : ' (' . implode(', ', $conflictColumns) . ')';
+                $sql .= ' ON CONFLICT' . $target . ' DO NOTHING';
+            } else {
+                $sql = 'INSERT IGNORE INTO ' . substr($sql, 12);
+            }
+        } elseif ($this->isSqlite()) {
+            $sql .= ' ON CONFLICT (' . implode(', ', $conflictColumns) . ') DO UPDATE SET ' . implode(', ', $sets);
+        } else {
+            $sql .= ' ON DUPLICATE KEY UPDATE ' . implode(', ', $sets);
+        }
+
+        return $this->execute($sql, $data);
     }
 }
