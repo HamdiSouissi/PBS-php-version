@@ -124,8 +124,8 @@
     --sidebar-w: 264px;
     --sidebar-w-rail: 76px;
     --topbar-h: 64px;
-    /* Largeur de contenu identique sur toutes les pages (gabarit unique) */
-    --content-max-width: 1440px;
+    /* Le contenu occupe toute la largeur disponible, marges comprises */
+    --content-max-width: 100%;
     --form-max-width: 780px;
 
     /* Plans */
@@ -640,6 +640,26 @@ svg.lucide {
 :root[data-theme='light'] .theme-toggle .icon-dark { display: none; }
 :root:not([data-theme='dark']):not([data-theme='light']) .theme-toggle .icon-light,
 :root:not([data-theme='dark']):not([data-theme='light']) .theme-toggle .icon-dark { display: none; }
+
+/* Horloge Paris de la topbar : date et heure légales sur toutes les pages */
+.topbar-clock {
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-pill);
+    background: var(--c-surface-glass);
+    color: var(--c-secondary);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.topbar-clock svg.lucide { width: 0.95rem; height: 0.95rem; color: var(--accent); }
+.topbar-clock-time { font-weight: 600; color: var(--c-ink); }
+.topbar-clock-zone { color: var(--c-muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+@media (max-width: 1199.98px) {
+    .topbar-clock-zone { display: none; }
+}
 
 .avatar {
     width: 34px;

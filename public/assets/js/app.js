@@ -102,6 +102,7 @@ const App = {
         if (this.initialized) return;
         this.initialized = true;
         this.initTheme();
+        this.initClock();
         this.initIcons();
         this.initSidebar();
         this.initToasts();
@@ -146,6 +147,31 @@ const App = {
             btn.title = labels[theme];
         });
         document.dispatchEvent(new CustomEvent('pbs:theme-changed', { detail: { theme, dark: root.dataset.bsTheme === 'dark' } }));
+    },
+
+    /* --- Horloge légale Europe/Paris, rendue côté serveur puis vivante --- */
+    initClock() {
+        const clock = document.getElementById('pbsClock');
+        if (!clock || typeof Intl === 'undefined') return;
+        const dateEl = clock.querySelector('[data-clock-date]');
+        const timeEl = clock.querySelector('[data-clock-time]');
+        const dateFmt = new Intl.DateTimeFormat('fr-FR', {
+            timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric',
+        });
+        const timeFmt = new Intl.DateTimeFormat('fr-FR', {
+            timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+        });
+        const tick = () => {
+            const now = new Date();
+            if (dateEl) dateEl.textContent = dateFmt.format(now);
+            if (timeEl) timeEl.textContent = timeFmt.format(now).replace(/\u202f/g, ' ');
+        };
+        tick();
+        // On se cale sur la seconde suivante pour un décompre régulier.
+        setTimeout(() => {
+            tick();
+            setInterval(tick, 1000);
+        }, 1000 - (Date.now() % 1000));
     },
 
     /* --- Icônes : Lucide + compatibilité des anciens <i class="bi-…"> ---- */
