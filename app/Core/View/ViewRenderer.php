@@ -60,8 +60,13 @@ final class ViewRenderer
      * Lien de navigation latérale, affiché uniquement si la permission
      * (optionnelle) est accordée à l'utilisateur courant.
      */
-    public function navItem(string $url, string $label, string $icon, string $permission = ''): string
-    {
+    public function navItem(
+        string $url,
+        string $label,
+        string $icon,
+        string $permission = '',
+        string $badgeHtml = ''
+    ): string {
         if ($permission !== '' && !\App\Core\Application::container()->get(\App\Core\Auth\AuthManager::class)->hasPermission($permission)) {
             return '';
         }
@@ -70,12 +75,13 @@ final class ViewRenderer
         $active = $isActive ? 'active' : '';
         $ariaCurrent = $isActive ? ' aria-current="page"' : '';
         return sprintf(
-            '<a class="nav-link %s" href="%s"%s><i class="bi bi-%s"></i><span>%s</span></a>',
+            '<a class="nav-link %s" href="%s"%s><i class="bi bi-%s"></i><span>%s</span>%s</a>',
             $active,
             htmlspecialchars($url, ENT_QUOTES),
             $ariaCurrent,
             htmlspecialchars($icon, ENT_QUOTES),
-            htmlspecialchars($label, ENT_QUOTES)
+            htmlspecialchars($label, ENT_QUOTES),
+            $badgeHtml
         );
     }
 

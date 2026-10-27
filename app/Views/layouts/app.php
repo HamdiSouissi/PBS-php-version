@@ -19,6 +19,12 @@ $authManager = container()->get(\App\Core\Auth\AuthManager::class);
 // Horloge permanente exprimée dans le fuseau légal de l'entreprise (Paris).
 $parisNow = new DateTimeImmutable('now', new DateTimeZone('Europe/Paris'));
 
+// Pastille des messages non lus de la messagerie collaborative (chat.use).
+$chatUnread = 0;
+if ($user !== null && $authManager->hasPermission('chat.use')) {
+    $chatUnread = container()->get(\Modules\Chat\Services\ChatService::class)->unreadTotal($user->id);
+}
+
 // Navigation filtrée par permission RBAC. Le code icône est le nom Bootstrap
 // historique ; le script global le remplace par une icône Lucide équivalente.
 $navSections = [
@@ -35,6 +41,7 @@ $navSections = [
     [
         'label' => 'Communication',
         'items' => [
+            ['/chat', 'Messagerie', 'chat-dots', 'chat.use', 'chat'],
             ['/mail', 'Boîte mail', 'envelope', 'mail.read'],
             ['/mail/admin/accounts', 'Comptes mail', 'gear', 'mail.configure'],
         ],
@@ -76,7 +83,7 @@ $lucideMap = [
     'pie-chart' => 'pie-chart', 'shield-check' => 'shield-check',
     'folder2-open' => 'folder-open', 'stars' => 'sparkles',
     'shield-lock' => 'shield-lock', 'clock-history' => 'history',
-    'envelope' => 'mail', 'gear' => 'settings',
+    'envelope' => 'mail', 'gear' => 'settings', 'chat-dots' => 'messages-square',
 ];
 $palette = [
     ['group' => 'Navigation', 'label' => 'Tableau de bord', 'href' => '/dashboard', 'icon' => 'gauge', 'hint' => ''],
@@ -159,8 +166,17 @@ $pageTitle = $title ?? 'Prime Business Suite';
                 }
                 ?>
                 <?= $this->navSection($section['label']) ?>
-                <?php foreach ($visibleItems as [$url, $label, $icon, $permission]): ?>
-                    <?= $this->navItem($url, $label, $icon, $permission) ?>
+                <?php foreach ($visibleItems as $item): ?>
+                    <?php
+                    [$url, $label, $icon, $permission] = $item;
+                    $badgeHtml = '';
+                    if (($item[4] ?? '') === 'chat') {
+                        $badgeHtml = '<span class="badge text-bg-danger rounded-pill ms-auto"'
+                            . ' id="chatNavBadge"' . ($chatUnread === 0 ? ' hidden' : '') . '>'
+                            . $chatUnread . '</span>';
+                    }
+                    ?>
+                    <?= $this->navItem($url, $label, $icon, $permission, $badgeHtml) ?>
                 <?php endforeach; ?>
             <?php endforeach; ?>
         </nav>
