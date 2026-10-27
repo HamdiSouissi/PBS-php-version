@@ -1,0 +1,17 @@
+# =============================================================================
+# Filet de sécurité : la racine web DOIT être le dossier public/.
+# Si la configuration Apache pointe par erreur à la racine du projet, on
+# réécrit quand même vers public/ (nécessite AllowOverride All).
+# La configuration recommandée reste un DocumentRoot sur public/.
+# =============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^$ public/ [L]
+    RewriteRule (.*) public/$1 [L]
+</IfModule>
+
+# Refus direct en l'absence de mod_rewrite.
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>

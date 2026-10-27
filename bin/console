@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Point d'entrée console standard (Docker / production) :
+ *   php bin/console migrate:run
+ */
+
+use App\Core\Console\ConsoleKernel;
+use App\Core\Console\Input;
+use App\Core\Console\Output;
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit("Console réservée au mode CLI.\n");
+}
+
+/** @var array{0:\App\Core\Application,1:mixed,2:\App\Core\Container} $bootstrap */
+$bootstrap = require dirname(__DIR__) . '/app/bootstrap.php';
+$container = $bootstrap[2];
+
+$kernel = new ConsoleKernel($container);
+(require dirname(__DIR__) . '/app/commands.php')($kernel);
+
+exit($kernel->run(new Input($argv), new Output()));

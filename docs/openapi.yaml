@@ -1,0 +1,253 @@
+openapi: 3.1.0
+info:
+  title: Prime Business Suite — API REST
+  version: 1.0.0
+  description: >
+    API JSON de Prime Business Suite (PBS), ERP modulaire PHP natif.
+    Authentification par JWT Bearer. Les permissions RBAC du compte
+    s'appliquent comme dans l'interface web.
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Docker local
+  - url: https://erp.prime-vision-solutions.fr/api/v1
+    description: Production (exemple)
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Unauthorized:
+      description: Jeton manquant, expiré ou invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Permission RBAC insuffisante
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        error:
+          type: object
+          properties:
+            type: { type: string }
+            code: { type: integer, example: 401 }
+            message: { type: string }
+    Tokens:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        token_type: { type: string, example: Bearer }
+        access_token: { type: string }
+        refresh_token: { type: string }
+    InvoiceLineInput:
+      type: object
+      required: [label, quantity, unit_price, vat_rate]
+      properties:
+        label: { type: string, example: Prestation conseil }
+        quantity: { type: number, format: float, example: 5 }
+        unit_price: { type: number, format: float, example: 200 }
+        vat_rate: { type: number, enum: [20, 10, 5.5, 2.1, 0], example: 20 }
+        discount_pct: { type: number, format: float, example: 0 }
+    InvoiceInput:
+      type: object
+      required: [third_party_id, lines]
+      properties:
+        third_party_id: { type: integer, example: 2 }
+        issue_date: { type: string, format: date, example: '2026-10-26' }
+        due_date: { type: string, format: date, example: '2026-11-25' }
+        notes: { type: string }
+        lines:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/InvoiceLineInput' }
+    PaymentInput:
+      type: object
+      required: [amount]
+      properties:
+        amount: { type: number, format: float, example: 480.00 }
+        method: { type: string, enum: [virement, cheque, prelevement, carte, especes], example: virement }
+        paid_on: { type: string, format: date }
+        bank_account_id: { type: integer, nullable: true }
+        reference: { type: string }
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      security: []
+      summary: Connexion, retourne les jetons d'accès et de rafraîchissement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Jetons émis
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tokens' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { description: Trop de tentatives (rate limiting) }
+  /auth/refresh:
+    post:
+      security: []
+      summary: Renouvelle le jeton d'accès
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: Nouveaux jetons
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tokens' }
+  /auth/2fa:
+    post:
+      security: []
+      summary: Validation du code TOTP lorsque la double authentification est active
+      responses:
+        '200': { description: Code validé, jetons émis }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/me:
+    get:
+      summary: Profil, rôles et permissions de l'appelant
+      responses:
+        '200':
+          description: Profil courant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      email: { type: string, format: email }
+                      full_name: { type: string }
+                      roles: { type: array, items: { type: string }, example: [admin] }
+                      permissions:
+                        type: array
+                        items: { type: string }
+                        example: ['*']
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /employees:
+    get:
+      summary: Liste des salariés (permission employees.read)
+      parameters:
+        - { name: q, in: query, schema: { type: string }, description: Recherche nom/matricule }
+      responses:
+        '200': { description: Liste }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /employees/{id}:
+    get:
+      summary: Fiche salarié détaillée
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Fiche }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /invoices:
+    get:
+      summary: Factures de vente paginées (permission invoicing.read)
+      parameters:
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - name: status
+          in: query
+          schema: { type: string, enum: [draft, issued, partial, paid, overdue, cancelled] }
+      responses:
+        '200':
+          description: Page de factures
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      rows: { type: array, items: { type: object } }
+                      total: { type: integer }
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      pages: { type: integer }
+    post:
+      summary: Crée une facture en brouillon (permission invoicing.write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InvoiceInput' }
+      responses:
+        '201':
+          description: Facture créée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer, example: 6 }
+        '422': { description: Données invalides (lignes, taux de TVA, dates) }
+  /invoices/{id}:
+    get:
+      summary: Détail d'une facture (lignes, paiements)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Facture détaillée }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /invoices/{id}/issue:
+    post:
+      summary: Émet une facture en brouillon (permission invoicing.validate)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Facture émise, document UBL généré automatiquement }
+        '422': { description: Transition de statut impossible }
+  /invoices/{id}/payments:
+    post:
+      summary: Enregistre un encaissement (permission invoicing.payments)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentInput' }
+      responses:
+        '201': { description: Paiement enregistré, statut de lettrage mis à jour }
+        '422': { description: Trop-perçu ou facture non émise }

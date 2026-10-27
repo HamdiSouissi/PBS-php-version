@@ -1,0 +1,39 @@
+# Dépendances et artefits locaux (réinstallés/recréés dans l'image)
+/vendor/
+/node_modules/
+/.git/
+/.idea/
+/.vscode/
+/.phpunit.cache/
+/coverage/
+/test-results.xml
+
+# Secrets et environnement local
+.env
+.env.local
+*.key
+
+# Contenu généré (la structure des dossiers est recréée par le Dockerfile)
+/storage/cache/*
+/storage/sessions/*
+/storage/queue/*
+/storage/logs/*
+/storage/uploads/*
+/storage/documents/*
+/storage/exports/*
+/storage/backups/*
+/storage/einvoicing/*
+!/storage/**/.gitkeep
+
+# Docker et docs (inutiles dans le contexte de build applicatif)
+/docker-compose*.yml
+/docs/
+Dockerfile
+.dockerignore
+
+# Divers
+*.tar.gz
+*.zip
+*.tgz
+.DS_Store
+Thumbs.db

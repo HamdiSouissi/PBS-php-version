@@ -1,0 +1,65 @@
+# =============================================================================
+# Prime Business Suite - Ignorés Git
+# Ne jamais versionner : .env, clés API, bulletins, documents RH, données bancaires
+# =============================================================================
+
+# Environnement & secrets
+.env
+.env.local
+.env.*.local
+config/secrets.local.php
+*.pem
+*.key
+storage/encryption/*.key
+
+# Dépendances
+/vendor/
+/node_modules/
+
+# Logs
+/storage/logs/*
+!/storage/logs/.gitkeep
+*.log
+
+# Cache & sessions & file d'attente
+/storage/cache/*
+!/storage/cache/.gitkeep
+/storage/sessions/*
+!/storage/sessions/.gitkeep
+/storage/queue/*
+!/storage/queue/.gitkeep
+
+# Documents sensibles générés (bulletins, RH, bancaires, factures clients)
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+/storage/documents/*
+!/storage/documents/.gitkeep
+/storage/exports/*
+!/storage/exports/.gitkeep
+/storage/backups/*
+!/storage/backups/.gitkeep
+/storage/einvoicing/*
+!/storage/einvoicing/.gitkeep
+
+# Bases locales
+*.sqlite
+*.sqlite3
+/mysqldata/
+/mariadbdata/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Tests & couverture
+/.phpunit.cache/
+/coverage/
+/test-results.xml
+
+# Archives
+*.tar.gz
+*.zip
+*.tgz

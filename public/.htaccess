@@ -1,0 +1,41 @@
+# =============================================================================
+# Prime Business Suite — réécriture Apache (Laragon, XAMPP, hébergement Apache)
+# Le dossier public/ doit être la racine web (DocumentRoot).
+# =============================================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Les fichiers et dossiers réellement existants (assets…) sont servis
+    # directement ; toutes les autres requêtes passent par le front controller.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Interdiction d'exposer les fichiers cachés (.env, .git, .gitignore…).
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Aucun listing de répertoire.
+Options -Indexes
+
+# En-têtes de sécurité de base (le middleware PHP en ajoute d'autres).
+<IfModule mod_headers.c>
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-Content-Type-Options "nosniff"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Cache navigateur des ressources statiques.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+    ExpiresByType image/png "access plus 7 days"
+    ExpiresByType image/jpeg "access plus 7 days"
+    ExpiresByType image/webp "access plus 7 days"
+    ExpiresByType image/svg+xml "access plus 7 days"
+    ExpiresByType font/woff2 "access plus 30 days"
+</IfModule>
