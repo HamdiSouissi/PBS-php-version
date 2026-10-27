@@ -44,7 +44,14 @@ final class PortalController extends Controller
     public function index(Request $request): Response
     {
         $this->auth()->requirePermission('portal.self');
-        $employee = $this->currentEmployee();
+        try {
+            $employee = $this->currentEmployee();
+        } catch (NotFoundException $exception) {
+            // Cas normal pour l'administrateur initial : pas de fiche salarié.
+            flash('warning', $exception->getMessage()
+                . ' (Renseignez l\'e-mail professionnel d\'une fiche salarié identique à l\'e-mail du compte.)');
+            return new RedirectResponse('/dashboard');
+        }
         $year = (int) date('Y');
         return $this->view('HR::portal/index', [
             'title' => 'Mon portail salarié',

@@ -109,9 +109,47 @@ final class Connection
      */
     public function run(string $sql, array $params = []): PDOStatement
     {
+        [$sql, $params] = $this->expandRepeatedNamedParams($sql, $params);
         $statement = $this->pdo()->prepare($sql);
         $statement->execute($this->normalizeParams($params));
         return $statement;
+    }
+
+    /**
+     * CORRECTIF : MySQL (prepares natifs, ATTR_EMULATE_PREPARES = false)
+     * interdit de réutiliser un même paramètre nommé plusieurs fois dans une
+     * requête (SQLSTATE HY093). Chaque occurrence supplémentaire est donc
+     * renommée (:nom__2, :nom__3...) et sa valeur dupliquée. SQLite accepte
+     * nativement la réutilisation : aucun changement pour la suite de tests.
+     *
+     * @param array<string|int,mixed> $params
+     * @return array{0:string,1:array<string|int,mixed>}
+     */
+    private function expandRepeatedNamedParams(string $sql, array $params): array
+    {
+        if ($params === [] || array_is_list($params) || $this->isSqlite()) {
+            return [$sql, $params];
+        }
+        $seen = [];
+        $extra = [];
+        $rewritten = preg_replace_callback(
+            '/(?<![:\w]):([A-Za-z_][A-Za-z0-9_]*)/',
+            static function (array $match) use (&$seen, &$extra, $params): string {
+                $name = $match[1];
+                if (!array_key_exists($name, $params)) {
+                    return $match[0];
+                }
+                $seen[$name] = ($seen[$name] ?? 0) + 1;
+                if ($seen[$name] === 1) {
+                    return $match[0];
+                }
+                $alias = $name . '__' . $seen[$name];
+                $extra[$alias] = $params[$name];
+                return ':' . $alias;
+            },
+            $sql
+        );
+        return [$rewritten ?? $sql, $params + $extra];
     }
 
     /**
@@ -209,11 +247,6 @@ final class Connection
         }
     }
 
-    /**
-     * MODIFIÉ : si le compteur indique une transaction ouverte alors que PDO
-     * n'en a plus (commit implicite d'un DDL MySQL), on repart de zéro au lieu
-     * de poser un SAVEPOINT sur une transaction qui n'existe plus.
-     */
     public function beginTransaction(): void
     {
         if ($this->transactionDepth > 0 && !$this->pdo()->inTransaction()) {
@@ -228,10 +261,6 @@ final class Connection
         $this->transactionDepth++;
     }
 
-    /**
-     * MODIFIÉ : ne plante plus si un DDL (CREATE/ALTER/DROP TABLE) a déjà
-     * validé implicitement la transaction côté MySQL.
-     */
     public function commit(): void
     {
         if ($this->transactionDepth === 0) {
@@ -252,10 +281,6 @@ final class Connection
         }
     }
 
-    /**
-     * MODIFIÉ : ne lève jamais « There is no active transaction », afin de ne
-     * pas masquer l'exception d'origine (erreur SQL de la migration).
-     */
     public function rollBack(): void
     {
         // Niveau racine, ou transaction déjà fermée par un commit implicite.
