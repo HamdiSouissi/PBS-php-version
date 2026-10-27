@@ -98,7 +98,12 @@ final class InvoicePdf implements PdfTemplate
             $pdf->h2('Notes');
             $pdf->paragraph((string) $invoice['notes']);
         }
-        $pdf->smallMuted('Conditions de paiement : 30 jours nets. En cas de retard, des pénalités peuvent être appliquées (art. L441-10 Code de commerce).');
+        $pdf->smallMuted(
+            "Conditions de paiement : 30 jours nets. En cas de retard, des pénalités sont exigibles le jour suivant "
+            . "la date d'échéance, au taux de la Banque centrale européenne majoré de 10 points (art. L. 441-10 du "
+            . "Code de commerce), ainsi qu'une indemnité forfaitaire pour frais de recouvrement de 40 € par facture "
+            . "impayée (art. D. 441-5 du Code de commerce)."
+        );
         if (($company['vat_number'] ?? '') !== '') {
             $pdf->smallMuted('N° TVA intracommunautaire : ' . $company['vat_number']);
         }
