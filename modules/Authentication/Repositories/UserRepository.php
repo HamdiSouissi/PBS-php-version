@@ -126,9 +126,10 @@ final class UserRepository extends BaseRepository
 
     public function storeRememberToken(int $userId, string $hash, \DateTimeImmutable $expires): void
     {
+        // CORRECTIF : la variable s'appelait $exp (inexistante) au lieu de $expires.
         $this->db->execute(
             'INSERT INTO remember_tokens (user_id, token_hash, expires_at) VALUES (:u, :h, :e)',
-            ['u' => $userId, 'h' => $hash, 'e' => $exp->format('Y-m-d H:i:s')]
+            ['u' => $userId, 'h' => $hash, 'e' => $expires->format('Y-m-d H:i:s')]
         );
     }
 
