@@ -77,6 +77,26 @@ La connexion dispose d'un plafond propre (`login_max = 5` tentatives) codé dans
 `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`. Aucun envoi réel
 n'est tenté si le serveur SMTP n'est pas configuré.
 
+### Boîtes mail intégrées (IMAP/SMTP, ex. IONOS)
+
+Les valeurs par défaut des nouveaux comptes sont surchargeables par
+l'environnement, chaque compte restant modifiable individuellement depuis
+l'écran d'administration (`/mail/admin/accounts`) :
+
+| Variable | Défaut | Rôle |
+|----------|--------|------|
+| `MAILBOX_IMAP_HOST` / `MAILBOX_IMAP_PORT` | `imap.ionos.fr` / `993` | Serveur entrant |
+| `MAILBOX_IMAP_ENCRYPTION` | `ssl` | `ssl` (TLS implicite), `tls` (STARTTLS) ou `none` |
+| `MAILBOX_SMTP_HOST` / `MAILBOX_SMTP_PORT` | `smtp.ionos.fr` / `465` | Serveur sortant |
+| `MAILBOX_SMTP_ENCRYPTION` | `ssl` | Idem, `tls` correspond au port 587 |
+| `MAILBOX_TIMEOUT` | `15` | Délai de connexion en secondes |
+| `MAILBOX_PAGE_SIZE` | `20` | Messages par page |
+| `MAILBOX_MAX_ATTACHMENTS_SIZE` | `10485760` (10 Mo) | Taille cumulée maximale des pièces jointes |
+| `MAILBOX_MAX_RECIPIENTS` | `50` | Destinataires maximum (To/Cc/Cci) |
+
+Les identifiants de connexion ne se configurent pas ici : ils sont saisis par
+le gestionnaire dans l'application et chiffrés au repos avec `APP_KEY`.
+
 ### Intelligence artificielle (tout optionnel)
 
 | Variable | Rôle |
