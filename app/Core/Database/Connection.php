@@ -209,8 +209,17 @@ final class Connection
         }
     }
 
+    /**
+     * MODIFIÉ : si le compteur indique une transaction ouverte alors que PDO
+     * n'en a plus (commit implicite d'un DDL MySQL), on repart de zéro au lieu
+     * de poser un SAVEPOINT sur une transaction qui n'existe plus.
+     */
     public function beginTransaction(): void
     {
+        if ($this->transactionDepth > 0 && !$this->pdo()->inTransaction()) {
+            $this->transactionDepth = 0;
+        }
+
         if ($this->transactionDepth === 0) {
             $this->pdo()->beginTransaction();
         } else {
@@ -219,8 +228,22 @@ final class Connection
         $this->transactionDepth++;
     }
 
+    /**
+     * MODIFIÉ : ne plante plus si un DDL (CREATE/ALTER/DROP TABLE) a déjà
+     * validé implicitement la transaction côté MySQL.
+     */
     public function commit(): void
     {
+        if ($this->transactionDepth === 0) {
+            return;
+        }
+
+        // Commit implicite déjà effectué par MySQL (DDL) : plus rien à valider.
+        if (!$this->pdo()->inTransaction()) {
+            $this->transactionDepth = 0;
+            return;
+        }
+
         $this->transactionDepth--;
         if ($this->transactionDepth === 0) {
             $this->pdo()->commit();
@@ -229,9 +252,14 @@ final class Connection
         }
     }
 
+    /**
+     * MODIFIÉ : ne lève jamais « There is no active transaction », afin de ne
+     * pas masquer l'exception d'origine (erreur SQL de la migration).
+     */
     public function rollBack(): void
     {
-        if ($this->transactionDepth <= 1) {
+        // Niveau racine, ou transaction déjà fermée par un commit implicite.
+        if ($this->transactionDepth <= 1 || !$this->pdo()->inTransaction()) {
             if ($this->pdo()->inTransaction()) {
                 $this->pdo()->rollBack();
             }

@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS document_sequences (
     id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     kind        VARCHAR(20)  NOT NULL,
     period      VARCHAR(10)  NOT NULL,
-    last_value  INTEGER      NOT NULL DEFAULT 0,
+    `last_value` INTEGER     NOT NULL DEFAULT 0,
     updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT document_sequences_unique UNIQUE (kind, period)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

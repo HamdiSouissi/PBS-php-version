@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS employees (
     first_name             VARCHAR(100) NOT NULL,
     birth_date             DATE,
     birth_place            VARCHAR(120) NOT NULL DEFAULT '',
-    gender                 VARCHAR(10) NOT NULL DEFAULT 'non_renseigne',
+    gender                 VARCHAR(20) NOT NULL DEFAULT 'non_renseigne',
     social_security_number VARCHAR(15) NOT NULL DEFAULT '',
     nationality            VARCHAR(60) NOT NULL DEFAULT 'Française',
     personal_email         VARCHAR(180) NOT NULL DEFAULT '',
