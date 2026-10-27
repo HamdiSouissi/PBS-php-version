@@ -82,11 +82,24 @@ final class PdfManager
         $company = $this->db->fetchOne('SELECT * FROM companies ORDER BY is_default DESC, id ASC LIMIT 1')
             ?? ['legal_name' => 'Prime Business Suite'];
 
-        $document = new PdfDocument();
-        $document->setCompany($company);
         /** @var PdfTemplate $template */
         $template = new $config['template']($this->db);
+
+        $document = new PdfDocument();
+        $document->setCompany($company);
         $title = $template->render($document, $entityId);
+
+        // Garantie mono-page : si un document marqué OnePageDocument déborde,
+        // une seconde génération est lancée avec le compactage maximal.
+        if ($template instanceof OnePageDocument && $document->pageCount() > 1) {
+            $document = new PdfDocument();
+            $document->setCompany($company)
+                ->setDensity(0.75)
+                ->setCompactRows(true)
+                ->setTightSpacing(true);
+            $title = $template->render($document, $entityId);
+        }
+
         $binary = $document->output();
 
         $year = date('Y');
