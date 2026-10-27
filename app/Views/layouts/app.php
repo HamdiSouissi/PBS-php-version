@@ -16,6 +16,8 @@ declare(strict_types=1);
 $user = current_user();
 $flash = container()->get(\App\Core\Session\FlashBag::class)->pull();
 $authManager = container()->get(\App\Core\Auth\AuthManager::class);
+// Horloge permanente exprimée dans le fuseau légal de l'entreprise (Paris).
+$parisNow = new DateTimeImmutable('now', new DateTimeZone('Europe/Paris'));
 
 // Navigation filtrée par permission RBAC. Le code icône est le nom Bootstrap
 // historique ; le script global le remplace par une icône Lucide équivalente.
@@ -190,6 +192,14 @@ $pageTitle = $title ?? 'Prime Business Suite';
                 <i class="icon-light" data-lucide="sun"></i>
                 <i class="icon-dark" data-lucide="moon"></i>
             </button>
+
+            <div class="topbar-clock d-none d-lg-flex" id="pbsClock" role="timer"
+                 aria-label="Date et heure de Paris">
+                <i data-lucide="clock"></i>
+                <span class="topbar-clock-date" data-clock-date><?= e($parisNow->format('d/m/Y')) ?></span>
+                <span class="topbar-clock-time" data-clock-time><?= e($parisNow->format('H:i:s')) ?></span>
+                <span class="topbar-clock-zone">Paris</span>
+            </div>
 
             <div class="dropdown">
                 <button class="user-menu-btn dropdown-toggle" data-bs-toggle="dropdown"
