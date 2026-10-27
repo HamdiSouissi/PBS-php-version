@@ -3,11 +3,16 @@
 declare(strict_types=1);
 /** @var ?array<string,mixed> $employee @var list<array<string,mixed>> $departments @var list<array<string,mixed>> $establishments */
 $action = $employee ? '/employees/' . $employee['id'] . '/update' : '/employees';
+$formTitle = $employee ? 'Modifier le salarié' : 'Nouveau salarié';
+$headerActions = '<a href="/employees" class="btn btn-outline-secondary btn-sm">Annuler</a>'
+    . '<button form="employee-form" class="btn btn-primary btn-sm" type="submit"><i data-lucide="save"></i>Enregistrer</button>';
 ?>
+<?= $viewRenderer->pageHeader($formTitle, [['label' => 'Salariés', 'href' => '/employees']], $headerActions) ?>
+
+<div class="page-body form-narrow">
 <div class="card">
-    <div class="card-header bg-white fw-semibold"><?= $employee ? 'Modifier le salarié' : 'Nouveau salarié' ?></div>
     <div class="card-body">
-        <form method="post" action="<?= e($action) ?>" class="row g-3">
+        <form method="post" action="<?= e($action) ?>" class="row g-3" id="employee-form" data-guard>
             <?= csrf_field() ?>
             <?php
             $sections = [
@@ -70,10 +75,7 @@ $action = $employee ? '/employees/' . $employee['id'] . '/update' : '/employees'
                     </div>
                 <?php endforeach; ?>
             <?php endforeach; ?>
-            <div class="col-12">
-                <button class="btn btn-primary"><i class="bi bi-save me-1"></i>Enregistrer</button>
-                <a href="/employees" class="btn btn-link">Annuler</a>
-            </div>
         </form>
     </div>
+</div>
 </div>

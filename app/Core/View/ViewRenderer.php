@@ -85,6 +85,52 @@ final class ViewRenderer
             . htmlspecialchars($label, ENT_QUOTES) . '</div>';
     }
 
+    /**
+     * En-tête de page unique du gabarit : fil d'Ariane, titre, sous-titre
+     * optionnel et actions contextuelles. Toutes les vues passent par ce
+     * composant pour garantir une structure et une largeur identiques.
+     *
+     * @param list<array{label:string, href?:?string}> $breadcrumbs
+     */
+    public function pageHeader(
+        string $title,
+        array $breadcrumbs = [],
+        string $actionsHtml = '',
+        ?string $subtitle = null
+    ): string {
+        $items = [['label' => 'Accueil', 'href' => '/dashboard']];
+        foreach ($breadcrumbs as $crumb) {
+            $items[] = ['label' => (string) $crumb['label'], 'href' => $crumb['href'] ?? null];
+        }
+
+        $crumbs = '';
+        $last = count($items) - 1;
+        foreach ($items as $index => $item) {
+            $isLast = $index === $last;
+            $label = htmlspecialchars((string) $item['label'], ENT_QUOTES);
+            if ($isLast || empty($item['href'])) {
+                $crumbs .= '<li class="breadcrumb-item active" aria-current="page">' . $label . '</li>';
+                continue;
+            }
+            $href = htmlspecialchars((string) $item['href'], ENT_QUOTES);
+            $crumbs .= '<li class="breadcrumb-item"><a href="' . $href . '">' . $label . '</a></li>';
+        }
+
+        $actions = $actionsHtml !== '' ? '<div class="page-actions">' . $actionsHtml . '</div>' : '';
+        $subtitleHtml = $subtitle !== null
+            ? '<p class="page-subtitle">' . htmlspecialchars($subtitle, ENT_QUOTES) . '</p>'
+            : '';
+
+        return '<header class="page-header">'
+            . '<nav aria-label="Fil d\'Ariane"><ol class="breadcrumb mb-0">' . $crumbs . '</ol></nav>'
+            . '<div class="page-header-row">'
+            . '<div class="page-header-text"><h1 class="page-title">'
+            . htmlspecialchars($title, ENT_QUOTES)
+            . '</h1>' . $subtitleHtml . '</div>'
+            . $actions
+            . '</div></header>';
+    }
+
     private function resolve(string $template): string
     {
         if (str_contains($template, '::')) {

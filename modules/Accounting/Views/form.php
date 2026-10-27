@@ -7,16 +7,25 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $fiscalYears
  * @var list<array<string,mixed>> $accounts
  */
+$headerActions = '';
+if ($fiscalYears !== []) {
+    $headerActions = '<a href="/accounting" class="btn btn-outline-secondary btn-sm">Annuler</a>'
+        . '<button form="entry-form" class="btn btn-primary btn-sm" id="submit-btn" disabled type="submit">'
+        . '<i data-lucide="circle-check"></i>Comptabiliser l\'écriture</button>';
+}
 ?>
-<div class="mb-3">
-    <h2 class="h4 mb-1">Nouvelle écriture comptable</h2>
-    <p class="text-muted mb-0">Saisie en partie double : les totaux débit et crédit doivent être strictement égaux.</p>
-</div>
+<?= $viewRenderer->pageHeader(
+    'Nouvelle écriture comptable',
+    [['label' => 'Comptabilité', 'href' => '/accounting']],
+    $headerActions,
+    'Saisie en partie double : les totaux débit et crédit doivent être strictement égaux.'
+) ?>
 
 <?php if ($fiscalYears === []): ?>
     <div class="alert alert-warning">Aucun exercice ouvert : la saisie est impossible tant qu'un exercice n'est pas créé.</div>
 <?php else: ?>
-<form method="post" action="/accounting/entries">
+<div class="page-body">
+<form method="post" action="/accounting/entries" id="entry-form">
     <?= csrf_field() ?>
     <div class="card mb-3">
         <div class="card-header">En-tête</div>
@@ -55,7 +64,7 @@ declare(strict_types=1);
     <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span>Lignes d'écriture</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" id="add-line"><i class="bi bi-plus-lg me-1"></i>Ajouter une ligne</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="add-line"><i data-lucide="plus"></i>Ajouter une ligne</button>
         </div>
         <div class="table-responsive">
             <table class="table table-sm mb-0">
@@ -76,7 +85,7 @@ declare(strict_types=1);
                     <td><input class="form-control form-control-sm" name="lines[third_party][]"></td>
                     <td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end debit" name="lines[debit][]" value="0"></td>
                     <td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end credit" name="lines[credit][]" value="0"></td>
-                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-line"><i class="bi bi-trash"></i></button></td>
+                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-line" aria-label="Supprimer la ligne"><i data-lucide="trash-2"></i></button></td>
                 </tr>
                 </tbody>
                 <tfoot>
@@ -91,9 +100,8 @@ declare(strict_types=1);
         </div>
     </div>
 
-    <button class="btn btn-primary btn-sm" id="submit-btn" disabled><i class="bi bi-check2-circle me-1"></i>Comptabiliser l'écriture</button>
-    <a href="/accounting" class="btn btn-outline-secondary btn-sm">Annuler</a>
 </form>
+</div>
 
 <template id="line-template">
     <tr class="line-row">
@@ -109,7 +117,7 @@ declare(strict_types=1);
         <td><input class="form-control form-control-sm" name="lines[third_party][]"></td>
         <td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end debit" name="lines[debit][]" value="0"></td>
         <td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end credit" name="lines[credit][]" value="0"></td>
-        <td><button type="button" class="btn btn-sm btn-outline-danger remove-line"><i class="bi bi-trash"></i></button></td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger remove-line" aria-label="Supprimer la ligne"><i data-lucide="trash-2"></i></button></td>
     </tr>
 </template>
 

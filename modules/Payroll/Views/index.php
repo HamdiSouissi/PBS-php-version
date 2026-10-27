@@ -9,24 +9,22 @@ declare(strict_types=1);
  */
 $statusBadges = ['draft' => 'secondary', 'validated' => 'info', 'locked' => 'success'];
 $statusLabels = ['draft' => 'Brouillon', 'validated' => 'Validé', 'locked' => 'Verrouillé'];
+$actions = '<button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#periodModal">'
+    . '<i data-lucide="calendar-plus"></i>Nouvelle période</button>'
+    . '<a class="btn btn-primary btn-sm" href="/payroll/generate"><i data-lucide="calculator"></i>Générer un bulletin</a>';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h2 class="h4 mb-1">Paie</h2>
-        <p class="text-muted mb-0">Périodes, bulletins et règles de cotisations versionnées.</p>
-    </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#periodModal">
-            <i class="bi bi-calendar-plus me-1"></i>Nouvelle période
-        </button>
-        <a class="btn btn-primary btn-sm" href="/payroll/generate"><i class="bi bi-calculator me-1"></i>Générer un bulletin</a>
-    </div>
-</div>
+<?= $viewRenderer->pageHeader(
+    'Paie',
+    [],
+    $actions,
+    'Périodes, bulletins et règles de cotisations versionnées.'
+) ?>
 
-<div class="card mb-3">
+<div class="page-body">
+<div class="card">
     <div class="card-header">Périodes de paie</div>
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
+        <table class="table table-sm table-hover mb-0" data-sortable>
             <thead class="table-light"><tr><th>Période</th><th>Début</th><th>Fin</th><th>Statut</th><th class="text-end">Bulletins</th><th></th></tr></thead>
             <tbody>
             <?php if ($periods === []): ?><tr><td colspan="6" class="text-center text-muted py-3">Aucune période.</td></tr><?php endif; ?>
@@ -48,7 +46,7 @@ $statusLabels = ['draft' => 'Brouillon', 'validated' => 'Validé', 'locked' => '
                         <?php if ((int) $period['is_locked'] === 0): ?>
                             <form method="post" action="/payroll/periods/<?= (int) $period['id'] ?>/lock">
                                 <?= csrf_field() ?>
-                                <button class="btn btn-sm btn-outline-primary"><i class="bi bi-lock me-1"></i>Verrouiller</button>
+                                <button class="btn btn-sm btn-outline-primary"><i data-lucide="lock"></i>Verrouiller</button>
                             </form>
                         <?php endif; ?>
                     </td>
@@ -59,10 +57,10 @@ $statusLabels = ['draft' => 'Brouillon', 'validated' => 'Validé', 'locked' => '
     </div>
 </div>
 
-<div class="card mb-3">
+<div class="card">
     <div class="card-header">Bulletins</div>
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
+        <table class="table table-sm table-hover mb-0" data-sortable>
             <thead class="table-light"><tr><th>Période</th><th>Matricule</th><th>Salarié</th><th>Statut</th><th class="text-end">Brut</th><th class="text-end">Salarial</th><th class="text-end">Patronal</th><th class="text-end">Net à payer</th><th></th></tr></thead>
             <tbody>
             <?php if ($payslips === []): ?><tr><td colspan="9" class="text-center text-muted py-3">Aucun bulletin.</td></tr><?php endif; ?>
@@ -87,7 +85,7 @@ $statusLabels = ['draft' => 'Brouillon', 'validated' => 'Validé', 'locked' => '
 <div class="card">
     <div class="card-header">Règles de cotisations <span class="text-muted small">(taux à valider par un spécialiste paie)</span></div>
     <div class="table-responsive">
-        <table class="table table-sm mb-0">
+        <table class="table table-sm mb-0" data-sortable>
             <thead class="table-light"><tr><th>Code</th><th>Libellé</th><th class="text-end">Salarial %</th><th class="text-end">Patronal %</th><th class="text-end">Plafond</th><th>Effet</th></tr></thead>
             <tbody>
             <?php foreach ($rules as $rule): ?>
@@ -104,12 +102,13 @@ $statusLabels = ['draft' => 'Brouillon', 'validated' => 'Validé', 'locked' => '
         </table>
     </div>
 </div>
+</div>
 
-<div class="modal fade" id="periodModal" tabindex="-1">
+<div class="modal fade" id="periodModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="periodModalTitle">
     <div class="modal-dialog">
         <form class="modal-content" method="post" action="/payroll/periods">
             <?= csrf_field() ?>
-            <div class="modal-header"><h5 class="modal-title">Nouvelle période de paie</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><h5 class="modal-title" id="periodModalTitle">Nouvelle période de paie</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body row g-2">
                 <div class="col-6"><label class="form-label small">Année *</label><input type="number" min="2020" max="2100" class="form-control form-control-sm" name="year" value="<?= date('Y') ?>" required></div>
                 <div class="col-6"><label class="form-label small">Mois *</label><input type="number" min="1" max="12" class="form-control form-control-sm" name="month" value="<?= date('n') ?>" required></div>

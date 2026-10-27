@@ -6,22 +6,28 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $periods
  * @var list<array<string,mixed>> $employees
  */
+$actions = '<a href="/payroll" class="btn btn-outline-secondary btn-sm">Annuler</a>'
+    . '<button form="payslip-form" class="btn btn-primary btn-sm" type="submit"><i data-lucide="calculator"></i>Calculer le bulletin</button>';
 ?>
-<div class="mb-3">
-    <h2 class="h4 mb-1">Générer un bulletin de paie</h2>
-    <p class="text-muted mb-0">Le calcul reprend le contrat actif et les règles de cotisations applicables à la période.</p>
-</div>
+<?= $viewRenderer->pageHeader(
+    'Générer un bulletin de paie',
+    [['label' => 'Paie', 'href' => '/payroll']],
+    $periods === [] || $employees === [] ? '<a href="/payroll" class="btn btn-outline-secondary btn-sm">Retour à la paie</a>' : $actions,
+    'Le calcul reprend le contrat actif et les règles de cotisations applicables à la période.'
+) ?>
 
 <?php if ($periods === [] || $employees === []): ?>
+    <div class="page-body">
     <div class="alert alert-warning">
         <?php if ($periods === []): ?>Aucune période ouverte : créez d'abord une période de paie.<?php endif; ?>
         <?php if ($employees === []): ?>Aucun salarié avec un contrat actif.<?php endif; ?>
-        <a href="/payroll" class="alert-link">Retour à la paie</a>
+    </div>
     </div>
 <?php else: ?>
+<div class="page-body form-narrow">
 <div class="card">
     <div class="card-body">
-        <form method="post" action="/payroll/generate" class="row g-3">
+        <form method="post" action="/payroll/generate" class="row g-3" id="payslip-form" data-guard>
             <?= csrf_field() ?>
             <div class="col-md-6">
                 <label class="form-label small fw-semibold">Période *</label>
@@ -50,11 +56,8 @@ declare(strict_types=1);
                 <label class="form-label small fw-semibold">Prime brute éventuelle (€)</label>
                 <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="bonus" value="0">
             </div>
-            <div class="col-12">
-                <button class="btn btn-primary btn-sm"><i class="bi bi-calculator me-1"></i>Calculer le bulletin</button>
-                <a href="/payroll" class="btn btn-outline-secondary btn-sm">Annuler</a>
-            </div>
         </form>
     </div>
+</div>
 </div>
 <?php endif; ?>

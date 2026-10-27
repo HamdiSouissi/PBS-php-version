@@ -102,6 +102,7 @@ const App = {
         this.initCountUp();
         this.initTableSearch();
         this.initTableSort();
+        this.initScrollTargets();
         this.initFormGuard();
         this.initPalette();
         this.initShortcuts();
@@ -383,6 +384,13 @@ const App = {
                     }
                 });
             });
+        });
+    },
+
+    /* --- Défilement automatique vers un élément (ex : carte d'édition) --- */
+    initScrollTargets() {
+        document.querySelectorAll('[data-scroll-into-view]').forEach((el) => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     },
 

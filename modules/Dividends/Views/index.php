@@ -9,18 +9,18 @@ declare(strict_types=1);
  */
 $statusBadges = ['proposed' => 'warning', 'decided' => 'info', 'paid' => 'success'];
 $statusLabels = ['proposed' => 'Proposé', 'decided' => 'Décidé', 'paid' => 'Payé'];
+$actions = '<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#divModal"'
+    . ($shareholders === [] ? ' disabled' : '') . '>'
+    . '<i data-lucide="plus"></i>Nouveau dividende</button>';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h2 class="h4 mb-1">Associés & dividendes</h2>
-        <p class="text-muted mb-0">Table de capital et décisions de distribution.</p>
-    </div>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#divModal"
-        <?= $shareholders === [] ? 'disabled' : '' ?>>
-        <i class="bi bi-plus-lg me-1"></i>Nouveau dividende
-    </button>
-</div>
+<?= $viewRenderer->pageHeader(
+    'Associés & dividendes',
+    [],
+    $actions,
+    'Table de capital et décisions de distribution.'
+) ?>
 
+<div class="page-body">
 <div class="row g-3">
     <div class="col-lg-4">
         <div class="card">
@@ -70,8 +70,9 @@ $statusLabels = ['proposed' => 'Proposé', 'decided' => 'Décidé', 'paid' => 'P
         </div>
     </div>
 </div>
+</div>
 
-<div class="modal fade" id="divModal" tabindex="-1">
+<div class="modal fade" id="divModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="divModalTitle">
     <div class="modal-dialog">
         <form class="modal-content" method="post" action="/dividends">
             <?= csrf_field() ?>

@@ -7,19 +7,21 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $entries
  * @var list<array<string,mixed>> $balances
  */
+$actions = '<a class="btn btn-primary btn-sm" href="/accounting/entries/new">'
+    . '<i data-lucide="circle-plus"></i>Nouvelle écriture</a>';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h2 class="h4 mb-1">Comptabilité</h2>
-        <p class="text-muted mb-0">Exercices, écritures en partie double et balance des comptes.</p>
-    </div>
-    <a class="btn btn-primary btn-sm" href="/accounting/entries/new"><i class="bi bi-journal-plus me-1"></i>Nouvelle écriture</a>
-</div>
+<?= $viewRenderer->pageHeader(
+    'Comptabilité',
+    [],
+    $actions,
+    'Exercices, écritures en partie double et balance des comptes.'
+) ?>
 
-<div class="card mb-3">
+<div class="page-body">
+<div class="card">
     <div class="card-header">Exercices</div>
     <div class="table-responsive">
-        <table class="table table-sm mb-0">
+        <table class="table table-sm mb-0" data-sortable>
             <thead class="table-light"><tr><th>Exercice</th><th>Début</th><th>Fin</th><th>Statut</th></tr></thead>
             <tbody>
             <?php foreach ($years as $year): ?>
@@ -38,7 +40,7 @@ declare(strict_types=1);
 <div class="card mb-3">
     <div class="card-header">50 dernières écritures</div>
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
+        <table class="table table-sm table-hover mb-0" data-sortable>
             <thead class="table-light"><tr><th>Date</th><th>Journal</th><th>Réf.</th><th>Libellé</th><th>Statut</th><th></th></tr></thead>
             <tbody>
             <?php if ($entries === []): ?><tr><td colspan="6" class="text-center text-muted py-4">Aucune écriture.</td></tr><?php endif; ?>
@@ -68,7 +70,7 @@ declare(strict_types=1);
 <div class="card">
     <div class="card-header">Balance des comptes <span class="text-muted small">(écritures comptabilisées)</span></div>
     <div class="table-responsive">
-        <table class="table table-sm mb-0">
+        <table class="table table-sm mb-0" data-sortable>
             <thead class="table-light"><tr><th>Compte</th><th>Libellé</th><th class="text-end">Débit</th><th class="text-end">Crédit</th><th class="text-end">Solde débiteur</th><th class="text-end">Solde créditeur</th></tr></thead>
             <tbody>
             <?php if ($balances === []): ?><tr><td colspan="6" class="text-center text-muted py-3">Aucun mouvement comptabilisé.</td></tr><?php endif; ?>
@@ -85,4 +87,5 @@ declare(strict_types=1);
             </tbody>
         </table>
     </div>
+</div>
 </div>

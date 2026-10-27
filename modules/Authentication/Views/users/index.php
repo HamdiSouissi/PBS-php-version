@@ -6,15 +6,14 @@ declare(strict_types=1);
  * @var \App\Core\Pagination\Paginator $paginator
  * @var list<array<string,mixed>> $roles
  */
+$actions = '<button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#newUserCard" aria-expanded="false" aria-controls="newUserCard">
+        <i data-lucide="user-plus"></i>Nouvel utilisateur
+    </button>';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h4 mb-0">Utilisateurs &amp; rôles</h2>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#newUserCard">
-        <i class="bi bi-person-plus me-1"></i>Nouvel utilisateur
-    </button>
-</div>
+<?= $viewRenderer->pageHeader('Utilisateurs & rôles', [['label' => 'Gouvernance']], $actions) ?>
 
-<div class="collapse mb-3" id="newUserCard">
+<div class="page-body">
+<div class="collapse" id="newUserCard">
     <div class="card card-body">
         <form method="post" action="/settings/users" class="row g-2">
             <?= csrf_field() ?>
@@ -38,7 +37,7 @@ declare(strict_types=1);
 
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+        <table class="table table-hover align-middle mb-0" data-sortable>
             <thead class="table-light">
             <tr>
                 <th>Utilisateur</th><th>E-mail</th><th>Rôles</th><th>2FA</th><th>Statut</th><th>Dernière connexion</th><th class="text-end">Actions</th>
@@ -69,7 +68,7 @@ declare(strict_types=1);
                     <td class="text-end">
                         <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
                                 data-bs-target="#editUser<?= (int) $row['id'] ?>">
-                            <i class="bi bi-pencil"></i>
+                            <i data-lucide="pencil"></i>
                         </button>
                     </td>
                 </tr>
@@ -79,13 +78,14 @@ declare(strict_types=1);
     </div>
 </div>
 
+</div>
 <?php foreach ($paginator->items as $row): ?>
-<div class="modal fade" id="editUser<?= (int) $row['id'] ?>" tabindex="-1">
+<div class="modal fade" id="editUser<?= (int) $row['id'] ?>" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="editUserTitle<?= (int) $row['id'] ?>">
     <div class="modal-dialog">
         <form class="modal-content" method="post" action="/settings/users/<?= (int) $row['id'] ?>/update">
             <?= csrf_field() ?>
-            <div class="modal-header"><h5 class="modal-title">Modifier <?= e($row['email']) ?></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><h5 class="modal-title" id="editUserTitle<?= (int) $row['id'] ?>">Modifier <?= e($row['email']) ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button></div>
             <div class="modal-body row g-2">
                 <div class="col-6"><label class="form-label">Prénom</label>
                     <input class="form-control" name="first_name" value="<?= e($row['first_name']) ?>" required></div>
@@ -117,3 +117,4 @@ declare(strict_types=1);
 <p class="text-muted small mt-2">
     Page <?= $paginator->page ?>/<?= $paginator->totalPages() ?> — <?= (int) $paginator->total ?> utilisateur(s).
 </p>
+</div>

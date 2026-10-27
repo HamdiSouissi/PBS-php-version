@@ -81,18 +81,12 @@ $format = static function (mixed $value, ?string $type) use ($badgeClass): strin
     };
 };
 ?>
-<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-    <div>
-        <h2 class="h4 mb-1"><?= e($heading) ?></h2>
-        <?php if ($intro !== ''): ?>
-            <p class="text-muted mb-0"><?= e($intro) ?></p>
-        <?php endif; ?>
-    </div>
-</div>
+<?= $viewRenderer->pageHeader($heading, [], '', $intro !== '' ? $intro : null) ?>
 
+<div class="page-body">
 <?php if ($notice !== ''): ?>
     <div class="alert alert-info d-flex align-items-start gap-2" role="note">
-        <i class="bi bi-info-circle-fill mt-1"></i>
+        <i data-lucide="info" class="mt-1"></i>
         <div class="small mb-0"><?= e($notice) ?></div>
     </div>
 <?php endif; ?>
@@ -103,13 +97,13 @@ $format = static function (mixed $value, ?string $type) use ($badgeClass): strin
     $columns = $section['columns'] ?? [];
     $emptyMessage = $section['empty'] ?? 'Aucune donnée disponible.';
     ?>
-    <div class="card mb-3">
-        <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+    <div class="card">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
             <span><?= e($section['title']) ?></span>
             <span class="badge text-bg-light border rounded-pill"><?= count($rows) ?></span>
         </div>
         <div class="table-responsive">
-            <table class="table table-sm table-hover mb-0 align-middle">
+            <table class="table table-sm table-hover mb-0 align-middle" data-sortable>
                 <thead class="table-light">
                     <tr>
                         <?php foreach ($columns as $config): ?>
@@ -138,3 +132,4 @@ $format = static function (mixed $value, ?string $type) use ($badgeClass): strin
         </div>
     </div>
 <?php endforeach; ?>
+</div>

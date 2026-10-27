@@ -11,24 +11,24 @@ declare(strict_types=1);
 $statusBadges = ['pending' => 'warning', 'done' => 'success', 'overdue' => 'danger', 'not_applicable' => 'secondary'];
 $statusLabels = ['pending' => 'À traiter', 'done' => 'Traitée', 'overdue' => 'En retard', 'not_applicable' => 'Non applicable'];
 $authorityLabels = ['URSSAF' => 'URSSAF', 'DGFIP' => 'DGFIP', 'INSEE' => 'INSEE', 'greffe' => 'Greffe', 'medecine_travail' => 'Médecine du travail', 'interne' => 'Interne'];
+$actions = '<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#oblModal">'
+    . '<i data-lucide="plus"></i>Nouvelle obligation</button>';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h2 class="h4 mb-1">Conformité</h2>
-        <p class="text-muted mb-0">Obligations légales, échéances et sauvegardes.</p>
-    </div>
-    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#oblModal">
-        <i class="bi bi-plus-lg me-1"></i>Nouvelle obligation
-    </button>
-</div>
+<?= $viewRenderer->pageHeader(
+    'Conformité',
+    [],
+    $actions,
+    'Obligations légales, échéances et sauvegardes.'
+) ?>
 
-<div class="card mb-3">
+<div class="page-body">
+<div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span>Obligations</span>
         <span class="badge text-bg-light rounded-pill"><?= count($obligations) ?></span>
     </div>
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
+        <table class="table table-sm table-hover mb-0" data-sortable>
             <thead class="table-light"><tr><th>Obligation</th><th>Organisme</th><th>Fréquence</th><th>Échéance</th><th>Statut</th><th></th></tr></thead>
             <tbody>
             <?php if ($obligations === []): ?><tr><td colspan="6" class="text-center text-muted py-4">Aucune obligation.</td></tr><?php endif; ?>
@@ -43,7 +43,7 @@ $authorityLabels = ['URSSAF' => 'URSSAF', 'DGFIP' => 'DGFIP', 'INSEE' => 'INSEE'
                         <?php if ($obligation['status'] !== 'done'): ?>
                             <form method="post" action="/compliance/obligations/<?= (int) $obligation['id'] ?>/complete">
                                 <?= csrf_field() ?>
-                                <button class="btn btn-sm btn-outline-success"><i class="bi bi-check2 me-1"></i>Traiter</button>
+                                <button class="btn btn-sm btn-outline-success"><i data-lucide="check"></i>Traiter</button>
                             </form>
                         <?php endif; ?>
                     </td>
@@ -62,18 +62,19 @@ $authorityLabels = ['URSSAF' => 'URSSAF', 'DGFIP' => 'DGFIP', 'INSEE' => 'INSEE'
             <tbody>
             <?php if ($backups === []): ?><tr><td colspan="3" class="text-center text-muted py-3">Aucune sauvegarde.</td></tr><?php endif; ?>
             <?php foreach ($backups as $backup): ?>
-                <tr><td><i class="bi bi-database-check me-1"></i><?= e($backup['file']) ?></td><td><?= e($backup['size']) ?></td><td><?= e($backup['created_at']) ?></td></tr>
+                <tr><td><i data-lucide="database-backup"></i><?= e($backup['file']) ?></td><td><?= e($backup['size']) ?></td><td><?= e($backup['created_at']) ?></td></tr>
             <?php endforeach; ?>
             </tbody>
         </table>
     </div>
 </div>
+</div>
 
-<div class="modal fade" id="oblModal" tabindex="-1">
+<div class="modal fade" id="oblModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="oblModalTitle">
     <div class="modal-dialog">
         <form class="modal-content" method="post" action="/compliance/obligations">
             <?= csrf_field() ?>
-            <div class="modal-header"><h5 class="modal-title">Nouvelle obligation</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><h5 class="modal-title" id="oblModalTitle">Nouvelle obligation</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body row g-2">
                 <div class="col-12"><label class="form-label small">Intitulé *</label><input class="form-control form-control-sm" name="title" required></div>
                 <div class="col-6">

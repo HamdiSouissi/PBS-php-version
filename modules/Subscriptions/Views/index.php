@@ -11,28 +11,26 @@ declare(strict_types=1);
  */
 $cycleLabels = ['monthly' => 'Mensuel', 'quarterly' => 'Trimestriel', 'half_yearly' => 'Semestriel', 'yearly' => 'Annuel'];
 $statusBadges = ['active' => 'success', 'paused' => 'warning', 'cancelled' => 'danger'];
+$actions = '<button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#planModal"><i data-lucide="bookmark-plus"></i>Nouvelle offre</button>'
+    . '<form method="post" action="/subscriptions/run">'
+    . csrf_field()
+    . '<button class="btn btn-outline-primary btn-sm"><i data-lucide="zap"></i>Facturer les abonnements dus</button></form>'
+    . '<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#subModal"><i data-lucide="plus"></i>Nouvel abonnement</button>';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h2 class="h4 mb-1">Abonnements</h2>
-        <p class="text-muted mb-0">MRR HT : <strong><?= money_format($mrr) ?></strong> · ARR : <strong><?= money_format($mrr * 12) ?></strong></p>
-    </div>
-    <div class="d-flex gap-2">
-        <form method="post" action="/subscriptions/run">
-            <?= csrf_field() ?>
-            <button class="btn btn-outline-primary btn-sm"><i class="bi bi-lightning-charge me-1"></i>Facturer les abonnements dus</button>
-        </form>
-        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#subModal"><i class="bi bi-plus-lg me-1"></i>Nouvel abonnement</button>
-        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#planModal"><i class="bi bi-bookmark-plus me-1"></i>Offre</button>
-    </div>
-</div>
+<?= $viewRenderer->pageHeader(
+    'Abonnements',
+    [],
+    $actions,
+    'MRR HT : ' . money_format($mrr) . ' · ARR : ' . money_format($mrr * 12)
+) ?>
 
+<div class="page-body">
 <div class="row g-3">
     <div class="col-lg-5">
         <div class="card h-100">
             <div class="card-header">Offres</div>
             <div class="table-responsive">
-                <table class="table table-sm mb-0">
+                <table class="table table-sm mb-0" data-sortable>
                     <thead class="table-light"><tr><th>Code</th><th>Libellé</th><th>Cycle</th><th class="text-end">Montant HT</th><th>Active</th></tr></thead>
                     <tbody>
                     <?php if ($plans === []): ?><tr><td colspan="5" class="text-center text-muted py-3">Aucune offre.</td></tr><?php endif; ?>
@@ -61,7 +59,7 @@ $statusBadges = ['active' => 'success', 'paused' => 'warning', 'cancelled' => 'd
         <div class="card h-100">
             <div class="card-header">Abonnements clients</div>
             <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
+                <table class="table table-sm table-hover mb-0" data-sortable>
                     <thead class="table-light"><tr><th>Client</th><th>Offre</th><th class="text-end">Qté</th><th class="text-end">Prix unit. HT</th><th>Prochaine facture</th><th>Statut</th><th></th></tr></thead>
                     <tbody>
                     <?php if ($subscriptions === []): ?><tr><td colspan="7" class="text-center text-muted py-3">Aucun abonnement.</td></tr><?php endif; ?>
@@ -96,7 +94,7 @@ $statusBadges = ['active' => 'success', 'paused' => 'warning', 'cancelled' => 'd
 <div class="card mt-3">
     <div class="card-header">Dernières campagnes de facturation</div>
     <div class="table-responsive">
-        <table class="table table-sm mb-0">
+        <table class="table table-sm mb-0" data-sortable>
             <thead class="table-light"><tr><th>Date</th><th class="text-end">Factures générées</th><th class="text-end">Total TTC</th></tr></thead>
             <tbody>
             <?php foreach ($runs as $run): ?>
@@ -108,11 +106,11 @@ $statusBadges = ['active' => 'success', 'paused' => 'warning', 'cancelled' => 'd
 </div>
 <?php endif; ?>
 
-<div class="modal fade" id="planModal" tabindex="-1">
+<div class="modal fade" id="planModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="planModalTitle">
     <div class="modal-dialog">
         <form class="modal-content" method="post" action="/subscriptions/plans">
             <?= csrf_field() ?>
-            <div class="modal-header"><h5 class="modal-title">Nouvelle offre</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header"><h5 class="modal-title" id="planModalTitle">Nouvelle offre</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body row g-2">
                 <div class="col-6"><label class="form-label small">Code *</label><input class="form-control form-control-sm" name="code" required></div>
                 <div class="col-6"><label class="form-label small">Libellé *</label><input class="form-control form-control-sm" name="label" required></div>
@@ -129,7 +127,7 @@ $statusBadges = ['active' => 'success', 'paused' => 'warning', 'cancelled' => 'd
     </div>
 </div>
 
-<div class="modal fade" id="subModal" tabindex="-1">
+<div class="modal fade" id="subModal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="subModalTitle">
     <div class="modal-dialog modal-lg">
         <form class="modal-content" method="post" action="/subscriptions">
             <?= csrf_field() ?>

@@ -1,16 +1,20 @@
 <?php
 
 declare(strict_types=1);
-/** @var list<array<string,mixed>> $quotes */
+/**
+ * @var \App\Core\View\ViewRenderer $viewRenderer
+ * @var list<array<string,mixed>> $quotes
+ */
 $badges = ['draft' => 'secondary', 'sent' => 'info', 'accepted' => 'success', 'rejected' => 'danger', 'invoiced' => 'primary', 'expired' => 'dark'];
+$actions = '<a href="/invoicing/quotes/new" class="btn btn-primary btn-sm">'
+    . '<i data-lucide="file-plus-2"></i>Nouveau devis</a>';
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h4 mb-0">Devis</h2>
-    <a href="/invoicing/quotes/new" class="btn btn-primary btn-sm"><i class="bi bi-file-earmark-plus me-1"></i>Nouveau devis</a>
-</div>
+<?= $viewRenderer->pageHeader('Devis', [['label' => 'Facturation']], $actions) ?>
+
+<div class="page-body">
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-hover table-sm mb-0">
+        <table class="table table-hover table-sm mb-0" data-sortable>
             <thead class="table-light"><tr><th>N°</th><th>Client</th><th>Date</th><th>Validité</th><th class="text-end">TTC</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
             <tbody>
             <?php if ($quotes === []): ?><tr><td colspan="7" class="text-center text-muted py-3">Aucun devis.</td></tr><?php endif; ?>
@@ -20,7 +24,7 @@ $badges = ['draft' => 'secondary', 'sent' => 'info', 'accepted' => 'success', 'r
                     <td><?= e($quote['third_party_name']) ?></td>
                     <td class="small"><?= e(date('d/m/Y', strtotime((string) $quote['issue_date']))) ?></td>
                     <td class="small"><?= $quote['valid_until'] ? e(date('d/m/Y', strtotime((string) $quote['valid_until']))) : '—' ?></td>
-                    <td class="text-end"><?= money_format((float) $quote['total_ttc']) ?></td>
+                    <td class="text-end tnum"><?= money_format((float) $quote['total_ttc']) ?></td>
                     <td><span class="badge text-bg-<?= e($badges[$quote['status']] ?? 'secondary') ?>"><?= e($quote['status']) ?></span></td>
                     <td class="text-end">
                         <?php if ($quote['status'] === 'draft'): ?>
@@ -38,4 +42,5 @@ $badges = ['draft' => 'secondary', 'sent' => 'info', 'accepted' => 'success', 'r
             </tbody>
         </table>
     </div>
+</div>
 </div>

@@ -6,16 +6,21 @@ declare(strict_types=1);
  * @var int $total @var int $page @var int $totalPages
  */
 ?>
+<?= $viewRenderer->pageHeader(
+    "Journal d'audit",
+    [['label' => 'Gouvernance']],
+    '',
+    'Traçabilité des actions sensibles.'
+) ?>
+<div class="page-body">
+<form class="table-toolbar d-flex gap-2" method="get">
+    <input class="form-control form-control-sm" name="entity_type" placeholder="Entité (User, Invoice…)">
+    <button class="btn btn-outline-secondary btn-sm"><i data-lucide="search"></i>Filtrer</button>
+</form>
 <div class="card">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <span class="fw-semibold">Journal d'audit — traçabilité des actions sensibles</span>
-        <form class="d-flex gap-2" method="get">
-            <input class="form-control form-control-sm" name="entity_type" placeholder="Entité (User, Invoice…)">
-            <button class="btn btn-outline-secondary btn-sm">Filtrer</button>
-        </form>
-    </div>
+    <div class="card-header fw-semibold">Événements enregistrés</div>
     <div class="table-responsive">
-        <table class="table table-sm table-hover mb-0">
+        <table class="table table-sm table-hover mb-0" data-sortable>
             <thead class="table-light">
             <tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Entité</th><th>ID</th><th>IP</th><th>Détails</th></tr>
             </thead>
@@ -39,3 +44,5 @@ declare(strict_types=1);
     </div>
 </div>
 <p class="text-muted small mt-2"><?= (int) $total ?> entrée(s) — page <?= (int) $page ?>/<?= (int) $totalPages ?></p>
+</div>
+</div>
