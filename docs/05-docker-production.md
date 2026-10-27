@@ -38,9 +38,15 @@ service_healthy`) et migrations/seeders exécutés.
 Le `Dockerfile` :
 
 - part de `php:8.4-fpm-bookworm` ;
+- installe les bibliothèques système nécessaires aux extensions :
+  `libpq-dev` (PostgreSQL), `libonig-dev` (mbstring), `libicu-dev` (intl),
+  `libzip-dev` (zip), `libpng/libjpeg/libfreetype/libwebp` (gd),
+  `libsodium-dev` (sodium), `libxml2-dev` (dom/xml) ;
 - compile les extensions `pdo_pgsql, pgsql, mbstring, intl, bcmath, gd, zip,
-  exif, opcache` ;
-- installe Tesseract (OCR des notes de frais) ;
+  exif, sodium, opcache` puis **vérifie leur chargement** (échec de build
+  explicite si une extension requise manque) ;
+- installe Tesseract (OCR des notes de frais) et le client PostgreSQL
+  (`pg_dump`/`psql` pour les sauvegardes) ;
 - copie Composer 2 et installe les dépendances ;
 - expose le port 9000 (FastCGI, jamais exposé à l'hôte) ;
 - déclare un `HEALTHCHECK` et un entrypoint idempotent.

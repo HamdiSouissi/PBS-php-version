@@ -48,8 +48,11 @@ services:
         condition: service_healthy
     volumes:
       # Code source en montage lié pour le développement ; en production,
-      # le code est déjà dans l'image (supprimer ce montage).
+      # le code est déjà dans l'image (supprimer ce montage, voir docs/05).
       - ./:/var/www/pbs
+      # Volume anonyme : préserve le vendor/ installé dans l'image, que le
+      # bind mount sinon masquerait (l'hôte n'a pas de vendor/).
+      - /var/www/pbs/vendor
       # Données générées persistantes (bulletins, exports, e-facturation…).
       - storage:/var/www/pbs/storage
     networks:

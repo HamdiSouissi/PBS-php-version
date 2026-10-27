@@ -5,21 +5,37 @@
 FROM php:8.4-fpm-bookworm AS base
 
 # ---- Dépendances système ----------------------------------------------------
-# libpq (PDO PostgreSQL), icu (intl), zip, gd (png/jpeg/freetype), xml,
-# tesseract-ocr (module Dépenses/OCR), git/unzip pour Composer.
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Dépendances de compilation des extensions PHP :
+#   libpq-dev      -> pdo_pgsql, pgsql
+#   libonig-dev    -> mbstring (expressions régulières multioctets)
+#   libicu-dev     -> intl
+#   libzip-dev     -> zip
+#   libpng/libjpeg/libfreetype/libwebp -> gd
+#   libxml2-dev    -> dom, xml
+#   libsodium-dev  -> sodium
+# Outils runtime : tesseract-ocr (OCR notes de frais), postgresql-client
+# (pg_dump/psql des sauvegardes), git/unzip pour Composer.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         libpq-dev \
+        libonig-dev \
         libicu-dev \
         libzip-dev \
         libpng-dev \
         libjpeg62-turbo-dev \
         libfreetype6-dev \
+        libwebp-dev \
         libxml2-dev \
+        libsodium-dev \
+        pkg-config \
         unzip \
         git \
         tesseract-ocr \
         postgresql-client \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
+        --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
         pdo_pgsql \
         pgsql \
@@ -29,9 +45,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gd \
         zip \
         exif \
+        sodium \
         opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Vérification immédiate : le build s'arrête ici si une extension requise
+# par composer.json n'est pas chargée, au lieu d'échouer à l'exécution.
+RUN php -r '
+$required = ["pdo_pgsql","pgsql","mbstring","intl","bcmath","gd","zip","exif","sodium","opcache","dom","xml","fileinfo","openssl"];
+$missing = array_diff($required, get_loaded_extensions());
+if ($missing !== []) {
+    fwrite(STDERR, "Extensions PHP manquantes : " . implode(", ", $missing) . PHP_EOL);
+    exit(1);
+}
+echo "Extensions PHP vérifiées : " . count($required) . PHP_EOL;
+'
 
 # ---- Composer (binaire officiel) --------------------------------------------
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -40,7 +69,7 @@ WORKDIR /var/www/pbs
 
 # Dépendances PHP d'abord (meilleure réutilisation du cache de couches).
 COPY composer.json ./
-RUN composer install --no-interaction --no-scripts --prefer-dist || true
+RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts
 
 # ---- Code de l'application ---------------------------------------------------
 COPY . .
@@ -57,7 +86,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh \
 # Le master php-fpm tourne en root, les workers en www-data (image officielle).
 USER root
 EXPOSE 9000
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=5 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
     CMD php bin/health.php || exit 1
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

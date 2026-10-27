@@ -86,3 +86,5 @@ Puis dans `.env` : `CACHE_DRIVER=redis` et `QUEUE_DRIVER=redis`.
 | HTTP 502 sur nginx | PHP-FPM pas encore prêt | attendre la fin des migrations (healthcheck) |
 | `APP_KEY absent` | `.env` sans clé et génération impossible | `php bin/console app:key-generate` dans le conteneur |
 | Port 8080 occupé | autre service | changer `APP_HTTP_PORT` dans `.env` |
+| Échec build `Package requirements (oniguruma) were not met` | image construite avec un ancien Dockerfile | `git pull` puis reconstruire : `docker compose build --no-cache app` |
+| Échec build `Extensions PHP manquantes` | une extension n'a pas pu être compilée | lire les lignes `configure: error` précédentes ; vérifier les paquets `*-dev` du Dockerfile |
