@@ -11,6 +11,11 @@ use App\Core\Exception\AppException;
  * Numérotation séquentielle des documents commerciaux, par type et par année.
  * Verrou pessimiste (SELECT ... FOR UPDATE) pour garantir l'absence de trou
  * et de doublon en cas de saisie concurrente.
+ *
+ * CORRECTIF : LAST_VALUE est un mot réservé de MySQL 8 (fonction de fenêtrage).
+ * Utilisé sans guillemets inversés, il provoquait une erreur de syntaxe SQL à
+ * la création de toute facture, devis ou avoir. Les identifiants sont
+ * désormais protégés par des backticks (compatibles MySQL, MariaDB et SQLite).
  */
 final class DocumentNumberingService
 {
@@ -33,14 +38,14 @@ final class DocumentNumberingService
         $date ??= new \DateTimeImmutable();
         $period = $date->format('Y');
 
-        $this->db->insertIgnore(
-            'document_sequences',
-            ['kind' => $kind, 'period' => $period, 'last_value' => 0],
-            ['kind', 'period']
+        $insert = $this->db->isSqlite() ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+        $this->db->execute(
+            $insert . ' INTO document_sequences (`kind`, `period`, `last_value`) VALUES (:k, :p, 0)',
+            ['k' => $kind, 'p' => $period]
         );
 
         $row = $this->db->fetchOne(
-            'SELECT last_value FROM document_sequences WHERE kind = :k AND period = :p' . $this->db->rowLockClause(),
+            'SELECT `last_value` FROM document_sequences WHERE `kind` = :k AND `period` = :p' . $this->db->rowLockClause(),
             ['k' => $kind, 'p' => $period]
         );
         if ($row === null) {
@@ -49,8 +54,8 @@ final class DocumentNumberingService
 
         $next = (int) $row['last_value'] + 1;
         $this->db->execute(
-            'UPDATE document_sequences SET last_value = :v, updated_at = ' . $this->db->nowExpression() . '
-             WHERE kind = :k AND period = :p',
+            'UPDATE document_sequences SET `last_value` = :v, updated_at = ' . $this->db->nowExpression() . '
+             WHERE `kind` = :k AND `period` = :p',
             ['v' => $next, 'k' => $kind, 'p' => $period]
         );
 
