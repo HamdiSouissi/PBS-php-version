@@ -29,10 +29,10 @@ class PdfDocument
     private const MUTED = [115, 109, 97];
     /** Filets neutres. */
     private const HAIRLINE = [225, 221, 213];
-    /** Accent corail (couleur pleine, identique à la charte écran). */
-    private const ACCENT = [206, 63, 43];
-    /** Fond corail très atténué pour le total TTC. */
-    private const ACCENT_SOFT = [251, 238, 235];
+    /** Accent bleu institutionnel (couleur pleine, identique à la charte écran). */
+    private const ACCENT = [11, 85, 189];
+    /** Fond bleu très atténué pour le total TTC. */
+    private const ACCENT_SOFT = [232, 240, 253];
     /** Fond neutre des lignes alternées. */
     private const ZEBRA = [248, 247, 244];
 
@@ -615,10 +615,8 @@ class PdfDocument
             $pdf->Cell($pageWidth - $rightX, 4.6, $this->t($identityLine), 0, 1);
         }
 
-        // Filet corail discret séparant l'en-tête du corps.
-        $pdf->SetDrawColor(...self::ACCENT);
-        $pdf->SetLineWidth(0.4);
-        $pdf->Line(16, 29, $pageWidth, 29);
+        // Aucun filet coloré entre l'en-tête et le corps : l'en-tête est
+        // délimité par la marge haute, les titres de section marquent le contenu.
     }
 
     private function renderFooter(\FPDF $pdf): void

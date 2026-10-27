@@ -40,10 +40,10 @@
     --c-muted: #746d61;
     --c-on-accent: #ffffff;
 
-    /* Accent — corail vermillon vif (couleur pleine, sans dégradé, AA sur blanc) */
-    --accent: #ce3f2b;
-    --accent-hover: #bc3624;
-    --accent-active: #a82f1f;
+    /* Accent — bleu institutionnel dérivé du logo (couleur pleine, sans dégradé, AA sur blanc) */
+    --accent: #0b55bd;
+    --accent-hover: #09479f;
+    --accent-active: #083c85;
     --accent-contrast: #ffffff;
     --accent-subtle: color-mix(in srgb, var(--accent) 9%, transparent);
     --accent-subtle-2: color-mix(in srgb, var(--accent) 14%, transparent);
@@ -59,7 +59,7 @@
     --mod-violet-subtle: color-mix(in srgb, var(--mod-violet) 10%, transparent);
     --mod-magenta-subtle: color-mix(in srgb, var(--mod-magenta) 10%, transparent);
 
-    /* Sémantiques — l'information est violette, jamais bleue */
+    /* Sémantiques — l'information reste violette pour se distinguer du bleu de marque */
     --success: #0b7350;
     --success-subtle: color-mix(in srgb, var(--success) 10%, transparent);
     --warning: #996204;
@@ -139,9 +139,9 @@
      * Mapping des variables Bootstrap : l'ensemble du framework hérite du thème
      * ---------------------------------------------------------------------- */
     --bs-primary: var(--accent);
-    --bs-primary-rgb: 206, 63, 43;
+    --bs-primary-rgb: 11, 85, 189;
     --bs-link-color: var(--accent);
-    --bs-link-color-rgb: 206, 63, 43;
+    --bs-link-color-rgb: 11, 85, 189;
     --bs-link-hover-color: var(--accent-active);
     --bs-body-bg: var(--c-bg);
     --bs-body-color: var(--c-body);
@@ -157,7 +157,7 @@
     --bs-border-radius-lg: var(--r-lg);
     --bs-link-decoration: none;
 
-    /* Sémantique Bootstrap alignée sur la palette maison (aucun bleu résiduel) */
+    /* Sémantique Bootstrap alignée sur la palette maison */
     --bs-success: var(--success);
     --bs-success-rgb: 11, 115, 80;
     --bs-warning: var(--warning);
@@ -188,13 +188,13 @@
     --c-body: #ccc4b8;
     --c-secondary: #9a9185;
     --c-muted: #766e62;
-    --c-on-accent: #1f0d09;
+    --c-on-accent: #06152f;
 
-    /* Corail clair — texte sombre chaud sur le bouton vif (AA) */
-    --accent: #f06a53;
-    --accent-hover: #f57d69;
-    --accent-active: #ff9380;
-    --accent-contrast: #1f0d09;
+    /* Bleu clair dérivé du logo — texte marine sombre sur le bouton vif (AA) */
+    --accent: #6aa5ff;
+    --accent-hover: #88b8ff;
+    --accent-active: #a6ccff;
+    --accent-contrast: #06152f;
     --accent-subtle: color-mix(in srgb, var(--accent) 16%, transparent);
     --accent-subtle-2: color-mix(in srgb, var(--accent) 24%, transparent);
     --accent-ring: color-mix(in srgb, var(--accent) 36%, transparent);
@@ -235,8 +235,8 @@
     --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.4), 0 28px 60px -16px rgba(0, 0, 0, 0.65);
     --shadow-accent: 0 6px 18px -6px color-mix(in srgb, var(--accent) 45%, transparent);
 
-    --bs-primary-rgb: 240, 106, 83;
-    --bs-primary-bg: #1f0d09;
+    --bs-primary-rgb: 106, 165, 255;
+    --bs-primary-bg: #06152f;
     --bs-body-bg-rgb: 19, 16, 13;
     --bs-emphasis-color-rgb: 244, 241, 235;
     --bs-secondary-color: var(--c-secondary);
@@ -270,11 +270,11 @@
         --c-body: #ccc4b8;
         --c-secondary: #9a9185;
         --c-muted: #766e62;
-        --c-on-accent: #1f0d09;
-        --accent: #f06a53;
-        --accent-hover: #f57d69;
-        --accent-active: #ff9380;
-        --accent-contrast: #1f0d09;
+        --c-on-accent: #06152f;
+        --accent: #6aa5ff;
+        --accent-hover: #88b8ff;
+        --accent-active: #a6ccff;
+        --accent-contrast: #06152f;
         --accent-subtle: color-mix(in srgb, var(--accent) 16%, transparent);
         --accent-subtle-2: color-mix(in srgb, var(--accent) 24%, transparent);
         --accent-ring: color-mix(in srgb, var(--accent) 36%, transparent);
@@ -307,8 +307,8 @@
         --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.35), 0 10px 28px -8px rgba(0, 0, 0, 0.55);
         --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.4), 0 28px 60px -16px rgba(0, 0, 0, 0.65);
         --shadow-accent: 0 6px 18px -6px color-mix(in srgb, var(--accent) 45%, transparent);
-        --bs-primary-rgb: 240, 106, 83;
-        --bs-primary-bg: #1f0d09;
+        --bs-primary-rgb: 106, 165, 255;
+        --bs-primary-bg: #06152f;
         --bs-body-bg-rgb: 19, 16, 13;
         --bs-emphasis-color-rgb: 244, 241, 235;
         --bs-tertiary-bg: var(--c-surface-2);
