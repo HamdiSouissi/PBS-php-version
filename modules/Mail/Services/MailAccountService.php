@@ -69,6 +69,14 @@ final class MailAccountService
         return $this->crypto->decrypt((string) $row['imap_secret']);
     }
 
+    /**
+     * Horodate la dernière synchronisation réussie d'une boîte.
+     */
+    public function touchSync(int $id): void
+    {
+        $this->repository->touchSync($id);
+    }
+
     public function smtpPassword(array $row): string
     {
         return $this->crypto->decrypt((string) $row['smtp_secret']);
