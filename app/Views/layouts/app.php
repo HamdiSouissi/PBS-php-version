@@ -16,6 +16,7 @@ $flash = container()->get(\App\Core\Session\FlashBag::class)->pull();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="/assets/img/favicon.png">
     <title><?= e($title ?? 'PBS') ?> — Prime Business Suite</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -23,12 +24,15 @@ $flash = container()->get(\App\Core\Session\FlashBag::class)->pull();
 </head>
 <body>
 <div class="wrapper d-flex">
-    <aside class="sidebar text-bg-dark" id="sidebar">
-        <div class="sidebar-brand d-flex align-items-center gap-2 px-3 py-3">
-            <i class="bi bi-briefcase-fill text-info fs-4"></i>
-            <span class="fw-semibold">Prime Business Suite</span>
-        </div>
-        <nav class="nav flex-column px-2 pb-4">
+    <aside class="sidebar" id="sidebar">
+        <a class="sidebar-brand text-decoration-none" href="/dashboard">
+            <span class="brand-tile"><img src="/assets/img/logo-mark.png" alt="Logo Prime Vision Solutions"></span>
+            <span class="brand-wordmark">
+                <span class="brand-name">Prime Business Suite</span>
+                <span class="brand-sub">Prime Vision Solutions</span>
+            </span>
+        </a>
+        <nav class="nav flex-column">
             <?= $this->navItem('/dashboard', 'Tableau de bord', 'speedometer2') ?>
             <?= $this->navSection('Pilotage') ?>
             <?= $this->navItem('/organization', 'Entreprise & organisation', 'building') ?>
@@ -53,7 +57,7 @@ $flash = container()->get(\App\Core\Session\FlashBag::class)->pull();
     </aside>
 
     <div class="main flex-grow-1 d-flex flex-column min-vh-100">
-        <header class="topbar bg-white border-bottom d-flex align-items-center px-3 py-2 gap-3">
+        <header class="topbar d-flex align-items-center px-3 px-lg-4 gap-3">
             <button class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebarToggle" type="button">
                 <i class="bi bi-list"></i>
             </button>
@@ -77,7 +81,7 @@ $flash = container()->get(\App\Core\Session\FlashBag::class)->pull();
             </div>
         </header>
 
-        <main class="content p-3 p-lg-4 flex-grow-1 bg-body-tertiary">
+        <main class="content p-3 p-lg-4 flex-grow-1">
             <?php foreach ($flash as $type => $messages): ?>
                 <?php foreach ((array) $messages as $message): ?>
                     <div class="alert alert-<?= e($type === 'error' ? 'danger' : $type) ?> alert-dismissible fade show">
@@ -88,7 +92,7 @@ $flash = container()->get(\App\Core\Session\FlashBag::class)->pull();
             <?php endforeach; ?>
             <?= $content ?>
         </main>
-        <footer class="text-center text-muted small py-2 bg-white border-top">
+        <footer class="text-center text-muted small py-3 border-top">
             Prime Business Suite — PHP natif · données sensibles protégées · voir <a href="/compliance">conformité</a>
         </footer>
     </div>
