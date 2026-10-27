@@ -52,15 +52,10 @@ RUN apt-get update \
 
 # Vérification immédiate : le build s'arrête ici si une extension requise
 # par composer.json n'est pas chargée, au lieu d'échouer à l'exécution.
-RUN php -r '
-$required = ["pdo_pgsql","pgsql","mbstring","intl","bcmath","gd","zip","exif","sodium","opcache","dom","xml","fileinfo","openssl"];
-$missing = array_diff($required, get_loaded_extensions());
-if ($missing !== []) {
-    fwrite(STDERR, "Extensions PHP manquantes : " . implode(", ", $missing) . PHP_EOL);
-    exit(1);
-}
-echo "Extensions PHP vérifiées : " . count($required) . PHP_EOL;
-'
+# Le script est dans un fichier dédié (docker/php/) pour éviter tout problème
+# de quoting multi-ligne dans une instruction RUN du Dockerfile.
+COPY docker/php/check-extensions.php /tmp/check-extensions.php
+RUN php /tmp/check-extensions.php
 
 # ---- Composer (binaire officiel) --------------------------------------------
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
