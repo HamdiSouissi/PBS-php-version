@@ -25,7 +25,7 @@ $checked = static fn (array $permission): string => (
 <div class="collapse mb-3" id="newRoleCard">
     <div class="card">
         <div class="card-header">Créer un rôle</div>
-        <form method="post" action="/settings/roles">
+        <form method="post" action="/settings/roles" data-guard>
             <?= csrf_field() ?>
             <div class="card-body">
                 <div class="row g-2 mb-3">
@@ -108,7 +108,7 @@ $checked = static fn (array $permission): string => (
         <span>Modifier le rôle « <?= e($editing['label']) ?> » <code class="small"><?= e($editing['code']) ?></code></span>
         <a class="btn btn-sm btn-outline-secondary" href="/settings/roles">Fermer</a>
     </div>
-    <form method="post" action="/settings/roles/<?= (int) $editing['id'] ?>/update">
+    <form method="post" action="/settings/roles/<?= (int) $editing['id'] ?>/update" data-guard>
         <?= csrf_field() ?>
         <div class="card-body">
             <div class="row g-2 mb-3">

@@ -17,22 +17,16 @@ declare(strict_types=1);
     </button>
 </div>
 
-<div class="row g-3 mb-3">
-    <?php foreach ($accounts as $account): ?>
-        <div class="col-md-6 col-xl-4">
-            <div class="card stat-card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <div class="stat-label"><?= e($account['label']) ?></div>
-                            <div class="stat-value"><?= money_format((float) $account['current_balance']) ?></div>
-                            <div class="text-muted small mt-1"><?= e($account['bank_name']) ?> · <?= e($account['iban']) ?></div>
-                        </div>
-                        <div class="stat-icon stat-success"><i class="bi bi-bank"></i></div>
-                    </div>
-                </div>
+<div class="kpi-grid mb-4">
+    <?php foreach ($accounts as $i => $account): ?>
+        <article class="kpi-card" style="--i: <?= $i ?>">
+            <div class="kpi-top">
+                <span class="kpi-icon is-success"><i data-lucide="landmark"></i></span>
             </div>
-        </div>
+            <div class="kpi-value tnum"><?= money_format((float) $account['current_balance']) ?></div>
+            <div class="kpi-label"><?= e($account['label']) ?></div>
+            <div class="small text-muted mt-1 text-truncate"><?= e($account['bank_name']) ?> · <?= e($account['iban']) ?></div>
+        </article>
     <?php endforeach; ?>
 </div>
 

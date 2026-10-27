@@ -38,24 +38,23 @@ $invoiceBadges = ['draft' => 'secondary', 'issued' => 'primary', 'partial' => 'w
     </div>
 </div>
 
-<div class="row g-3 mb-3">
-    <?php
-    $kpis = [
-        ['Factures', (int) ($stats['invoice_count'] ?? 0), 'receipt', 'primary'],
-        ['Impayées', (int) ($stats['unpaid_count'] ?? 0), 'exclamation-triangle', 'warning'],
-        ['Total facturé TTC', money_format((float) ($stats['billed_ttc'] ?? 0)), 'currency-euro', 'info'],
-        ['Encours dû', money_format((float) ($stats['outstanding'] ?? 0)), 'hourglass-split', 'danger'],
-    ];
-    foreach ($kpis as [$label, $value, $icon, $color]): ?>
-        <div class="col-6 col-xl-3">
-            <div class="card stat-card stat-<?= e($color) ?> h-100">
-                <div class="card-body">
-                    <div class="stat-icon"><i class="bi bi-<?= e($icon) ?>"></i></div>
-                    <div class="stat-value"><?= e((string) $value) ?></div>
-                    <div class="stat-label"><?= e($label) ?></div>
-                </div>
+<?php
+$clientKpis = [
+    ['Factures', (int) ($stats['invoice_count'] ?? 0), 'receipt', 'is-accent'],
+    ['Impayées', (int) ($stats['unpaid_count'] ?? 0), 'triangle-alert', 'is-warning'],
+    ['Total facturé TTC', money_format((float) ($stats['billed_ttc'] ?? 0)), 'euro', 'is-info'],
+    ['Encours dû', money_format((float) ($stats['outstanding'] ?? 0)), 'hourglass', 'is-danger'],
+];
+?>
+<div class="kpi-grid mb-4">
+    <?php foreach ($clientKpis as $i => [$label, $value, $icon, $tone]): ?>
+        <article class="kpi-card" style="--i: <?= $i ?>">
+            <div class="kpi-top">
+                <span class="kpi-icon <?= e($tone) ?>"><i data-lucide="<?= e($icon) ?>"></i></span>
             </div>
-        </div>
+            <div class="kpi-value tnum"><?= e((string) $value) ?></div>
+            <div class="kpi-label"><?= e($label) ?></div>
+        </article>
     <?php endforeach; ?>
 </div>
 
