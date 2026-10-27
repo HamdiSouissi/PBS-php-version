@@ -32,29 +32,65 @@ $flash = container()->get(\App\Core\Session\FlashBag::class)->pull();
                 <span class="brand-sub">Prime Vision Solutions</span>
             </span>
         </a>
+<?php
+// Navigation filtrée par permission RBAC : une entrée (et une section)
+// n'est rendue que si l'utilisateur courant détient la permission requise.
+$authManager = container()->get(\App\Core\Auth\AuthManager::class);
+$navSections = [
+    [
+        'label' => 'Pilotage',
+        'items' => [
+            ['/organization', 'Entreprise & organisation', 'building', 'organization.read'],
+            ['/employees', 'Employés', 'people', 'employees.read'],
+            ['/hr/leaves', 'Congés', 'calendar-week', 'hr.leaves.read'],
+            ['/portal', 'Portail salarié', 'person-badge', 'portal.self'],
+            ['/payroll', 'Paie', 'cash-stack', 'payroll.read'],
+        ],
+    ],
+    [
+        'label' => 'Finances',
+        'items' => [
+            ['/clients', 'Clients', 'people-fill', 'clients.read'],
+            ['/invoicing/invoices', 'Facturation', 'receipt', 'invoicing.read'],
+            ['/invoicing/quotes', 'Devis', 'file-earmark-text', 'invoicing.read'],
+            ['/subscriptions', 'Abonnements', 'arrow-repeat', 'subscriptions.read'],
+            ['/contracts', 'Contrats clients', 'file-earmark-text', 'contracts.read'],
+            ['/expenses', 'Notes de frais', 'wallet2', 'expenses.read'],
+            ['/accounting', 'Comptabilité', 'journal-book', 'accounting.read'],
+            ['/treasury', 'Trésorerie', 'bank', 'treasury.read'],
+            ['/dividends', 'Associés & dividendes', 'pie-chart', 'dividends.read'],
+        ],
+    ],
+    [
+        'label' => 'Gouvernance',
+        'items' => [
+            ['/compliance', 'Conformité', 'shield-check', 'compliance.read'],
+            ['/documents', 'Documents', 'folder2-open', 'documents.read'],
+            ['/ai/assistant', 'Assistant IA', 'stars', 'ai.use'],
+            ['/settings/users', 'Utilisateurs', 'people', 'users.read'],
+            ['/settings/roles', 'Rôles & permissions', 'shield-lock', 'users.read'],
+            ['/settings/audit', "Journal d'audit", 'clock-history', 'audit.read'],
+        ],
+    ],
+];
+?>
         <nav class="nav flex-column">
             <?= $this->navItem('/dashboard', 'Tableau de bord', 'speedometer2') ?>
-            <?= $this->navSection('Pilotage') ?>
-            <?= $this->navItem('/organization', 'Entreprise & organisation', 'building') ?>
-            <?= $this->navItem('/employees', 'Employés', 'people') ?>
-            <?= $this->navItem('/hr/leaves', 'Congés', 'calendar-week') ?>
-            <?= $this->navItem('/portal', 'Portail salarié', 'person-badge', 'portal.self') ?>
-            <?= $this->navItem('/payroll', 'Paie', 'cash-stack') ?>
-            <?= $this->navSection('Finances') ?>
-            <?= $this->navItem('/clients', 'Clients', 'people-fill', 'clients.read') ?>
-            <?= $this->navItem('/invoicing/invoices', 'Facturation', 'receipt', 'invoicing.read') ?>
-            <?= $this->navItem('/invoicing/quotes', 'Devis', 'file-earmark-text', 'invoicing.read') ?>
-            <?= $this->navItem('/subscriptions', 'Abonnements', 'arrow-repeat') ?>
-            <?= $this->navItem('/contracts', 'Contrats clients', 'file-earmark-text') ?>
-            <?= $this->navItem('/expenses', 'Notes de frais', 'wallet2') ?>
-            <?= $this->navItem('/accounting', 'Comptabilité', 'journal-book') ?>
-            <?= $this->navItem('/treasury', 'Trésorerie', 'bank') ?>
-            <?= $this->navItem('/dividends', 'Associés & dividendes', 'pie-chart') ?>
-            <?= $this->navSection('Gouvernance') ?>
-            <?= $this->navItem('/compliance', 'Conformité', 'shield-check') ?>
-            <?= $this->navItem('/documents', 'Documents', 'folder2-open') ?>
-            <?= $this->navItem('/ai/assistant', 'Assistant IA', 'stars') ?>
-            <?= $this->navItem('/settings/audit', 'Journal d\'audit', 'clock-history') ?>
+            <?php foreach ($navSections as $section): ?>
+                <?php
+                $visibleItems = array_filter(
+                    $section['items'],
+                    static fn (array $item): bool => $authManager->hasPermission($item[3])
+                );
+                if ($visibleItems === []) {
+                    continue;
+                }
+                ?>
+                <?= $this->navSection($section['label']) ?>
+                <?php foreach ($visibleItems as [$url, $label, $icon, $permission]): ?>
+                    <?= $this->navItem($url, $label, $icon, $permission) ?>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
         </nav>
     </aside>
 
@@ -71,7 +107,10 @@ $flash = container()->get(\App\Core\Session\FlashBag::class)->pull();
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="/profile"><i class="bi bi-person me-2"></i>Mon profil</a></li>
-                    <li><a class="dropdown-item" href="/settings/users"><i class="bi bi-people me-2"></i>Utilisateurs</a></li>
+                    <?php if ($authManager->hasPermission('users.read')): ?>
+                        <li><a class="dropdown-item" href="/settings/users"><i class="bi bi-people me-2"></i>Utilisateurs</a></li>
+                        <li><a class="dropdown-item" href="/settings/roles"><i class="bi bi-shield-lock me-2"></i>Rôles & permissions</a></li>
+                    <?php endif; ?>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form method="post" action="/logout" class="px-2">
@@ -95,7 +134,7 @@ $flash = container()->get(\App\Core\Session\FlashBag::class)->pull();
             <?= $content ?>
         </main>
         <footer class="text-center text-muted small py-3 border-top">
-            Prime Business Suite — PHP natif · données sensibles protégées · voir <a href="/compliance">conformité</a>
+            Prime Business Suite — PHP natif · données sensibles protégées<?php if ($authManager->hasPermission('compliance.read')): ?> · voir <a href="/compliance">conformité</a><?php endif; ?>
         </footer>
     </div>
 </div>
