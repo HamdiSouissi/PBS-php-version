@@ -35,18 +35,20 @@ final class CompanySeeder
                  :address, :pc, :city, :country, :email, :phone, TRUE,
                  :urssaf, :cc)',
             [
-                'legal' => 'Prime Vision Solutions',
+                // Identité officielle (voir config/company.php, source : mentions légales du site).
+                'legal' => 'PRIME VISION SOLUTIONS',
                 'commercial' => 'Prime Vision Solutions',
-                'siren' => '900123456',
-                'siret' => '90012345600014',
-                'vat' => 'FR12900123456',
+                'siren' => '130493273',
+                'siret' => '13049327300010',
+                'vat' => 'FR53130493273',
+                // Forme juridique non publiée sur le site : laissée au défaut SQL, à confirmer.
                 'form' => 'SAS',
-                'address' => '12 rue des Lumières',
-                'pc' => '75002',
+                'address' => '25 rue de Ponthieu',
+                'pc' => '75008',
                 'city' => 'Paris',
                 'country' => 'France',
-                'email' => 'contact@prime-vision-solutions.fr',
-                'phone' => '+33100000000',
+                'email' => 'contact@primevisionsolutions.fr',
+                'phone' => '01 88 31 89 12',
                 'urssaf' => '117',
                 'cc' => 'SYNTEC (bureaux d\'études techniques)',
             ]
@@ -59,9 +61,9 @@ final class CompanySeeder
             [
                 'c' => $companyId,
                 'n' => 'Siège social - Paris',
-                'siret' => '90012345600014',
-                'a' => '12 rue des Lumières',
-                'pc' => '75002',
+                'siret' => '13049327300010',
+                'a' => '25 rue de Ponthieu',
+                'pc' => '75008',
                 'city' => 'Paris',
             ]
         );
