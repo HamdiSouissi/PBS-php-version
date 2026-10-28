@@ -12,6 +12,7 @@ use App\Core\Http\Controller;
 use App\Core\Http\RedirectResponse;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
+use Modules\Documents\Services\DocumentAccessService;
 
 /**
  * Centre documentaire : liste, dépôt, téléchargement sécurisé et suppression.
@@ -21,23 +22,20 @@ final class DocumentController extends Controller
     /** Disques autorisés (dossiers sous storage/). */
     private const DISKS = ['documents', 'uploads', 'exports'];
 
-    public function __construct(private readonly Connection $db)
-    {
+    public function __construct(
+        private readonly Connection $db,
+        private readonly DocumentAccessService $access
+    ) {
     }
 
     public function index(Request $request): Response
     {
         $this->auth()->requirePermission('documents.read');
-        $documents = $this->db->fetchAll(
-            'SELECT d.*, u.email AS uploader
-             FROM documents d
-             LEFT JOIN users u ON u.id = d.uploaded_by
-             ORDER BY d.created_at DESC, d.id DESC
-             LIMIT 200'
-        );
+        $scoped = !$this->access->isManager();
         return $this->view('Documents::index', [
-            'title' => 'Documents',
-            'documents' => $documents,
+            'title' => $scoped ? 'Mes documents' : 'Documents',
+            'documents' => $this->access->visibleDocuments(),
+            'scoped' => $scoped,
             'canWrite' => $this->auth()->hasPermission('documents.write'),
             'maxSizeMb' => (int) ((int) config('security.upload.max_size') / 1048576),
             'extensions' => (array) config('security.upload.allowed_extensions'),
@@ -99,6 +97,8 @@ final class DocumentController extends Controller
     {
         $this->auth()->requirePermission('documents.read');
         $document = $this->findOrFail($id);
+        // Un salarié ne peut télécharger que ses propres documents.
+        $this->access->assertCanAccess($document);
         $full = $this->resolvePath($document);
         $name = preg_replace('/[^\w.\- ]+/u', '_', (string) ($document['original_name'] ?: $document['name'])) ?: 'document';
         audit('document.download', 'Document', $id);

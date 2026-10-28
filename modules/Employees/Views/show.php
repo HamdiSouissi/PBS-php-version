@@ -43,6 +43,21 @@ $actions .= '<button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal
                 <li class="list-group-item d-flex justify-content-between"><span>Établissement</span><span><?= e($employee['establishment_name'] ?? '—') ?></span></li>
                 <li class="list-group-item d-flex justify-content-between"><span>Embauche</span><span><?= e($employee['hire_date'] ? date('d/m/Y', strtotime((string) $employee['hire_date'])) : '—') ?></span></li>
                 <li class="list-group-item d-flex justify-content-between"><span>IBAN</span><span><?= e($employee['iban'] ?: '—') ?></span></li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Compte de connexion</span>
+                    <?php if (!empty($account)): ?>
+                        <span class="text-end">
+                            <?= e($account['email']) ?>
+                            <?php if ((int) $account['must_change_password'] === 1): ?>
+                                <span class="badge text-bg-warning">mot de passe temporaire</span>
+                            <?php else: ?>
+                                <span class="badge text-bg-success">actif</span>
+                            <?php endif; ?>
+                        </span>
+                    <?php else: ?>
+                        <span class="text-muted">non rattaché</span>
+                    <?php endif; ?>
+                </li>
             </ul>
         </div>
     </div>

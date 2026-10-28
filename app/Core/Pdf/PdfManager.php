@@ -114,11 +114,17 @@ final class PdfManager
         $absolutePath = $absoluteDir . '/' . $baseName . '.pdf';
         file_put_contents($absolutePath, $binary);
 
+        // Les PDF relatifs à un salarié (bulletin, contrat, fiche) sont
+        // rattachés à sa fiche et visibles depuis son portail ; les autres
+        // documents (factures, devis…) restent des documents d'entreprise.
+        $employeeId = $this->resolveEmployeeId($kind, $entityId);
+        $visibility = $employeeId !== null ? 'portal' : 'company';
+
         $this->db->execute(
             'INSERT INTO documents (name, original_name, disk, path, mime, size, category, entity_type, entity_id,
-                                     visibility, checksum, uploaded_by)
+                                     employee_id, visibility, checksum, uploaded_by)
              VALUES (:name, :original, :disk, :path, :mime, :size, :category, :entity, :entity_id,
-                     :visibility, :checksum, :user)',
+                     :employee_id, :visibility, :checksum, :user)',
             [
                 'name' => $title,
                 'original' => $baseName . '.pdf',
@@ -129,7 +135,8 @@ final class PdfManager
                 'category' => $config['category'],
                 'entity' => $config['entity'],
                 'entity_id' => $entityId,
-                'visibility' => 'company',
+                'employee_id' => $employeeId,
+                'visibility' => $visibility,
                 'checksum' => hash('sha256', $binary),
                 'user' => $userId,
             ]
@@ -185,6 +192,35 @@ final class PdfManager
             }
         }
         return null;
+    }
+
+    /**
+     * Fiche salarié propriétaire du document, selon le type de génération.
+     * Null pour les documents sans lien salarié (facture, devis, note de frais…).
+     */
+    private function resolveEmployeeId(string $kind, int $entityId): ?int
+    {
+        return match ($kind) {
+            'payslip' => $this->fetchEmployeeId(
+                'SELECT employee_id FROM payslips WHERE id = :id',
+                $entityId
+            ),
+            'employee_contract' => $this->fetchEmployeeId(
+                'SELECT employee_id FROM employment_contracts WHERE id = :id',
+                $entityId
+            ),
+            'employee_sheet' => $this->fetchEmployeeId(
+                'SELECT id AS employee_id FROM employees WHERE id = :id',
+                $entityId
+            ),
+            default => null,
+        };
+    }
+
+    private function fetchEmployeeId(string $sql, int $entityId): ?int
+    {
+        $id = $this->db->fetchScalar($sql, ['id' => $entityId]);
+        return $id === false || $id === null ? null : (int) $id;
     }
 
     private function slug(string $value): string

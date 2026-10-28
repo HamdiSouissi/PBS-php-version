@@ -4,12 +4,16 @@ declare(strict_types=1);
 /**
  * @var list<array<string,mixed>> $documents
  * @var bool $canWrite
+ * @var bool $scoped
  * @var int $maxSizeMb
  * @var list<string> $extensions
  */
 $categories = ['autre' => 'Autre', 'rh' => 'RH', 'paie' => 'Paie', 'facture' => 'Facture', 'contrat' => 'Contrat', 'juridique' => 'Juridique', 'comptable' => 'Comptable'];
+$subtitle = $scoped
+    ? 'Vos bulletins, contrats et documents RH rattachés à votre fiche salarié.'
+    : 'Centre documentaire : dépôts, classement et exports générés.';
 ?>
-<?= $viewRenderer->pageHeader('Documents', [], '', 'Centre documentaire : dépôts, classement et exports générés.') ?>
+<?= $viewRenderer->pageHeader($scoped ? 'Mes documents' : 'Documents', [], '', $subtitle) ?>
 
 <div class="page-body">
 <?php if ($canWrite): ?>
