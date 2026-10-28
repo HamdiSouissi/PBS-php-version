@@ -43,6 +43,7 @@ const ICON_MAP = {
     'house': 'house',
     'envelope': 'mail',
     'gear': 'settings',
+    'chat-dots': 'messages-square',
     'pen-square': 'pen-square',
     'reply': 'reply',
     'arrow-left': 'arrow-left',

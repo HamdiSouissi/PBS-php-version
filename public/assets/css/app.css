@@ -550,6 +550,12 @@ svg.lucide {
 .sidebar-collapsed .main { margin-left: var(--sidebar-w-rail); }
 
 .main {
+    /* La sidebar est en position:fixed (hors flux) : .main est le seul item
+       flex en flux du .wrapper. flex:1 1 0% le force à occuper toute la
+       largeur restante (100vw - marge de sidebar) de façon déterministe,
+       quelle que soit la largeur intrinsèque du contenu. Un width:100%
+       provoquerait au contraire un débordement (100% + la marge de 264px). */
+    flex: 1 1 0%;
     margin-left: var(--sidebar-w);
     transition: margin-left var(--dur-base) var(--ease-in-out);
     min-width: 0;
