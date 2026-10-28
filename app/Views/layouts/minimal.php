@@ -30,8 +30,8 @@ $toastIcons = ['success' => 'circle-check', 'warning' => 'triangle-alert', 'erro
             } catch (e) { /* thème automatique */ }
         })();
     </script>
-    <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
-    <link href="/assets/css/app.css" rel="stylesheet">
+    <link href="<?= e(asset('assets/vendor/bootstrap/bootstrap.min.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('assets/css/app.css')) ?>" rel="stylesheet">
 </head>
 <body class="auth-body">
 <main class="auth-card">
@@ -51,7 +51,7 @@ $toastIcons = ['success' => 'circle-check', 'warning' => 'triangle-alert', 'erro
 </main>
 <p class="auth-foot">Application de gestion d'entreprise · PHP natif</p>
 
-<script src="/assets/vendor/lucide/lucide.min.js" defer></script>
+<script src="<?= e(asset('assets/vendor/lucide/lucide.min.js')) ?>" defer></script>
 <script>
     /* Les scripts différés s'exécutent avant DOMContentLoaded : on attend donc
        cet événement pour être certain que lucide est disponible. */

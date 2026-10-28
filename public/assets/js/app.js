@@ -115,6 +115,20 @@ const App = {
         this.initFormGuard();
         this.initPalette();
         this.initShortcuts();
+        this.initModals();
+    },
+
+    /* --- Modales : rendues dans <body> pour éviter tout ancêtre à -------
+       contexte de empilement (transform, backdrop-filter) qui les rendrait
+       grisées et incliquables derrière le voile backdrop. ---------------- */
+    initModals() {
+        document.querySelectorAll('.modal').forEach((modal) => {
+            modal.addEventListener('show.bs.modal', () => {
+                if (modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+            });
+        });
     },
 
     /* --- Thème (auto / clair / sombre), persisté, sans clignotement ------ */

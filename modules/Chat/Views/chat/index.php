@@ -216,4 +216,4 @@ $initialUsers = array_map(static fn (array $u): array => [
     </div>
 </div>
 
-<script src="/assets/js/chat.js" defer></script>
+<script src="<?= e(asset('assets/js/chat.js')) ?>" defer></script>

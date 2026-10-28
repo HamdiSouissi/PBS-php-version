@@ -140,8 +140,8 @@ $pageTitle = $title ?? 'Prime Business Suite';
             } catch (e) { /* localStorage indisponible : thème automatique */ }
         })();
     </script>
-    <link href="/assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
-    <link href="/assets/css/app.css" rel="stylesheet">
+    <link href="<?= e(asset('assets/vendor/bootstrap/bootstrap.min.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('assets/css/app.css')) ?>" rel="stylesheet">
 </head>
 <body>
 <div class="wrapper d-flex">
@@ -184,7 +184,7 @@ $pageTitle = $title ?? 'Prime Business Suite';
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <div class="main d-flex flex-column min-vh-100">
-        <header class="topbar d-flex align-items-center px-3 px-lg-4">
+        <header class="topbar d-flex align-items-center px-3">
             <button class="icon-btn d-lg-none" id="sidebarToggle" type="button"
                     aria-label="Ouvrir le menu de navigation" aria-controls="sidebar" aria-expanded="false">
                 <i data-lucide="menu"></i>
@@ -306,8 +306,8 @@ $pageTitle = $title ?? 'Prime Business Suite';
 </div>
 
 <script>window.PBS_DATA = { palette: <?= json_encode($palette, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?> };</script>
-<script src="/assets/vendor/bootstrap/bootstrap.bundle.min.js" defer></script>
-<script src="/assets/vendor/lucide/lucide.min.js" defer></script>
-<script src="/assets/js/app.js" defer></script>
+<script src="<?= e(asset('assets/vendor/bootstrap/bootstrap.bundle.min.js')) ?>" defer></script>
+<script src="<?= e(asset('assets/vendor/lucide/lucide.min.js')) ?>" defer></script>
+<script src="<?= e(asset('assets/js/app.js')) ?>" defer></script>
 </body>
 </html>

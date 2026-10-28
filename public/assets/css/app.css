@@ -693,7 +693,9 @@ svg.lucide {
 
 .content {
     min-height: calc(100vh - var(--topbar-h));
-    padding: var(--sp-6) var(--sp-6) var(--sp-10);
+    /* Gouttière latérale réduite : le contenu occupe toute la largeur
+       disponible (la sidebar reste le seul élément structurel à gauche). */
+    padding: var(--sp-5) var(--sp-4) var(--sp-10);
 }
 .content-inner {
     max-width: var(--content-max-width);
@@ -1057,7 +1059,7 @@ textarea.form-control:focus {
     transition: transform var(--dur-base) var(--ease-out),
         box-shadow var(--dur-base) var(--ease-out),
         border-color var(--dur-base) var(--ease-out);
-    animation: rise-in var(--dur-slow) var(--ease-out) both;
+    animation: rise-in var(--dur-slow) var(--ease-out) backwards;
 }
 .kpi-grid > .kpi-card:nth-child(2) { animation-delay: 55ms; }
 .kpi-grid > .kpi-card:nth-child(3) { animation-delay: 110ms; }
@@ -1676,7 +1678,7 @@ thead.table-light th {
     border-radius: var(--r-xl);
     box-shadow: var(--shadow-lg);
     padding: 2.2rem 2rem;
-    animation: rise-in var(--dur-slow) var(--ease-out) both;
+    animation: rise-in var(--dur-slow) var(--ease-out) backwards;
 }
 .auth-logo { height: 44px; width: auto; display: block; margin: 0 auto var(--sp-2); }
 .auth-tagline {
@@ -1719,7 +1721,11 @@ thead.table-light th {
     50% { opacity: 0.55; }
 }
 
-.content > * { animation: rise-in var(--dur-slow) var(--ease-out) both; }
+/* fill-mode « backwards » : après l'animation, aucun transform ne subsiste.
+   Un transform résiduel créerait un bloc englobant pour les éléments
+   positionnés en fixed (modales Bootstrap), qui se retrouvaient prisonnières
+   sous le voile backdrop et devenaient incliquables. */
+.content > * { animation: rise-in var(--dur-slow) var(--ease-out) backwards; }
 .content > *:nth-child(2) { animation-delay: 60ms; }
 .content > *:nth-child(3) { animation-delay: 120ms; }
 .content > *:nth-child(n + 4) { animation-delay: 160ms; }
