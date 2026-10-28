@@ -45,4 +45,3 @@ declare(strict_types=1);
 </div>
 <p class="text-muted small mt-2"><?= (int) $total ?> entrée(s) — page <?= (int) $page ?>/<?= (int) $totalPages ?></p>
 </div>
-</div>

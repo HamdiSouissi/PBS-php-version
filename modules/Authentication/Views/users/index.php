@@ -78,7 +78,6 @@ $actions = '<button class="btn btn-primary btn-sm" data-bs-toggle="collapse" dat
     </div>
 </div>
 
-</div>
 <?php foreach ($paginator->items as $row): ?>
 <div class="modal fade" id="editUser<?= (int) $row['id'] ?>" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="editUserTitle<?= (int) $row['id'] ?>">
     <div class="modal-dialog">
