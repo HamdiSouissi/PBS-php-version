@@ -92,15 +92,15 @@ final class EmployeeController extends Controller
             'contractPdfs' => $contractPdfs,
             'sheetPdf' => $this->pdf->latestFor('employee_sheet', $id),
             'generatedPdfs' => db()->fetchAll(
-                "SELECT * FROM documents
-                 WHERE (
-                        entity_type = 'employment_contract'
-                        AND entity_id IN (SELECT id FROM employment_contracts WHERE employee_id = :e)
-                       )
-                    OR (entity_type = 'employee' AND entity_id = :e)
-                 ORDER BY id DESC LIMIT 20",
+                'SELECT * FROM documents
+                 WHERE employee_id = :e
+                 ORDER BY id DESC LIMIT 20',
                 ['e' => $id]
             ),
+            // Compte de connexion rattaché (e-mail + état du changement de mot de passe).
+            'account' => $employee['user_id']
+                ? db()->fetchOne('SELECT id, email, must_change_password FROM users WHERE id = :u', ['u' => $employee['user_id']])
+                : null,
         ]);
     }
 

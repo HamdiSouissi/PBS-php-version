@@ -90,6 +90,31 @@ declare(strict_types=1);
                 <?php endforeach; ?>
             </ul>
         </div>
+        <div class="card mt-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Mes documents</span>
+                <a class="btn btn-sm btn-outline-primary" href="/documents">Tout voir</a>
+            </div>
+            <ul class="list-group list-group-flush small">
+                <?php if ($documents === []): ?><li class="list-group-item text-muted">Aucun document disponible.</li><?php endif; ?>
+                <?php foreach ($documents as $document): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><i data-lucide="file-text" class="text-danger me-1"></i><?= e($document['name']) ?></span>
+                        <span class="d-flex gap-1">
+                            <?php if (($document['mime'] ?? '') === 'application/pdf'): ?>
+                                <a class="btn btn-sm btn-outline-secondary" target="_blank"
+                                   href="/pdf/<?= (int) $document['id'] ?>/preview">Aperçu</a>
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="/pdf/<?= (int) $document['id'] ?>/download">Télécharger</a>
+                            <?php else: ?>
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="/documents/download/<?= (int) $document['id'] ?>">Télécharger</a>
+                            <?php endif; ?>
+                        </span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
     </div>
 </div>
 </div>

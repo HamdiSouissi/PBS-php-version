@@ -65,6 +65,12 @@ final class PortalController extends Controller
                  WHERE p.employee_id = :e ORDER BY per.year DESC, per.month DESC LIMIT 12',
                 ['e' => $employee['id']]
             ),
+            'documents' => $this->db->fetchAll(
+                'SELECT * FROM documents
+                 WHERE employee_id = :e
+                 ORDER BY created_at DESC, id DESC LIMIT 25',
+                ['e' => $employee['id']]
+            ),
         ]);
     }
 

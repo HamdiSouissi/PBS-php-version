@@ -9,16 +9,20 @@ use App\Core\Http\Controller;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Pdf\PdfManager;
+use Modules\Documents\Services\DocumentAccessService;
 
 /**
  * Visualisation (inline) et téléchargement des PDF générés par l'application
  * et historisés dans la table `documents`. Le droit d'accès est déduit de
- * l'entité métier liée (facture, contrat, bulletin…).
+ * l'entité métier liée (facture, contrat, bulletin…), avec repli sur la
+ * propriété de la fiche salarié pour le portail des employés.
  */
 final class GeneratedDocumentController extends Controller
 {
-    public function __construct(private readonly PdfManager $pdf)
-    {
+    public function __construct(
+        private readonly PdfManager $pdf,
+        private readonly DocumentAccessService $documentAccess
+    ) {
     }
 
     public function preview(Request $request, int $id): Response
@@ -40,10 +44,12 @@ final class GeneratedDocumentController extends Controller
         }
 
         $permission = $this->pdf->permissionForEntity((string) $document['entity_type']);
-        if ($permission !== null) {
-            $this->auth()->requirePermission($permission);
-        } else {
-            $this->auth()->requirePermission('documents.read');
+        $allowed = $permission === null
+            ? $this->auth()->hasPermission('documents.read')
+            : $this->auth()->hasPermission($permission);
+        if (!$allowed) {
+            // Repli portail salarié : accès aux seuls PDF de sa propre fiche.
+            $this->documentAccess->assertCanAccess($document);
         }
 
         // Résolution sécurisée : disque "exports" uniquement, sans traversée.
