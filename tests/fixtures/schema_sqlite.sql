@@ -167,6 +167,7 @@ CREATE INDEX idx_notifications_user ON notifications(user_id, read_at);
 -- ---- 002 : RH ---------------------------------------------------------------
 CREATE TABLE employees (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE RESTRICT,
     establishment_id INTEGER REFERENCES establishments(id) ON DELETE SET NULL,
     department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
@@ -802,6 +803,7 @@ CREATE TABLE documents (
     category TEXT NOT NULL DEFAULT 'autre',
     entity_type TEXT NOT NULL DEFAULT '',
     entity_id INTEGER,
+    employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
     visibility TEXT NOT NULL DEFAULT 'private'
         CHECK (visibility IN ('private','company','portal')),
     checksum TEXT NOT NULL DEFAULT '',
@@ -809,6 +811,7 @@ CREATE TABLE documents (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_documents_entity ON documents(entity_type, entity_id);
+CREATE INDEX idx_documents_employee ON documents(employee_id);
 CREATE INDEX idx_documents_category ON documents(category);
 
 CREATE TABLE document_versions (
