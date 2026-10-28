@@ -21,6 +21,8 @@ $parisNow = new DateTimeImmutable('now', new DateTimeZone('Europe/Paris'));
 
 // Pastille des messages non lus de la messagerie collaborative (chat.use).
 $chatUnread = 0;
+$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+$isChatPage = $currentPath === '/chat' || str_starts_with($currentPath, '/chat/');
 if ($user !== null && $authManager->hasPermission('chat.use')) {
     $chatUnread = container()->get(\Modules\Chat\Services\ChatService::class)->unreadTotal($user->id);
 }
@@ -126,6 +128,7 @@ $pageTitle = $title ?? 'Prime Business Suite';
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
     <link rel="icon" type="image/png" href="/assets/img/favicon.png">
     <title><?= e($pageTitle) ?> — Prime Business Suite</title>
     <script>
@@ -171,7 +174,7 @@ $pageTitle = $title ?? 'Prime Business Suite';
                     [$url, $label, $icon, $permission] = $item;
                     $badgeHtml = '';
                     if (($item[4] ?? '') === 'chat') {
-                        $badgeHtml = '<span class="badge text-bg-danger rounded-pill ms-auto"'
+                        $badgeHtml = '<span class="badge text-bg-danger rounded-pill ms-auto chat-unread-total"'
                             . ' id="chatNavBadge"' . ($chatUnread === 0 ? ' hidden' : '') . '>'
                             . $chatUnread . '</span>';
                     }
@@ -201,6 +204,14 @@ $pageTitle = $title ?? 'Prime Business Suite';
                 <span class="search-label">Rechercher ou aller à…</span>
                 <kbd><span class="d-none d-sm-inline">Ctrl </span>K</kbd>
             </button>
+
+            <?php if ($authManager->hasPermission('chat.use') && !$isChatPage): ?>
+            <button type="button" class="icon-btn chat-topbar-btn" id="chatTopbarBtn"
+                    aria-label="Ouvrir la messagerie" title="Messagerie" aria-expanded="false">
+                <i data-lucide="messages-square"></i>
+                <span class="chat-dock-badge chat-unread-total" id="chatTopbarBadge"<?= $chatUnread === 0 ? ' hidden' : '' ?>><?= (int) $chatUnread ?></span>
+            </button>
+            <?php endif; ?>
 
             <button type="button" class="theme-toggle" data-theme-toggle
                     aria-label="Basculer le thème" title="Basculer le thème">
@@ -254,6 +265,64 @@ $pageTitle = $title ?? 'Prime Business Suite';
         </footer>
     </div>
 </div>
+
+<?php if ($authManager->hasPermission('chat.use') && !$isChatPage): ?>
+<!-- Widget de messagerie flottant (ancré en bas à droite, façon messagerie instantanée) -->
+<div class="chat-dock" id="chatDock"
+     data-csrf="<?= e(csrf_token()) ?>"
+     data-initial-unread="<?= (int) $chatUnread ?>">
+    <div class="chat-dock-panel" id="chatDockPanel" hidden>
+        <!-- Vue : liste des conversations -->
+        <section class="chat-dock-view" id="dockListView">
+            <header class="chat-dock-header">
+                <h6 class="mb-0 me-auto">Messagerie</h6>
+                <a class="icon-btn chat-dock-header-btn" href="/chat" title="Ouvrir la messagerie complète" aria-label="Messagerie complète">
+                    <i data-lucide="maximize-2"></i>
+                </a>
+                <button type="button" class="icon-btn chat-dock-header-btn" id="dockCloseBtn" aria-label="Réduire">
+                    <i data-lucide="minus"></i>
+                </button>
+            </header>
+            <div class="chat-dock-list" id="dockConversationList">
+                <p class="text-muted small text-center py-4 px-3 mb-0">Chargement…</p>
+            </div>
+            <footer class="chat-dock-footer">
+                <a class="btn btn-sm btn-outline-primary w-100" href="/chat">
+                    <i data-lucide="square-pen"></i> Nouvel échange
+                </a>
+            </footer>
+        </section>
+
+        <!-- Vue : fil d'une conversation -->
+        <section class="chat-dock-view" id="dockThreadView" hidden>
+            <header class="chat-dock-header">
+                <button type="button" class="icon-btn chat-dock-header-btn" id="dockBackBtn" aria-label="Retour aux conversations">
+                    <i data-lucide="arrow-left"></i>
+                </button>
+                <h6 class="mb-0 me-auto text-truncate" id="dockThreadTitle">—</h6>
+                <button type="button" class="icon-btn chat-dock-header-btn" id="dockThreadCloseBtn" aria-label="Réduire">
+                    <i data-lucide="minus"></i>
+                </button>
+            </header>
+            <div class="chat-dock-messages" id="dockMessages" aria-live="polite"></div>
+            <form class="chat-dock-composer" id="dockComposer">
+                <input type="hidden" name="conversation_id" id="dockConversationId">
+                <textarea class="form-control form-control-sm" id="dockBody" rows="1" maxlength="5000"
+                          placeholder="Votre message… (Entrée pour envoyer)"></textarea>
+                <button class="btn btn-primary btn-sm" type="submit" aria-label="Envoyer">
+                    <i data-lucide="send-horizontal"></i>
+                </button>
+            </form>
+        </section>
+    </div>
+
+    <button type="button" class="chat-dock-fab" id="chatDockFab"
+            aria-label="Ouvrir la messagerie" aria-expanded="false">
+        <i data-lucide="messages-square"></i>
+        <span class="chat-dock-badge chat-unread-total" id="dockFabBadge"<?= $chatUnread === 0 ? ' hidden' : '' ?>><?= (int) $chatUnread ?></span>
+    </button>
+</div>
+<?php endif; ?>
 
 <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="false">
     <?php foreach ($flash as $type => $messages): ?>
@@ -309,5 +378,8 @@ $pageTitle = $title ?? 'Prime Business Suite';
 <script src="<?= e(asset('assets/vendor/bootstrap/bootstrap.bundle.min.js')) ?>" defer></script>
 <script src="<?= e(asset('assets/vendor/lucide/lucide.min.js')) ?>" defer></script>
 <script src="<?= e(asset('assets/js/app.js')) ?>" defer></script>
+<?php if ($authManager->hasPermission('chat.use') && !$isChatPage): ?>
+<script src="<?= e(asset('assets/js/chat-widget.js')) ?>" defer></script>
+<?php endif; ?>
 </body>
 </html>
