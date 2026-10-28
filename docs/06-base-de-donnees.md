@@ -66,11 +66,24 @@ Orchestrés par `DatabaseSeeder`, tous idempotents (upserts `INSERT IGNORE` /
 
 | Seeder | Contenu |
 |--------|---------|
-| `RbacSeeder` | 5 rôles, 45 permissions, utilisateur administrateur initial |
+| `RbacSeeder` | 5 rôles, 46 permissions, utilisateur administrateur initial |
 | `CompanySeeder` | Société par défaut |
 | `ChartOfAccountsSeeder` | Plan comptable général |
 | `PayrollRulesSeeder` | Règles URSSAF / Agirc-Arrco versionnées |
-| `ReferenceSeeder` | Types de congés et références transverses |
+| `ReferenceSeeder` | Types de congés, réglage d'acquisition des congés et références transverses |
+
+### Liaison salariés / comptes / documents (migration 016)
+
+La migration `20261028_000016_employee_accounts.sql` ajoute :
+
+- `employees.user_id` : compte de connexion rattaché à la fiche salarié
+  (clé étrangère `users.id`, `ON DELETE SET NULL`) ;
+- `documents.employee_id` : propriétaire salarié d'un document du centre
+  documentaire (clé étrangère `employees.id`, `ON DELETE SET NULL`), permettant
+  au portail salarié de ne présenter que ses bulletins, contrats et fiches.
+
+Les PDF générés (bulletins de paie, contrats, fiches salarié) alimentent
+`documents` avec `employee_id` renseigné et une visibilité `portal`.
 
 ## Bases de l'environnement de développement
 
