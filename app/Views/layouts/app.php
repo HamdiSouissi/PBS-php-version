@@ -36,6 +36,7 @@ $navSections = [
             ['/organization', 'Entreprise & organisation', 'building', 'organization.read'],
             ['/employees', 'Employés', 'people', 'employees.read'],
             ['/hr/leaves', 'Congés', 'calendar-week', 'hr.leaves.read'],
+            ['/hr/settings', 'Réglages RH', 'gear', 'hr.settings.manage'],
             ['/portal', 'Portail salarié', 'person-badge', 'portal.self'],
             ['/payroll', 'Paie', 'cash-stack', 'payroll.read'],
         ],

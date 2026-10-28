@@ -60,6 +60,37 @@ $actions .= '<button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal
                 </li>
             </ul>
         </div>
+        <div class="card mt-3">
+            <div class="card-header bg-white fw-semibold">
+                Solde de congés payés — <?= (int) $leaveSummary['year'] ?>
+            </div>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Embauche</span>
+                    <span><?= e($leaveSummary['hire_date'] ? date('d/m/Y', strtotime((string) $leaveSummary['hire_date'])) : '—') ?></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Mois travaillés (prorata inclus)</span>
+                    <span><?= e(number_format((float) $leaveSummary['months'], 2, ',', ' ')) ?></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Acquisition mensuelle</span>
+                    <span><?= e(number_format((float) $leaveSummary['monthly_rate'], 4, ',', ' ')) ?> j</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Jours acquis</span>
+                    <strong><?= e(number_format((float) $leaveSummary['accrued_days'], 2, ',', ' ')) ?> j</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Jours pris (validés)</span>
+                    <span><?= e(number_format((float) $leaveSummary['taken_days'], 2, ',', ' ')) ?> j</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between table-light">
+                    <span class="fw-semibold">Solde restant</span>
+                    <strong class="text-primary"><?= e(number_format((float) $leaveSummary['remaining_days'], 2, ',', ' ')) ?> j</strong>
+                </li>
+            </ul>
+        </div>
     </div>
     <div class="col-lg-8">
         <div class="card mb-3">

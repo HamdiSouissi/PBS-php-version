@@ -108,5 +108,9 @@ final class ReferenceSeeder
             ],
             ['provider']
         );
+
+        // Réglage RH par défaut : acquisition des congés payés (droit commun
+        // français : 25 jours ouvrés par an, soit 2,0833 jours par mois).
+        $this->container->get(\Modules\HR\Services\LeaveSettingsService::class)->seedDefault();
     }
 }
