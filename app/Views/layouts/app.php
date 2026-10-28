@@ -276,11 +276,14 @@ $pageTitle = $title ?? 'Prime Business Suite';
         <section class="chat-dock-view" id="dockListView">
             <header class="chat-dock-header">
                 <h6 class="mb-0 me-auto">Messagerie</h6>
-                <a class="icon-btn chat-dock-header-btn" href="/chat" title="Ouvrir la messagerie complète" aria-label="Messagerie complète">
+                <a class="icon-btn chat-dock-header-btn" href="/chat" title="Ouvrir la messagerie complète" aria-label="Ouvrir la messagerie complète">
                     <i data-lucide="maximize-2"></i>
                 </a>
-                <button type="button" class="icon-btn chat-dock-header-btn" id="dockCloseBtn" aria-label="Réduire">
+                <button type="button" class="icon-btn chat-dock-header-btn" id="dockMinimizeBtn" title="Réduire" aria-label="Réduire">
                     <i data-lucide="minus"></i>
+                </button>
+                <button type="button" class="icon-btn chat-dock-header-btn" id="dockCloseBtn" title="Fermer" aria-label="Fermer">
+                    <i data-lucide="x"></i>
                 </button>
             </header>
             <div class="chat-dock-list" id="dockConversationList">
@@ -296,12 +299,15 @@ $pageTitle = $title ?? 'Prime Business Suite';
         <!-- Vue : fil d'une conversation -->
         <section class="chat-dock-view" id="dockThreadView" hidden>
             <header class="chat-dock-header">
-                <button type="button" class="icon-btn chat-dock-header-btn" id="dockBackBtn" aria-label="Retour aux conversations">
+                <button type="button" class="icon-btn chat-dock-header-btn" id="dockBackBtn" title="Retour aux conversations" aria-label="Retour aux conversations">
                     <i data-lucide="arrow-left"></i>
                 </button>
                 <h6 class="mb-0 me-auto text-truncate" id="dockThreadTitle">—</h6>
-                <button type="button" class="icon-btn chat-dock-header-btn" id="dockThreadCloseBtn" aria-label="Réduire">
+                <button type="button" class="icon-btn chat-dock-header-btn" id="dockThreadMinimizeBtn" title="Réduire" aria-label="Réduire">
                     <i data-lucide="minus"></i>
+                </button>
+                <button type="button" class="icon-btn chat-dock-header-btn" id="dockThreadCloseBtn" title="Fermer" aria-label="Fermer">
+                    <i data-lucide="x"></i>
                 </button>
             </header>
             <div class="chat-dock-messages" id="dockMessages" aria-live="polite"></div>

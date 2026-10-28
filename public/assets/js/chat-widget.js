@@ -25,6 +25,8 @@
         body: document.getElementById('dockBody'),
         closeBtn: document.getElementById('dockCloseBtn'),
         threadCloseBtn: document.getElementById('dockThreadCloseBtn'),
+        minimizeBtn: document.getElementById('dockMinimizeBtn'),
+        threadMinimizeBtn: document.getElementById('dockThreadMinimizeBtn'),
         backBtn: document.getElementById('dockBackBtn'),
     };
 
@@ -189,6 +191,15 @@
 
     async function openPanel() {
         state.isOpen = true;
+        // Une réduction conserve la vue courante ; une fermeture (X) a remis
+        // la liste par défaut. On garantit la cohérence de l'affichage.
+        if (state.activeId) {
+            els.listView.hidden = true;
+            els.threadView.hidden = false;
+        } else {
+            els.listView.hidden = false;
+            els.threadView.hidden = true;
+        }
         els.panel.hidden = false;
         [els.fab, els.topbarBtn].forEach((btn) => btn && btn.setAttribute('aria-expanded', 'true'));
         clearInterval(state.slowTimer);
@@ -204,12 +215,23 @@
         }
     }
 
-    function closePanel() {
+    // Réduire : masque le panneau en conservant la conversation ouverte ;
+    // la réouverture ramène exactement le fil en cours.
+    function minimizePanel() {
         state.isOpen = false;
         els.panel.hidden = true;
         [els.fab, els.topbarBtn].forEach((btn) => btn && btn.setAttribute('aria-expanded', 'false'));
         clearInterval(state.fastTimer);
         state.slowTimer = setInterval(refreshUnreadOnly, 20000);
+    }
+
+    // Fermer : réduit ET revient à la liste des conversations.
+    function closePanel() {
+        minimizePanel();
+        state.activeId = 0;
+        state.lastMessageId = 0;
+        els.threadView.hidden = true;
+        els.listView.hidden = false;
     }
 
     async function refreshUnreadOnly() {
@@ -231,9 +253,13 @@
     }
 
     /* --- Événements -------------------------------------------------------- */
+    // La bulle et l'icône topbar réduisent le panneau sans perdre le fil ouvert.
     [els.fab, els.topbarBtn].forEach((btn) => {
-        btn?.addEventListener('click', () => (state.isOpen ? closePanel() : openPanel()));
+        btn?.addEventListener('click', () => (state.isOpen ? minimizePanel() : openPanel()));
     });
+    // « − » réduit en conservant la conversation ; « X » ferme et revient à la liste.
+    els.minimizeBtn.addEventListener('click', minimizePanel);
+    els.threadMinimizeBtn.addEventListener('click', minimizePanel);
     els.closeBtn.addEventListener('click', closePanel);
     els.threadCloseBtn.addEventListener('click', closePanel);
     els.backBtn.addEventListener('click', backToList);
@@ -269,7 +295,7 @@
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && state.isOpen) closePanel();
+        if (event.key === 'Escape' && state.isOpen) minimizePanel();
     });
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && state.isOpen) tick();
