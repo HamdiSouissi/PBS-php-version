@@ -1416,7 +1416,11 @@ thead.table-light th {
     flex-direction: column;
     gap: var(--sp-2);
     max-width: min(380px, calc(100vw - 2rem));
+    /* La région occupe le même coin que la bulle de messagerie : seules les
+       notifications elles-mêmes captent les clics, le vide laisse passer. */
+    pointer-events: none;
 }
+.app-toast { pointer-events: auto; }
 .app-toast {
     display: flex;
     align-items: flex-start;
