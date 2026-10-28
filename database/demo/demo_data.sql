@@ -133,6 +133,48 @@ VALUES
      'FR7630001007948888000000885', 'BDFEFRPP', 'Développeur alternant', 'Alternant', '120',
      'active', '2026-09-01', 1, 'prt-emp-008', '2026-08-20 10:00:00', '2026-09-01 09:00:00');
 
+-- -----------------------------------------------------------------------------
+-- 3b. Rattachement obligatoire salarié ↔ compte utilisateur (migration 016)
+-- Les comptes existent déjà pour les salariés dont l'e-mail perso correspond
+-- à un utilisateur de démo (Sophie, Nathan, Claire). Les autres reçoivent un
+-- compte avec le mot de passe de démonstration (PBS@2026!demo), sans forçage.
+-- -----------------------------------------------------------------------------
+
+-- Comptes des salariés sans utilisateur existant (ids 8 à 12, après les 7 comptes initiaux).
+INSERT INTO users
+    (id, email, password_hash, first_name, last_name, is_active, totp_enrolled,
+     failed_attempts, must_change_password, created_at, updated_at)
+VALUES
+    (8,  'jean.dupont@primevisionsolutions.fr',   '$argon2id$v=19$m=65536,t=4,p=2$E46vz723eWTbMi39HO/pmw$jDXQGqSlse06Hpkm8u/y5nzDQbm9jkg6FODZx99VWu8', 'Jean',  'Dupont',     1, 0, 0, 0, '2026-09-01 09:00:00', '2026-09-01 09:00:00'),
+    (9,  'amine.bensalah@primevisionsolutions.fr','$argon2id$v=19$m=65536,t=4,p=2$E46vz723eWTbMi39HO/pmw$jDXQGqSlse06Hpkm8u/y5nzDQbm9jkg6FODZx99VWu8', 'Amine', 'Ben Salah',  1, 0, 0, 0, '2026-09-01 09:00:00', '2026-09-01 09:00:00'),
+    (10, 'thomas.lefevre@primevisionsolutions.fr','$argon2id$v=19$m=65536,t=4,p=2$E46vz723eWTbMi39HO/pmw$jDXQGqSlse06Hpkm8u/y5nzDQbm9jkg6FODZx99VWu8', 'Thomas','Lefevre',    1, 0, 0, 0, '2026-09-01 09:00:00', '2026-09-01 09:00:00'),
+    (11, 'julie.mercier@primevisionsolutions.fr', '$argon2id$v=19$m=65536,t=4,p=2$E46vz723eWTbMi39HO/pmw$jDXQGqSlse06Hpkm8u/y5nzDQbm9jkg6FODZx99VWu8', 'Julie', 'Mercier',    1, 0, 0, 0, '2026-09-01 09:00:00', '2026-09-01 09:00:00'),
+    (12, 'bao.nguyen@primevisionsolutions.fr',    '$argon2id$v=19$m=65536,t=4,p=2$E46vz723eWTbMi39HO/pmw$jDXQGqSlse06Hpkm8u/y5nzDQbm9jkg6FODZx99VWu8', 'Bao',   'Nguyen',     1, 0, 0, 0, '2026-09-01 09:00:00', '2026-09-01 09:00:00');
+
+-- Rattachement des fiches aux comptes par correspondance d'e-mail.
+UPDATE employees
+SET user_id = (
+    SELECT u.id FROM users u
+    WHERE u.email = employees.professional_email OR u.email = employees.personal_email
+)
+WHERE user_id IS NULL
+  AND EXISTS (
+      SELECT 1 FROM users u
+      WHERE u.email = employees.professional_email OR u.email = employees.personal_email
+  );
+
+-- Le rôle « employe » est attribué à tout salarié rattaché qui ne l'a pas déjà
+-- (les responsables conservent leurs rôles existants : RH, paie, comptable…).
+INSERT INTO role_user (role_id, user_id)
+SELECT (SELECT id FROM roles WHERE code = 'employe'), e.user_id
+FROM employees e
+WHERE e.user_id IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM role_user ru
+      JOIN roles r ON r.id = ru.role_id
+      WHERE ru.user_id = e.user_id AND r.code = 'employe'
+  );
+
 INSERT INTO employment_contracts
     (id, employee_id, type, start_date, end_date, trial_period_end, weekly_hours, is_part_time,
      part_time_pct, position, classification, coefficient, hourly_rate, monthly_gross,

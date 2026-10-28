@@ -61,10 +61,10 @@ final class EmployeeController extends Controller
     public function store(Request $request): Response
     {
         $this->auth()->requirePermission('employees.write');
-        $data = $this->validateEmployee($request);
+        $data = $this->validateEmployee($request, true);
         $company = $this->organization->defaultCompany();
         $id = $this->employees->create((int) $company['id'], $data);
-        flash('success', 'Salarié créé.');
+        flash('success', 'Salarié créé : un compte de connexion a été généré avec le mot de passe temporaire change_me@.');
         return new RedirectResponse('/employees/' . $id);
     }
 
@@ -194,7 +194,7 @@ final class EmployeeController extends Controller
     /**
      * @return array<string,mixed>
      */
-    private function validateEmployee(Request $request): array
+    private function validateEmployee(Request $request, bool $emailRequired = false): array
     {
         $data = $this->validator()->validate($request->all(), [
             'last_name' => 'required|string|max:100',
@@ -204,7 +204,8 @@ final class EmployeeController extends Controller
             'gender' => 'nullable|in:m,f,non_renseigne',
             'nationality' => 'nullable|string|max:60',
             'personal_email' => 'nullable|email',
-            'professional_email' => 'nullable|email',
+            // Obligatoire à l'embauche : il sert d'identifiant au compte créé.
+            'professional_email' => ($emailRequired ? 'required' : 'nullable') . '|email',
             'phone' => 'nullable|string|max:40',
             'social_security_number' => 'nullable|string|max:15',
             'job_title' => 'nullable|string|max:120',

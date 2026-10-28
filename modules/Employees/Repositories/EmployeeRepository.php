@@ -82,4 +82,32 @@ final class EmployeeRepository extends BaseRepository
             ['e' => $employeeId]
         );
     }
+
+    /**
+     * Fiche salarié rattachée à un compte utilisateur.
+     *
+     * Lien direct via employees.user_id, puis repli historique par e-mail
+     * pour les fiches créées avant le rattachement obligatoire.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function findForUser(int $userId, string $email): ?array
+    {
+        $row = $this->db->fetchOne(
+            'SELECT * FROM employees WHERE user_id = :user LIMIT 1',
+            ['user' => $userId]
+        );
+        if ($row !== null) {
+            return $row;
+        }
+        if ($email === '') {
+            return null;
+        }
+        return $this->db->fetchOne(
+            'SELECT * FROM employees
+             WHERE professional_email = :email OR personal_email = :email
+             LIMIT 1',
+            ['email' => mb_strtolower(trim($email))]
+        );
+    }
 }

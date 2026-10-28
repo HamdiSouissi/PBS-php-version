@@ -14,6 +14,15 @@ $headerActions = '<a href="/employees" class="btn btn-outline-secondary btn-sm">
     <div class="card-body">
         <form method="post" action="<?= e($action) ?>" class="row g-3" id="employee-form" data-guard>
             <?= csrf_field() ?>
+            <?php if ($employee === null): ?>
+                <div class="col-12">
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i data-lucide="info"></i>
+                        Un compte de connexion (rôle « salarié ») est créé automatiquement à l'enregistrement,
+                        avec le mot de passe temporaire <code>change_me@</code>, à changer à la première connexion.
+                    </div>
+                </div>
+            <?php endif; ?>
             <?php
             $sections = [
                 'État civil' => [
@@ -23,7 +32,7 @@ $headerActions = '<a href="/employees" class="btn btn-outline-secondary btn-sm">
                     'social_security_number' => ['N° sécurité sociale (15 chiffres)', 'text', false],
                 ],
                 'Coordonnées' => [
-                    'personal_email' => ['E-mail personnel', 'email', false], 'professional_email' => ['E-mail professionnel', 'email', false],
+                    'personal_email' => ['E-mail personnel', 'email', false], 'professional_email' => ['E-mail professionnel', 'email', $employee === null],
                     'phone' => ['Téléphone', 'text', false], 'address' => ['Adresse', 'text', false],
                     'postal_code' => ['Code postal', 'text', false], 'city' => ['Ville', 'text', false],
                 ],
