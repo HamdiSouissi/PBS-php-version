@@ -50,17 +50,31 @@ repose sur un utilisateur sans droits chargés.
 | Rôle | Périmètre |
 |------|-----------|
 | `admin` | Accès complet (permission wildcard `*`) |
-| `rh` | Organisation, employés, congés, documents, portail |
-| `paie` | Paie, bulletins, DSN, employés, congés |
+| `rh` | Organisation, employés, congés, paramètres RH, documents, portail |
+| `paie` | Paie, bulletins, DSN, employés, congés (sans les paramètres RH) |
 | `comptable` | Comptabilité, trésorerie, facturation, frais, conformité |
 | `employe` | Portail salarié en self-service |
 
 ### Permissions
 
-45 permissions codées par module (ex. `invoicing.write`, `hr.leaves.approve`,
-`employees.delete`, `invoicing.einvoice`, `audit.read`, `mail.read`,
-`mail.configure`). La liaison se fait via les tables `roles`, `permissions`,
-`role_permission`, `role_user`.
+46 permissions codées par module (ex. `invoicing.write`, `hr.leaves.approve`,
+`hr.settings.manage`, `employees.delete`, `invoicing.einvoice`, `audit.read`,
+`mail.read`, `mail.configure`). La liaison se fait via les tables `roles`,
+`permissions`, `role_permission`, `role_user`.
+
+La permission `hr.settings.manage` (rythme d'acquisition des congés payés)
+est réservée au super-administrateur (wildcard `*`) et au rôle `rh` : elle est
+explicitement retirée du rôle `paie`, bien que celui-ci hérite du module RH.
+
+### Comptes salariés et mot de passe forcé
+
+Chaque fiche salarié est rattachée à un compte (`employees.user_id`). À
+l'embauche, un compte de rôle `employe` est créé automatiquement avec le mot
+de passe temporaire `change_me@` et le drapeau `must_change_password`. Le
+middleware global `ForcePasswordChangeMiddleware` ne laisse alors accessible
+que la page de profil, la modification du mot de passe et la déconnexion,
+jusqu'au remplacement du mot de passe temporaire. La reprise des fiches
+existantes se fait avec `php bin/console employees:provision-accounts`.
 
 Le module Mail illustre la séparation lecture/administration : tous les rôles
 disposent de `mail.read` (chacun n'accède qu'à la boîte affectée à son compte),
