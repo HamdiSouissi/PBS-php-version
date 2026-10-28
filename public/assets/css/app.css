@@ -134,6 +134,7 @@
     --z-overlay: 1040;
     --z-palette: 1060;
     --z-toast: 1080;
+    --z-dock: 1045; /* widget messagerie : sous le backdrop des modales (1050) */
 
     /* -------------------------------------------------------------------------
      * Mapping des variables Bootstrap : l'ensemble du framework hérite du thème
@@ -1847,3 +1848,169 @@ thead.table-light th {
     .chat-layout .chat-sidebar { border-right: 0 !important; border-bottom: 1px solid var(--c-border); max-height: 320px; }
     .chat-main { min-height: 420px; }
 }
+
+/* =============================================================================
+   Widget de messagerie flottant : ancré en bas à droite (façon messenger)
+   z-index sous le backdrop des modales Bootstrap (1050), au-dessus du contenu.
+   ========================================================================== */
+
+.chat-dock {
+    position: fixed;
+    right: var(--sp-5);
+    bottom: var(--sp-5);
+    z-index: var(--z-dock);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--sp-3);
+}
+
+/* Pastille de non-lus partagée (FAB, topbar, sidebar) */
+.chat-dock-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: var(--r-pill);
+    background: var(--bs-danger, #dc3545);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    border: 2px solid var(--c-surface);
+}
+.chat-topbar-btn { position: relative; }
+.chat-topbar-btn .chat-dock-badge { top: 2px; right: 2px; }
+
+/* Bouton rond d'ouverture */
+.chat-dock-fab {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--r-pill);
+    border: none;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    display: grid;
+    place-items: center;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+.chat-dock-fab:hover { background: var(--accent-hover); transform: translateY(-2px); }
+.chat-dock-fab:active { transform: scale(0.97); }
+.chat-dock-fab svg { width: 1.5rem; height: 1.5rem; }
+
+/* Panneau */
+.chat-dock-panel {
+    width: 360px;
+    max-width: calc(100vw - 1.5rem);
+    height: min(70vh, 540px);
+    min-height: 380px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: dock-in var(--dur-base) var(--ease-out);
+}
+@keyframes dock-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.chat-dock-view { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.chat-dock-header {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: 0.6rem 0.7rem;
+    border-bottom: 1px solid var(--c-border-subtle);
+    background: var(--c-surface);
+}
+.chat-dock-header h6 { font-size: 0.92rem; }
+.chat-dock-header-btn {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 auto;
+    border-radius: var(--r-md);
+}
+
+/* Liste des conversations */
+.chat-dock-list { overflow-y: auto; flex: 1 1 auto; }
+.chat-dock-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--c-border-subtle);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--dur-fast) var(--ease-out);
+}
+.chat-dock-item:hover { background: var(--c-surface-2); }
+.chat-dock-item-row { display: flex; align-items: center; gap: var(--sp-2); }
+.chat-dock-item-name {
+    font-weight: 600;
+    font-size: 0.86rem;
+    color: var(--c-ink);
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.chat-dock-item-preview {
+    font-size: 0.76rem;
+    color: var(--c-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.chat-dock-item.unread .chat-dock-item-name { color: var(--accent); }
+.chat-dock-empty { padding: 2rem 1rem; text-align: center; }
+.chat-dock-footer { padding: 0.65rem 0.75rem; border-top: 1px solid var(--c-border-subtle); }
+
+/* Fil de messages */
+.chat-dock-messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    background: var(--c-surface-2);
+}
+.chat-dock-messages .chat-bubble {
+    max-width: 86%;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.82rem;
+}
+.chat-dock-messages .chat-bubble .chat-meta { font-size: 0.66rem; }
+.chat-dock-composer {
+    display: flex;
+    gap: var(--sp-2);
+    align-items: flex-end;
+    padding: 0.6rem 0.7rem;
+    border-top: 1px solid var(--c-border-subtle);
+    background: var(--c-surface);
+}
+.chat-dock-composer textarea {
+    resize: none;
+    max-height: 96px;
+    min-height: 34px;
+}
+
+@media (max-width: 575.98px) {
+    .chat-dock { right: var(--sp-3); bottom: var(--sp-3); }
+    .chat-dock-panel { width: calc(100vw - 1.5rem); height: 72vh; }
+}
+
+.chat-dock-item-icon { width: 1rem; height: 1rem; flex: 0 0 auto; color: var(--c-muted); }
