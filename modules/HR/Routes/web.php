@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Router\Router;
+use Modules\HR\Controllers\HrSettingsController;
 use Modules\HR\Controllers\LeaveController;
 use Modules\HR\Controllers\PortalController;
 
@@ -20,5 +21,12 @@ return static function (Router $router): void {
         $router->get('', [PortalController::class, 'index'])->name('portal.index');
         $router->post('/leave', [PortalController::class, 'requestLeave']);
         $router->post('/leave/{id}/cancel', [PortalController::class, 'cancelLeave']);
+    });
+
+    // Réglages RH : super-administrateur et responsables RH uniquement.
+    $router->group(['auth', 'csrf', 'permission:hr.settings.manage'], '/hr/settings', static function (Router $router): void {
+        $router->get('', [HrSettingsController::class, 'index'])->name('hr.settings.index');
+        $router->post('', [HrSettingsController::class, 'update'])->name('hr.settings.update');
+        $router->post('/reset', [HrSettingsController::class, 'reset'])->name('hr.settings.reset');
     });
 };

@@ -131,6 +131,66 @@ final class DocumentAccessTest extends DatabaseTestCase
         self::assertTrue(true);
     }
 
+    public function testGeneratedContractPdfIsLinkedAndRegenerationAddsRow(): void
+    {
+        $alice = $this->hireEmployee('alice@entreprise.fr', 'Alice');
+
+        $this->db->execute(
+            "INSERT INTO employment_contracts (employee_id, type, start_date, monthly_gross, weekly_hours, status)
+             VALUES ({$alice['employee_id']}, 'CDI', '2026-01-01', 3000, 35, 'active')"
+        );
+        $contractId = (int) $this->db->lastInsertId();
+
+        $pdf = Application::container()->get(PdfManager::class);
+        $first = $pdf->generate('employee_contract', $contractId, $alice['user_id']);
+        self::assertSame($alice['employee_id'], (int) $first['employee_id']);
+        self::assertSame('portal', $first['visibility']);
+
+        // Une régénération historise une nouvelle ligne, également rattachée.
+        $second = $pdf->generate('employee_contract', $contractId, $alice['user_id']);
+        self::assertNotSame((int) $first['id'], (int) $second['id']);
+        self::assertSame($alice['employee_id'], (int) $second['employee_id']);
+
+        foreach ([$first, $second] as $document) {
+            $path = storage_path('exports/' . $document['path']);
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+    }
+
+    public function testGeneratedPayslipPdfIsLinkedToEmployee(): void
+    {
+        $alice = $this->hireEmployee('alice@entreprise.fr', 'Alice');
+        $this->db->execute(
+            "INSERT INTO payroll_periods (company_id, year, month, starts_on, ends_on)
+             VALUES ({$this->companyId()}, 2026, 9, '2026-09-01', '2026-09-30')"
+        );
+        $periodId = (int) $this->db->lastInsertId();
+        $this->db->execute(
+            "INSERT INTO payslips (period_id, employee_id, status, gross_salary, net_payable)
+             VALUES ({$periodId}, {$alice['employee_id']}, 'validated', 3000, 2300)"
+        );
+        $payslipId = (int) $this->db->lastInsertId();
+
+        $document = Application::container()->get(PdfManager::class)
+            ->generate('payslip', $payslipId, $alice['user_id']);
+
+        self::assertSame($alice['employee_id'], (int) $document['employee_id']);
+        self::assertSame('portal', $document['visibility']);
+        self::assertSame('payslip', $document['entity_type']);
+
+        $this->loginAs($alice['user_id']);
+        $visible = $this->service()->visibleDocuments();
+        self::assertCount(1, $visible);
+        self::assertSame((int) $document['id'], (int) $visible[0]['id']);
+
+        $path = storage_path('exports/' . $document['path']);
+        if (is_file($path)) {
+            @unlink($path);
+        }
+    }
+
     public function testGeneratedEmployeeSheetIsLinkedAndPortalVisible(): void
     {
         $alice = $this->hireEmployee('alice@entreprise.fr', 'Alice');

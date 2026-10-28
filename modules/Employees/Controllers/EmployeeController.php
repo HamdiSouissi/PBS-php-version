@@ -13,6 +13,7 @@ use App\Core\Pdf\PdfManager;
 use Modules\Employees\Repositories\EmployeeRepository;
 use Modules\Employees\Services\ContractService;
 use Modules\Employees\Services\EmployeeService;
+use Modules\HR\Services\LeaveBalanceService;
 use Modules\Organization\Services\OrganizationService;
 
 final class EmployeeController extends Controller
@@ -25,7 +26,8 @@ final class EmployeeController extends Controller
         private readonly EmployeeRepository $repository,
         private readonly ContractService $contracts,
         private readonly OrganizationService $organization,
-        private readonly PdfManager $pdf
+        private readonly PdfManager $pdf,
+        private readonly LeaveBalanceService $leaveBalances
     ) {
     }
 
@@ -101,6 +103,7 @@ final class EmployeeController extends Controller
             'account' => $employee['user_id']
                 ? db()->fetchOne('SELECT id, email, must_change_password FROM users WHERE id = :u', ['u' => $employee['user_id']])
                 : null,
+            'leaveSummary' => $this->leaveBalances->summary($id),
         ]);
     }
 

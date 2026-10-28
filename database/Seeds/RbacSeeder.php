@@ -20,7 +20,7 @@ final class RbacSeeder
         'organization' => ['organization.read', 'organization.write'],
         'users' => ['users.read', 'users.write'],
         'employees' => ['employees.read', 'employees.write', 'employees.delete'],
-        'hr' => ['hr.leaves.read', 'hr.leaves.request', 'hr.leaves.approve'],
+        'hr' => ['hr.leaves.read', 'hr.leaves.request', 'hr.leaves.approve', 'hr.settings.manage'],
         'payroll' => ['payroll.read', 'payroll.run', 'payroll.validate', 'payroll.lock'],
         'accounting' => ['accounting.read', 'accounting.write', 'accounting.close'],
         'treasury' => ['treasury.read', 'treasury.write'],
@@ -66,8 +66,13 @@ final class RbacSeeder
 
         $roles = [
             'admin' => ['Administrateur', 'Accès complet à l\'application', ['*']],
-            'rh' => ['Responsable RH', 'Employés, contrats, congés et documents RH', array_merge($this->modulePermissions(['organization','users','employees','hr','documents','portal']), ['mail.read', 'chat.use'])],
-            'paie' => ['Gestionnaire de paie', 'Moteur de paie, bulletins, DSN', array_merge($this->modulePermissions(['payroll','employees','hr','documents','portal']), ['mail.read', 'chat.use'])],
+            'rh' => ['Responsable RH', 'Employés, contrats, congés, paramètres RH et documents RH', array_merge($this->modulePermissions(['organization','users','employees','hr','documents','portal']), ['mail.read', 'chat.use'])],
+            // Le réglage des congés est réservé au super-administrateur et aux RH :
+            // le rôle paie hérite du module RH mais pas de hr.settings.manage.
+            'paie' => ['Gestionnaire de paie', 'Moteur de paie, bulletins, DSN', array_diff(
+                array_merge($this->modulePermissions(['payroll','employees','hr','documents','portal']), ['mail.read', 'chat.use']),
+                ['hr.settings.manage']
+            )],
             'comptable' => ['Comptable', 'Comptabilité, trésorerie, facturation, frais', array_merge($this->modulePermissions(['accounting','treasury','invoicing','clients','expenses','contracts','subscriptions','dividends','compliance','documents','portal']), ['mail.read', 'chat.use'])],
             'employe' => ['Salarié', 'Portail salarié en self-service', ['portal.self', 'hr.leaves.request', 'documents.read', 'mail.read', 'chat.use']],
         ];
