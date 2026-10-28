@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Authentication\Controllers;
 
+use App\Core\Exception\ValidationException;
 use App\Core\Http\Controller;
 use App\Core\Http\RedirectResponse;
 use App\Core\Http\Request;
@@ -81,10 +82,15 @@ final class UserController extends Controller
     public function updateProfile(Request $request): Response
     {
         $user = $this->auth()->user();
-        $data = $this->validator()->validate($request->all(), [
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-        ]);
+        try {
+            $data = $this->validator()->validate($request->all(), [
+                'first_name' => 'required|string|max:100',
+                'last_name' => 'required|string|max:100',
+            ]);
+        } catch (ValidationException $exception) {
+            flash('danger', implode(' ', $exception->errors()));
+            return new RedirectResponse('/profile');
+        }
         $this->userService->updateUser($user->id, $data, []);
         flash('success', 'Profil mis à jour.');
         return new RedirectResponse('/profile');
@@ -93,12 +99,19 @@ final class UserController extends Controller
     public function updatePassword(Request $request): Response
     {
         $user = $this->auth()->user();
-        $this->userService->changePassword(
-            $user->id,
-            (string) $request->input('current_password', ''),
-            (string) $request->input('password', ''),
-            (string) $request->input('password_confirmation', '')
-        );
+        try {
+            $this->userService->changePassword(
+                $user->id,
+                (string) $request->input('current_password', ''),
+                (string) $request->input('password', ''),
+                (string) $request->input('password_confirmation', '')
+            );
+        } catch (ValidationException $exception) {
+            // Retour sur le formulaire avec un message lisible (notamment lors
+            // du changement forcé du mot de passe temporaire d'embauche).
+            flash('danger', implode(' ', $exception->errors()));
+            return new RedirectResponse('/profile');
+        }
         flash('success', 'Mot de passe modifié.');
         return new RedirectResponse('/profile');
     }
