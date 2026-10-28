@@ -46,6 +46,12 @@ declare(strict_types=1);
                         <input type="password" name="password" class="form-control" minlength="12" required></div>
                     <div class="col-12"><label class="form-label">Confirmation</label>
                         <input type="password" name="password_confirmation" class="form-control" minlength="12" required></div>
+                    <div class="col-12">
+                        <div class="form-text">
+                            Exigences : au moins 12 caractères, avec une majuscule, une minuscule,
+                            un chiffre et un caractère spécial.
+                        </div>
+                    </div>
                     <div class="col-12"><button class="btn btn-warning btn-sm"><i data-lucide="key-round"></i>Changer le mot de passe</button></div>
                 </form>
             </div>
