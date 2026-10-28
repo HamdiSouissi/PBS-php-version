@@ -42,6 +42,30 @@ if (!function_exists('storage_path')) {
     }
 }
 
+if (!function_exists('public_path')) {
+    function public_path(string $path = ''): string
+    {
+        return base_path('public' . ($path !== '' ? DIRECTORY_SEPARATOR . ltrim($path, '/\\') : ''));
+    }
+}
+
+if (!function_exists('asset')) {
+    /**
+     * URL d'un asset statique avec invalidation de cache par date de
+     * modification : toute mise à jour du fichier change la requête et
+     * force le navigateur à récupérer la nouvelle version.
+     */
+    function asset(string $path): string
+    {
+        $url = '/' . ltrim($path, '/');
+        $absolute = public_path($path);
+        if (is_file($absolute)) {
+            $url .= '?v=' . dechex(filemtime($absolute));
+        }
+        return $url;
+    }
+}
+
 if (!function_exists('config_path')) {
     function config_path(string $path = ''): string
     {
