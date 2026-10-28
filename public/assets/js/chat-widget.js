@@ -253,18 +253,20 @@
     }
 
     /* --- Événements -------------------------------------------------------- */
-    // La bulle et l'icône topbar réduisent le panneau sans perdre le fil ouvert.
+    // La bulle et l'icône topbar basent sur l'état RÉEL du panneau : un
+    // décalage éventuel du drapeau mémoire ne peut jamais les rendre muettes.
     [els.fab, els.topbarBtn].forEach((btn) => {
-        btn?.addEventListener('click', () => (state.isOpen ? minimizePanel() : openPanel()));
+        btn?.addEventListener('click', () => (els.panel.hidden ? openPanel() : minimizePanel()));
     });
     // « − » réduit en conservant la conversation ; « X » ferme et revient à la liste.
-    els.minimizeBtn.addEventListener('click', minimizePanel);
-    els.threadMinimizeBtn.addEventListener('click', minimizePanel);
-    els.closeBtn.addEventListener('click', closePanel);
-    els.threadCloseBtn.addEventListener('click', closePanel);
-    els.backBtn.addEventListener('click', backToList);
+    // Le chaînage optionnel évite qu'un élément absent neutralise tout le widget.
+    els.minimizeBtn?.addEventListener('click', minimizePanel);
+    els.threadMinimizeBtn?.addEventListener('click', minimizePanel);
+    els.closeBtn?.addEventListener('click', closePanel);
+    els.threadCloseBtn?.addEventListener('click', closePanel);
+    els.backBtn?.addEventListener('click', backToList);
 
-    els.composer.addEventListener('submit', async (event) => {
+    els.composer?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const body = els.body.value.trim();
         if (!body || !state.activeId) return;
@@ -283,13 +285,13 @@
         }
     });
 
-    els.body.addEventListener('keydown', (event) => {
+    els.body?.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
             els.composer.requestSubmit();
         }
     });
-    els.body.addEventListener('input', () => {
+    els.body?.addEventListener('input', () => {
         els.body.style.height = 'auto';
         els.body.style.height = `${Math.min(els.body.scrollHeight, 96)}px`;
     });
