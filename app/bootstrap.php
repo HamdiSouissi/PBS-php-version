@@ -12,6 +12,7 @@ use App\Core\Http\Kernel;
 use App\Core\Exception\ExceptionHandler;
 use App\Core\Http\Middleware\AuthMiddleware;
 use App\Core\Http\Middleware\CsrfMiddleware;
+use App\Core\Http\Middleware\ForcePasswordChangeMiddleware;
 use App\Core\Http\Middleware\GuestMiddleware;
 use App\Core\Http\Middleware\JwtAuthMiddleware;
 use App\Core\Http\Middleware\RateLimitMiddleware;
@@ -48,6 +49,7 @@ $kernel = new Kernel(
 
 $kernel->setGlobalMiddleware([
     SecurityHeadersMiddleware::class,
+    ForcePasswordChangeMiddleware::class,
 ]);
 
 $kernel->setMiddlewareAliases([

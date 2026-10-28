@@ -28,6 +28,13 @@ declare(strict_types=1);
         </div>
     </div>
     <div class="col-lg-6">
+        <?php if ($user->mustChangePassword): ?>
+            <div class="alert alert-warning">
+                <i data-lucide="triangle-alert"></i>
+                Votre mot de passe est temporaire. Choisissez un nouveau mot de passe ci-dessous pour
+                accéder à l'application.
+            </div>
+        <?php endif; ?>
         <div class="card">
             <div class="card-header fw-semibold">Sécurité du compte</div>
             <div class="card-body">

@@ -16,7 +16,8 @@ final class EmployeeService
 {
     public function __construct(
         private readonly EmployeeRepository $repository,
-        private readonly Connection $db
+        private readonly Connection $db,
+        private readonly EmployeeAccountService $accounts
     ) {
     }
 
@@ -25,37 +26,45 @@ final class EmployeeService
      */
     public function create(int $companyId, array $data): int
     {
-        $this->assertUniqueEmail($companyId, (string) ($data['personal_email'] ?? ''), null);
+        $this->assertUniqueEmail($companyId, $data, null);
         $number = $this->repository->nextEmployeeNumber($companyId);
-        $id = $this->repository->insert('employees', [
-            'company_id' => $companyId,
-            'establishment_id' => $data['establishment_id'] ?? null,
-            'department_id' => $data['department_id'] ?? null,
-            'manager_id' => $data['manager_id'] ?? null,
-            'employee_number' => $number,
-            'last_name' => $data['last_name'],
-            'first_name' => $data['first_name'],
-            'birth_date' => $data['birth_date'] ?? null,
-            'birth_place' => $data['birth_place'] ?? '',
-            'gender' => $data['gender'] ?? 'non_renseigne',
-            'social_security_number' => $this->normalizeNir((string) ($data['social_security_number'] ?? '')),
-            'nationality' => $data['nationality'] ?? 'Française',
-            'personal_email' => $data['personal_email'] ?? '',
-            'professional_email' => $data['professional_email'] ?? '',
-            'phone' => $data['phone'] ?? '',
-            'address' => $data['address'] ?? '',
-            'postal_code' => $data['postal_code'] ?? '',
-            'city' => $data['city'] ?? '',
-            'iban' => $data['iban'] ?? '',
-            'bic' => $data['bic'] ?? '',
-            'job_title' => $data['job_title'] ?? '',
-            'qualification' => $data['qualification'] ?? '',
-            'coefficient' => $data['coefficient'] ?? '',
-            'status' => $data['status'] ?? 'candidate',
-            'hire_date' => $data['hire_date'] ?? null,
-        ]);
-        audit('employee.create', 'Employee', $id, ['number' => $number]);
-        return $id;
+        return $this->db->transaction(function (Connection $db) use ($companyId, $data, $number): int {
+            $employeeId = $this->repository->insert('employees', [
+                'company_id' => $companyId,
+                'establishment_id' => $data['establishment_id'] ?? null,
+                'department_id' => $data['department_id'] ?? null,
+                'manager_id' => $data['manager_id'] ?? null,
+                'employee_number' => $number,
+                'last_name' => $data['last_name'],
+                'first_name' => $data['first_name'],
+                'birth_date' => $data['birth_date'] ?? null,
+                'birth_place' => $data['birth_place'] ?? '',
+                'gender' => $data['gender'] ?? 'non_renseigne',
+                'social_security_number' => $this->normalizeNir((string) ($data['social_security_number'] ?? '')),
+                'nationality' => $data['nationality'] ?? 'Française',
+                'personal_email' => $data['personal_email'] ?? '',
+                'professional_email' => $data['professional_email'] ?? '',
+                'phone' => $data['phone'] ?? '',
+                'address' => $data['address'] ?? '',
+                'postal_code' => $data['postal_code'] ?? '',
+                'city' => $data['city'] ?? '',
+                'iban' => $data['iban'] ?? '',
+                'bic' => $data['bic'] ?? '',
+                'job_title' => $data['job_title'] ?? '',
+                'qualification' => $data['qualification'] ?? '',
+                'coefficient' => $data['coefficient'] ?? '',
+                'status' => $data['status'] ?? 'candidate',
+                'hire_date' => $data['hire_date'] ?? null,
+            ]);
+            audit('employee.create', 'Employee', $employeeId, ['number' => $number]);
+
+            // Création automatique du compte de connexion (rôle employe,
+            // mot de passe temporaire). Sans e-mail exploitable, la fiche est
+            // conservée et la reprise se fait via la commande dédiée.
+            $this->accounts->provision($employeeId);
+
+            return $employeeId;
+        });
     }
 
     /**
@@ -125,19 +134,26 @@ final class EmployeeService
         return $row;
     }
 
-    private function assertUniqueEmail(int $companyId, string $email, ?int $exceptId): void
+    /**
+     * @param array<string,mixed> $data
+     */
+    private function assertUniqueEmail(int $companyId, array $data, ?int $exceptId): void
     {
-        if ($email === '') {
-            return;
-        }
-        $sql = 'SELECT id FROM employees WHERE company_id = :c AND personal_email = :e';
-        $params = ['c' => $companyId, 'e' => $email];
-        if ($exceptId !== null) {
-            $sql .= ' AND id <> :id';
-            $params['id'] = $exceptId;
-        }
-        if ($this->db->fetchOne($sql, $params) !== null) {
-            throw new ValidationException(['personal_email' => 'Un salarié utilise déjà cette adresse e-mail.']);
+        foreach (['personal_email', 'professional_email'] as $column) {
+            $email = trim((string) ($data[$column] ?? ''));
+            if ($email === '') {
+                continue;
+            }
+            $sql = 'SELECT id FROM employees
+                    WHERE company_id = :c AND (personal_email = :e OR professional_email = :e)';
+            $params = ['c' => $companyId, 'e' => $email];
+            if ($exceptId !== null) {
+                $sql .= ' AND id <> :id';
+                $params['id'] = $exceptId;
+            }
+            if ($this->db->fetchOne($sql, $params) !== null) {
+                throw new ValidationException([$column => 'Un salarié utilise déjà cette adresse e-mail.']);
+            }
         }
     }
 

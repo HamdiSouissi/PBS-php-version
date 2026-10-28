@@ -10,6 +10,7 @@ use App\Core\Http\Controller;
 use App\Core\Http\RedirectResponse;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
+use Modules\Employees\Repositories\EmployeeRepository;
 use Modules\HR\Services\LeaveService;
 
 /**
@@ -19,20 +20,19 @@ final class PortalController extends Controller
 {
     public function __construct(
         private readonly Connection $db,
-        private readonly LeaveService $leaveService
+        private readonly LeaveService $leaveService,
+        private readonly EmployeeRepository $employees
     ) {
     }
 
     /**
-     * Rattache le compte utilisateur courant à une fiche salarié via l'e-mail.
+     * Fiche salarié rattachée au compte utilisateur courant (lien direct
+     * via employees.user_id, repli historique par e-mail).
      */
     private function currentEmployee(): array
     {
         $user = $this->auth()->user();
-        $row = $this->db->fetchOne(
-            'SELECT * FROM employees WHERE professional_email = :e OR personal_email = :e LIMIT 1',
-            ['e' => $user?->email ?? '']
-        );
+        $row = $this->employees->findForUser((int) $user?->id, (string) ($user?->email ?? ''));
         if ($row === null) {
             throw new NotFoundException(
                 'Aucune fiche salarié rattachée à votre compte. Contactez votre responsable RH.'

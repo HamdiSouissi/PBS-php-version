@@ -12,6 +12,7 @@ use App\Console\Commands\BackupRestoreCommand;
 use App\Console\Commands\DatabaseSeedCommand;
 use App\Console\Commands\KeyGenerateCommand;
 use App\Console\Commands\MigrateCommand;
+use App\Console\Commands\ProvisionEmployeeAccountsCommand;
 use App\Console\Commands\MigrateRollbackCommand;
 use App\Console\Commands\InvoiceOverdueCommand;
 use App\Console\Commands\MigrateStatusCommand;
@@ -38,5 +39,6 @@ return static function (ConsoleKernel $kernel): void {
     $kernel->register(InvoiceOverdueCommand::class);
     $kernel->register(RecurringInvoiceRunCommand::class);
     $kernel->register(UserCreateCommand::class);
+    $kernel->register(ProvisionEmployeeAccountsCommand::class);
     $kernel->register(TestRunnerCommand::class);
 };
