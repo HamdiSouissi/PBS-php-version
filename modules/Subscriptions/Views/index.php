@@ -156,3 +156,5 @@ $actions = '<button class="btn btn-outline-secondary btn-sm" data-bs-toggle="mod
         </form>
     </div>
 </div>
+</div>
+<!-- /.page-body -->
