@@ -17,7 +17,7 @@ $bootstrap = require dirname(__DIR__) . '/app/bootstrap.php';
 
 // La session n'est requise que pour le trafic web (pas l'API JWT).
 $request = Request::capture();
-if (!$request->isApi()) {
+if (!$request->isApiRoute()) {
     $container->get(SessionManager::class)->start();
 }
 

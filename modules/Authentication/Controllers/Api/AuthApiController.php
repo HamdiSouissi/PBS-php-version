@@ -11,6 +11,7 @@ use App\Core\Http\Request;
 use App\Core\Security\Jwt;
 use App\Core\Security\RateLimiter;
 use Modules\Authentication\Services\AuthService;
+use Modules\Authentication\Services\ApiTwoFactorChallengeService;
 
 /**
  * Authentification REST /api/v1/auth : jetons JWT courts + refresh.
@@ -21,7 +22,8 @@ final class AuthApiController extends Controller
         private readonly AuthService $authService,
         private readonly Jwt $jwt,
         private readonly AuthManager $auth,
-        private readonly RateLimiter $rateLimiter
+        private readonly RateLimiter $rateLimiter,
+        private readonly ApiTwoFactorChallengeService $challenges
     ) {
     }
 
@@ -40,10 +42,14 @@ final class AuthApiController extends Controller
         } catch (\Throwable $exception) {
             return json_response(['success' => false, 'error' => $exception->getMessage()], 401);
         }
+        if ($user->mustChangePassword) {
+            return json_response(['success' => false, 'error' => 'Modifiez votre mot de passe sur le portail web.'], 403);
+        }
         if ($user->totpEnrolled) {
             return json_response([
                 'success' => true,
                 'two_factor_required' => true,
+                'challenge' => $this->challenges->issue($user),
                 'message' => 'Un code TOTP est requis sur /auth/2fa.',
             ], 200);
         }
@@ -52,15 +58,16 @@ final class AuthApiController extends Controller
 
     public function verifyTwoFactor(Request $request): JsonResponse
     {
+        if (!$this->rateLimiter->attempt('api-2fa:' . $request->ip(), 5, 300)) {
+            return json_response(['success' => false, 'error' => 'Trop de tentatives.'], 429);
+        }
         $data = $this->validator()->validate($request->all(), [
-            'email' => 'required|email',
+            'challenge' => 'required|string',
             'code' => 'required|string',
         ]);
-        $repository = \App\Core\Application::container()
-            ->get(\Modules\Authentication\Repositories\UserRepository::class);
-        $user = $repository->findByEmail((string) $data['email']);
-        if ($user === null || !$this->authService->validateTwoFactor($user, (string) $data['code'])) {
-            return json_response(['success' => false, 'error' => 'Code TOTP invalide.'], 401);
+        $user = $this->challenges->verify((string) $data['challenge'], (string) $data['code']);
+        if ($user === null || $user->mustChangePassword) {
+            return json_response(['success' => false, 'error' => 'Défi ou code TOTP invalide.'], 401);
         }
         return json_response($this->issueTokens($user));
     }
@@ -78,7 +85,8 @@ final class AuthApiController extends Controller
         $repository = \App\Core\Application::container()
             ->get(\Modules\Authentication\Repositories\UserRepository::class);
         $user = $repository->findWithRights((int) $claims['sub']);
-        if ($user === null || !$user->isActive) {
+        if ($user === null || !$user->isActive || $user->mustChangePassword
+            || !hash_equals(hash('sha256', $user->passwordHash), (string) ($claims['pwd'] ?? ''))) {
             return json_response(['success' => false, 'error' => 'Utilisateur invalide.'], 401);
         }
         return json_response($this->issueTokens($user));
@@ -98,10 +106,12 @@ final class AuthApiController extends Controller
             'sub' => $user->id,
             'email' => $user->email,
             'typ' => 'access',
+            'pwd' => hash('sha256', $user->passwordHash),
         ]);
         $refresh = $this->jwt->issue([
             'sub' => $user->id,
             'typ' => 'refresh',
+            'pwd' => hash('sha256', $user->passwordHash),
         ], (int) config('security.jwt.refresh_ttl'));
         return [
             'success' => true,

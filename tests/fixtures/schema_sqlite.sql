@@ -1175,3 +1175,13 @@ CREATE TABLE contract_signatures (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_signature_contract ON contract_signatures(contract_id);
+
+CREATE TABLE api_two_factor_challenges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    password_fingerprint TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT
+);
+CREATE INDEX idx_api_2fa_expiry ON api_two_factor_challenges(expires_at);

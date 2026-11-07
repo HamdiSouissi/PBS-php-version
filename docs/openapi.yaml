@@ -132,6 +132,16 @@ paths:
     post:
       security: []
       summary: Validation du code TOTP lorsque la double authentification est active
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challenge, code]
+              properties:
+                challenge: { type: string, description: Défi à usage unique renvoyé par /auth/login après validation du mot de passe }
+                code: { type: string, example: '123456' }
       responses:
         '200': { description: Code validé, jetons émis }
         '401': { $ref: '#/components/responses/Unauthorized' }

@@ -10,7 +10,7 @@ use App\Core\Http\Response;
 use App\Core\Security\Csrf;
 
 /**
- * Vérifie le jeton CSRF pour toute écriture web (hors API JWT).
+ * Vérifie le jeton CSRF sur toute écriture des routes qui utilisent ce middleware.
  */
 final class CsrfMiddleware implements MiddlewareInterface
 {
@@ -20,7 +20,7 @@ final class CsrfMiddleware implements MiddlewareInterface
 
     public function handle(Request $request, callable $next): Response
     {
-        if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'], true) && !$request->isApi()) {
+        if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
             $token = $request->input('_csrf') ?? $request->header('x-csrf-token');
             if (!$this->csrf->validate(is_array($token) ? null : (string) $token)) {
                 throw new HttpException(419, 'Jeton CSRF invalide ou expiré. Veuillez renvoyer le formulaire.');

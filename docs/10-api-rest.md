@@ -110,3 +110,14 @@ Chaque module expose `Routes/api.php` chargé automatiquement. Les nouveaux
 endpoints se placent dans un groupe `['jwt']` et les contrôleurs dans
 `Controllers/Api/`, en réutilisant les mêmes services que le web (logique
 unique, double exposition).
+
+### Comptes avec double authentification
+
+Après validation du mot de passe, `/auth/login` renvoie `two_factor_required: true`
+et un `challenge` opaque. Envoyez ensuite `{"challenge":"…","code":"123456"}`
+à `/auth/2fa`. Le défi expire après cinq minutes, n'est utilisable qu'une fois
+et ne remplace pas le code TOTP. La vérification est limitée par adresse IP.
+Les comptes devant changer leur mot de passe doivent le faire sur le portail web.
+La mise à jour invalide les anciens jetons API : une reconnexion est nécessaire.
+Ce changement invalide également les jetons émis avant ce correctif et modifie
+le contrat de l'endpoint `/auth/2fa` (le seul e-mail ne suffit plus).

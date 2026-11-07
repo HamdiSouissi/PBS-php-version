@@ -72,7 +72,7 @@ final class AuthManager
         $user = \App\Core\Application::container()
             ->get(\Modules\Authentication\Repositories\UserRepository::class)
             ->findWithRights((int) $id);
-        if ($user === null) {
+        if ($user === null || !$user->isActive) {
             $this->session->remove('user_id');
             return null;
         }

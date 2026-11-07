@@ -60,6 +60,7 @@ final class AuthService
                 'UPDATE users SET password_hash = :h WHERE id = :id',
                 ['h' => $this->password->hash($plainPassword), 'id' => $user->id]
             );
+            $user = $this->users->findWithRights($user->id) ?? throw new AuthenticationException('Identifiants invalides.');
         }
         return $user;
     }
