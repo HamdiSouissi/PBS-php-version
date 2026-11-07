@@ -227,30 +227,71 @@ const App = {
         const railToggle = document.getElementById('railToggle');
         if (!sidebar) return;
 
+        const desktop = window.matchMedia('(min-width: 992px)');
+        const tooltip = document.createElement('div');
+        tooltip.className = 'sidebar-tooltip';
+        tooltip.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(tooltip);
+        const hideTooltip = () => tooltip.classList.remove('is-visible');
         const closeMobile = () => {
             sidebar.classList.remove('show');
             overlay?.classList.remove('show');
+            mobileToggle?.setAttribute('aria-expanded', 'false');
+        };
+        const updateRail = () => {
+            const collapsed = desktop.matches && this.store.get('pbs-sidebar-rail') === '1';
+            document.body.classList.toggle('sidebar-collapsed', collapsed);
+            const label = collapsed ? 'Développer la barre latérale' : 'Réduire la barre latérale';
+            railToggle?.setAttribute('aria-expanded', String(!collapsed));
+            railToggle?.setAttribute('aria-label', label);
+            railToggle?.setAttribute('title', label);
+            hideTooltip();
         };
 
         mobileToggle?.addEventListener('click', () => {
-            sidebar.classList.toggle('show');
-            overlay?.classList.toggle('show', sidebar.classList.contains('show'));
+            const open = sidebar.classList.toggle('show');
+            overlay?.classList.toggle('show', open);
+            mobileToggle.setAttribute('aria-expanded', String(open));
         });
         overlay?.addEventListener('click', closeMobile);
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeMobile();
+            if (e.key === 'Escape') {
+                hideTooltip();
+                if (sidebar.classList.contains('show')) {
+                    closeMobile();
+                    mobileToggle?.focus();
+                }
+            }
+        });
+        if (railToggle) railToggle.hidden = false;
+        updateRail();
+        railToggle?.addEventListener('click', () => {
+            this.store.set('pbs-sidebar-rail', document.body.classList.contains('sidebar-collapsed') ? '0' : '1');
+            updateRail();
+        });
+        desktop.addEventListener('change', () => {
+            closeMobile();
+            updateRail();
         });
 
-        if (this.store.get('pbs-sidebar-rail') === '1') {
-            document.body.classList.add('sidebar-collapsed');
-        }
-        railToggle?.addEventListener('click', () => {
-            document.body.classList.toggle('sidebar-collapsed');
-            this.store.set(
-                'pbs-sidebar-rail',
-                document.body.classList.contains('sidebar-collapsed') ? '1' : '0'
-            );
+        const showTooltip = (link) => {
+            if (!desktop.matches || !document.body.classList.contains('sidebar-collapsed')) return;
+            tooltip.textContent = link.dataset.navLabel || '';
+            if (!tooltip.textContent) return;
+            const rect = link.getBoundingClientRect();
+            tooltip.style.left = `${rect.right + 14}px`;
+            tooltip.style.top = `${Math.max(8, rect.top + rect.height / 2)}px`;
+            tooltip.classList.add('is-visible');
+        };
+        sidebar.querySelectorAll('.nav-link[data-nav-label]').forEach((link) => {
+            link.addEventListener('mouseenter', () => showTooltip(link));
+            link.addEventListener('mouseleave', hideTooltip);
+            link.addEventListener('focus', () => showTooltip(link));
+            link.addEventListener('blur', hideTooltip);
         });
+        sidebar.addEventListener('scroll', hideTooltip, { passive: true, capture: true });
+        window.addEventListener('scroll', hideTooltip, { passive: true });
+        window.addEventListener('resize', hideTooltip);
     },
 
     /* --- Toasts : fermeture, expiration, API globale --------------------- */
