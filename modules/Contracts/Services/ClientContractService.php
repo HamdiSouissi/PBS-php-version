@@ -6,6 +6,7 @@ namespace Modules\Contracts\Services;
 
 use App\Core\Database\Connection;
 use App\Core\Exception\NotFoundException;
+use App\Core\Exception\ValidationException;
 
 /**
  * Contrats commerciaux clients : création, cycle de vie et numérotation.
@@ -52,15 +53,28 @@ final class ClientContractService
      */
     public function create(array $data, ?int $userId = null): int
     {
+        $terms = $data['payment_terms'] ?? 'cycle';
+        if (!in_array($terms, ['cycle', 'full', 'milestones'], true)) {
+            throw new ValidationException(['payment_terms' => 'Modalité de paiement invalide.']);
+        }
+        if ($terms !== 'cycle' && ($data['billing_cycle'] ?? '') !== 'one_shot') {
+            throw new ValidationException(['payment_terms' => 'Les paiements total ou par étapes nécessitent un cycle ponctuel.']);
+        }
+        $description = trim((string) ($data['services_description'] ?? ''));
+        if ($description === '' || mb_strlen($description) > 5000) {
+            throw new ValidationException(['services_description' => 'Décrivez les prestations en 1 à 5 000 caractères.']);
+        }
         $number = $this->nextNumber();
         $this->db->execute(
             'INSERT INTO client_contracts
                 (third_party_id, contract_number, title, starts_on, ends_on, renewal_mode, notice_days,
-                 amount_ht, billing_cycle, status, signed_on, notes, created_by)
+                 amount_ht, billing_cycle, status, signed_on, notes, created_by, services_description, payment_terms)
              VALUES
                 (:party, :number, :title, :starts, :ends, :renewal, :notice,
-                 :amount, :cycle, :status, :signed, :notes, :user)',
+                 :amount, :cycle, :status, :signed, :notes, :user, :services, :terms)',
             [
+                'services' => $description,
+                'terms' => $terms,
                 'party' => (int) $data['third_party_id'],
                 'number' => $number,
                 'title' => $data['title'],

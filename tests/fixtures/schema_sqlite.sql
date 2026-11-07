@@ -636,6 +636,8 @@ CREATE TABLE client_contracts (
         CHECK (renewal_mode IN ('none','tacit','express')),
     notice_days INTEGER NOT NULL DEFAULT 30,
     amount_ht NUMERIC NOT NULL DEFAULT 0,
+    services_description TEXT,
+    payment_terms TEXT,
     billing_cycle TEXT NOT NULL DEFAULT 'monthly'
         CHECK (billing_cycle IN ('monthly','quarterly','half_yearly','yearly','one_shot')),
     status TEXT NOT NULL DEFAULT 'draft'

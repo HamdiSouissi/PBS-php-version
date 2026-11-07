@@ -81,6 +81,11 @@ final class ClientContractPdf implements PdfTemplate
             . "réalise la prestation avec tout le soin et la diligence attendus d'un professionnel."
         );
 
+        if (!empty($contract['services_description'])) {
+            $pdf->h2('Prestations et livrables convenus');
+            $pdf->paragraph((string) $contract['services_description']);
+        }
+
         $renewal = match ((string) $contract['renewal_mode']) {
             'tacit' => 'reconduction tacite aux mêmes conditions',
             'express' => 'renouvellement exprès requis par avenant signé',
@@ -105,15 +110,29 @@ final class ClientContractPdf implements PdfTemplate
             . "habilité. Tout retard imputable au Client décale d'autant les délais du Prestataire."
         );
 
+        $terms = $contract['payment_terms'] ?? null;
+        $paymentDescription = match ($terms) {
+            'full' => "100 % du prix HT est facturé à la signature et payable à réception de la facture, avant le démarrage des prestations.",
+            'milestones' => "40 % du prix HT est facturé à la signature et payable à réception, avant le démarrage ; 40 % est facturé à la livraison de la version V0 ; 20 % est facturé à la livraison finale. Chaque facture est payable à réception. La TVA applicable est ajoutée à chaque facture.",
+            default => "30 jours nets à réception de facture, par virement bancaire, selon le cycle indiqué.",
+        };
         $pdf->article('5', 'Prix et modalités de paiement',
-            "Les conditions financières du contrat sont les suivantes. Les prix s'entendent hors taxes ; "
-            . "la TVA est facturée au taux en vigueur au jour de la facturation.");
+            "Les prix s'entendent hors taxes ; la TVA est facturée au taux applicable au jour de la facturation. "
+            . $paymentDescription . " Le règlement est effectué par virement bancaire.");
         $pdf->keyValueTable([
-            ['Montant annuel HT', money_format((float) $contract['amount_ht'])],
-            ['TVA', 'Taux en vigueur applicable au jour de la facturation'],
+            ['Montant HT', money_format((float) $contract['amount_ht'])],
+            ['TVA', 'Taux applicable au jour de la facturation'],
             ['Cycle de facturation', PdfLabels::billingCycle((string) $contract['billing_cycle'])],
-            ['Modalités de règlement', '30 jours nets à réception de facture, par virement bancaire'],
         ]);
+        if ($terms === 'milestones') {
+            $pdf->article('5.1', 'Livraison V0, livraison finale et modifications',
+                "La V0 est une première version des livrables, dont le périmètre et les critères sont décrits dans les prestations ou les annexes convenues. "
+                . "La livraison V0 puis la livraison finale sont notifiées par écrit au Client, avec les moyens d'accès aux livrables. "
+                . "Le Client examine chaque livraison et communique par écrit ses remarques et anomalies ; les parties conviennent des corrections nécessaires et de leurs délais. "
+                . "La livraison finale correspond à la remise des livrables finaux du périmètre convenu, après traitement des remarques convenues. "
+                . "Toute demande hors périmètre, tout délai de recette et toute modification du prix ou du calendrier font l'objet d'un accord écrit ou d'un avenant. "
+                . "Les parties précisent les critères de recette et les délais dans les conditions particulières ou les annexes avant signature.");
+        }
 
         $pdf->article('6', 'Retards de paiement et recouvrement',
             "En l'absence de paiement à l'échéance, le Prestataire applique, sans qu'un rappel soit "
