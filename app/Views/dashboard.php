@@ -135,12 +135,6 @@ $greeting = $displayName !== '' ? 'Bonjour, ' . $displayName : 'Tableau de bord'
                 <span class="kpi-icon <?= e($card['tone']) ?>">
                     <i data-lucide="<?= e($card['icon']) ?>"></i>
                 </span>
-                <?php if ($i === 3 && $trend !== null): ?>
-                    <span class="kpi-trend <?= $trend['value'] >= 0 ? 'is-up' : 'is-down' ?>">
-                        <i data-lucide="<?= $trend['value'] >= 0 ? 'trending-up' : 'trending-down' ?>"></i>
-                        <?= e(number_format(abs($trend['value']), 1, ',', ' ')) ?> %
-                    </span>
-                <?php endif; ?>
             </div>
             <div class="kpi-value tnum"
                  data-countup="<?= e((string) $card['raw']) ?>"

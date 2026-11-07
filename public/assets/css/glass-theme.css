@@ -1,0 +1,178 @@
+/* Prime Glass — couches visuelles partagées par tous les modules.
+   Les jetons, états interactifs et composants métier restent ceux de app.css. */
+:root,
+:root[data-bs-theme='light'] {
+    --c-bg: #e9eef9;
+    --c-bg-subtle: #e0e8f5;
+    --c-surface: rgba(248, 251, 255, .78);
+    --c-surface-2: rgba(240, 245, 255, .87);
+    --c-surface-3: #e6edf9;
+    --c-surface-glass: rgba(242, 247, 255, .72);
+    --c-border: rgba(255, 255, 255, .86);
+    --c-border-strong: #b8c9e1;
+    --c-border-subtle: rgba(155, 174, 204, .25);
+    --c-ink: #101f3d;
+    --c-body: #263956;
+    --c-secondary: #485d7c;
+    --c-muted: #586d8b;
+    --sidebar-bg: rgba(235, 242, 254, .78);
+    --sidebar-border: rgba(255, 255, 255, .82);
+    --sidebar-text: #344b6c;
+    --sidebar-text-strong: #102442;
+    --sidebar-section: #637897;
+    --sidebar-hover: rgba(255, 255, 255, .55);
+    --sidebar-active-bg: rgba(125, 151, 241, .18);
+    --sidebar-active-text: #174da4;
+    --topbar-bg: rgba(242, 247, 255, .63);
+    --shadow-sm: 0 12px 30px rgba(42, 71, 119, .08), inset 0 1px 0 rgba(255, 255, 255, .8);
+    --shadow-md: 0 16px 36px rgba(42, 71, 119, .14), inset 0 1px 0 rgba(255, 255, 255, .8);
+    --shadow-lg: 0 24px 60px rgba(27, 46, 83, .2);
+    --bs-body-bg: var(--c-bg);
+    --bs-body-color: var(--c-body);
+    --bs-border-color: var(--c-border-subtle);
+    --bs-secondary-color: var(--c-secondary);
+}
+
+:root[data-bs-theme='dark'] {
+    color-scheme: dark;
+    --c-bg: #101827;
+    --c-bg-subtle: #17243a;
+    --c-surface: rgba(29, 44, 67, .92);
+    --c-surface-2: rgba(40, 57, 82, .94);
+    --c-surface-3: #30415d;
+    --c-surface-glass: rgba(29, 44, 67, .9);
+    --c-border: rgba(187, 209, 244, .18);
+    --c-border-strong: #607692;
+    --c-border-subtle: rgba(187, 209, 244, .14);
+    --c-ink: #f1f6ff;
+    --c-body: #d6e2f5;
+    --c-secondary: #bdcce2;
+    --c-muted: #b0c0d7;
+    --accent: #91baff;
+    --accent-hover: #b8d2ff;
+    --accent-active: #d4e3ff;
+    --accent-contrast: #10213d;
+    --sidebar-bg: rgba(25, 39, 60, .94);
+    --sidebar-border: rgba(187, 209, 244, .2);
+    --sidebar-text: #c2d1e8;
+    --sidebar-text-strong: #f4f8ff;
+    --sidebar-section: #9eb1cc;
+    --sidebar-hover: rgba(165, 194, 239, .12);
+    --sidebar-active-bg: rgba(105, 153, 235, .2);
+    --sidebar-active-text: #d6e5ff;
+    --topbar-bg: rgba(25, 39, 60, .91);
+    --shadow-sm: 0 12px 30px rgba(0, 0, 0, .18), inset 0 1px 0 rgba(255, 255, 255, .05);
+    --shadow-md: 0 16px 36px rgba(0, 0, 0, .25);
+    --bs-body-bg: var(--c-bg);
+    --bs-body-color: var(--c-body);
+    --bs-border-color: var(--c-border-subtle);
+    --bs-secondary-color: var(--c-secondary);
+}
+
+body,
+body.auth-body {
+    background-color: var(--c-bg);
+    background-image: linear-gradient(120deg, rgba(230, 237, 250, .88), rgba(236, 240, 252, .76)), url('/assets/img/glass-ambient.jpg');
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+}
+:root[data-bs-theme='dark'] body,
+:root[data-bs-theme='dark'] body.auth-body {
+    background-image: linear-gradient(120deg, rgba(12, 22, 38, .94), rgba(24, 36, 59, .91)), url('/assets/img/glass-ambient.jpg');
+}
+
+/* Cadre flottant et navigation : la largeur reste pilotée par les jetons existants. */
+.sidebar {
+    inset: 16px auto 16px 16px;
+    height: calc(100vh - 32px);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-sm);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    backdrop-filter: blur(24px) saturate(1.3);
+}
+.sidebar-brand { height: 80px; padding: 18px 16px; border-bottom-color: var(--c-border-subtle); }
+.brand-tile { border-radius: 13px; background: rgba(255, 255, 255, .82); }
+.brand-name { font-size: .88rem; letter-spacing: -.025em; }
+.brand-sub { margin-top: 3px; font-size: .62rem; letter-spacing: .06em; }
+.sidebar .nav { padding: 12px 12px 28px; }
+.nav-section { padding-top: 18px; font-size: .63rem; letter-spacing: .1em; }
+.sidebar .nav-link { min-height: 41px; padding: .62rem .75rem; border: 1px solid transparent; }
+.sidebar .nav-link.active { border-color: var(--c-border); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2); }
+.sidebar .nav-link.active::before { display: none; }
+.main { margin-left: calc(var(--sidebar-w) + 16px); }
+.sidebar-collapsed .main { margin-left: calc(var(--sidebar-w-rail) + 16px); }
+.topbar {
+    top: 12px;
+    margin: 16px 18px 0;
+    padding-inline: 16px !important;
+    min-height: var(--topbar-h);
+    border: 1px solid var(--c-border);
+    border-radius: 18px;
+    box-shadow: var(--shadow-sm);
+    -webkit-backdrop-filter: blur(22px) saturate(1.3);
+    backdrop-filter: blur(22px) saturate(1.3);
+}
+.topbar > .me-auto { display: none; }
+.search-trigger { margin-right: auto; max-width: 430px; min-height: 42px; background: var(--c-surface-glass); border-color: var(--c-border); }
+.user-menu-btn { border: 1px solid var(--c-border); background: var(--c-surface-glass); padding: 4px 12px 4px 5px; }
+.avatar { background: #205bc1; color: #fff; }
+.content { padding: 28px 20px 36px; }
+.page-header { margin-bottom: 24px; }
+.page-title { font-size: clamp(1.5rem, 2vw, 2rem); font-weight: 750; letter-spacing: -.035em; }
+.page-subtitle { font-size: .9rem; color: var(--c-secondary); }
+.app-footer { border: 0; padding: 12px 22px 22px; }
+
+/* Cartes, listes, formulaires et superpositions : aucun sélecteur métier. */
+.card, .kpi-card, .auth-card, .chat-dock-panel {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    box-shadow: var(--shadow-sm);
+    border-radius: 18px;
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    backdrop-filter: blur(16px) saturate(1.2);
+}
+.card-header { padding: 1.1rem 1.35rem; border-bottom-color: var(--c-border-subtle); font-size: .94rem; }
+.card-body { padding: 1.35rem; }
+.kpi-grid { gap: 16px; }
+.kpi-card { padding: 1.35rem; min-height: 160px; }
+.kpi-icon { width: 46px; height: 46px; border-radius: 15px; border: 1px solid var(--c-border); }
+.kpi-value { font-size: clamp(1.55rem, 2.15vw, 2rem); }
+.kpi-label { font-size: .82rem; color: var(--c-secondary); }
+.quick-action { background: var(--c-surface-glass); border-color: var(--c-border); box-shadow: var(--shadow-xs); }
+.quick-action:hover { background: var(--c-surface); }
+.form-control, .form-select, .input-group-text {
+    background-color: var(--c-surface-2);
+    border-color: var(--c-border-strong);
+    color: var(--c-ink);
+}
+.form-control:focus, .form-select:focus { background-color: var(--c-surface); color: var(--c-ink); }
+.table { --bs-table-bg: transparent; --bs-table-color: var(--c-body); --bs-table-hover-bg: var(--c-surface-2); }
+.table thead th, .table-light th, thead.table-light th { background: var(--c-surface-2) !important; color: var(--c-secondary); }
+.list-group { --bs-list-group-bg: transparent; --bs-list-group-color: var(--c-body); --bs-list-group-border-color: var(--c-border-subtle); }
+.dropdown-menu, .modal-content, .palette-dialog { background: var(--c-surface-2); border-color: var(--c-border-strong); box-shadow: var(--shadow-lg); }
+.btn-primary { box-shadow: 0 5px 14px rgba(11, 85, 189, .18); }
+.auth-body { min-height: 100vh; }
+.auth-card { border-radius: 24px; }
+
+@media (max-width: 991.98px) {
+    .sidebar { inset: 12px auto 12px 12px; height: calc(100vh - 24px); transform: translateX(calc(-100% - 24px)); }
+    .sidebar.show { transform: translateX(0); }
+    .main, .sidebar-collapsed .main { margin-left: 0 !important; }
+    .topbar { margin: 12px 12px 0; top: 8px; }
+    .content { padding: 22px 14px 30px; }
+    .search-trigger { margin-right: auto; }
+}
+@media (max-width: 575.98px) {
+    .topbar { margin: 8px 8px 0; padding-inline: 10px !important; gap: 6px; }
+    .content { padding: 20px 10px 28px; }
+    .kpi-card { min-height: 145px; padding: 1rem; }
+    .kpi-value { font-size: 1.35rem; overflow-wrap: anywhere; }
+    .card-body { padding: 1rem; }
+    .page-title { font-size: 1.4rem; }
+}
+@media print {
+    body { background: white !important; }
+    .card, .kpi-card { background: white !important; box-shadow: none; backdrop-filter: none; }
+}
