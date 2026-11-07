@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Contracts\Controllers;
 
 use App\Core\Database\Connection;
+use App\Core\Exception\ValidationException;
 use App\Core\Http\Controller;
 use App\Core\Http\RedirectResponse;
 use App\Core\Http\Request;
@@ -45,20 +46,31 @@ final class ClientContractController extends Controller
     public function store(Request $request): Response
     {
         $this->auth()->requirePermission('contracts.write');
-        $data = $this->validator()->validate($request->all(), [
-            'third_party_id' => 'required|integer',
-            'title' => 'required|string|max:180',
-            'starts_on' => 'required|date',
-            'ends_on' => 'nullable|date',
-            'renewal_mode' => 'required|in:none,tacit,express',
-            'notice_days' => 'required|integer',
-            'amount_ht' => 'required|decimal:2',
-            'billing_cycle' => 'required|in:monthly,quarterly,half_yearly,yearly,one_shot',
-            'status' => 'required|in:draft,active,terminated,expired',
-            'signed_on' => 'nullable|date',
-            'notes' => 'nullable|string|max:1000',
-        ]);
-        $id = $this->contracts->create($data, $this->auth()->id());
+        try {
+            $data = $this->validator()->validate($request->all(), [
+                'third_party_id' => 'required|integer',
+                'title' => 'required|string|max:180',
+                'starts_on' => 'required|date',
+                'ends_on' => 'nullable|date',
+                'renewal_mode' => 'required|in:none,tacit,express',
+                'notice_days' => 'required|integer',
+                'amount_ht' => 'required|decimal:2',
+                'billing_cycle' => 'required|in:monthly,quarterly,half_yearly,yearly,one_shot',
+                'payment_terms' => 'required|in:cycle,full,milestones',
+                'services_description' => 'required|string|max:5000',
+                'status' => 'required|in:draft,active,terminated,expired',
+                'signed_on' => 'nullable|date',
+                'notes' => 'nullable|string|max:1000',
+            ]);
+            $id = $this->contracts->create($data, $this->auth()->id());
+        } catch (ValidationException $exception) {
+            return $this->view('Contracts::form', [
+                'title' => 'Nouveau contrat client',
+                'clients' => $this->clients(),
+                'formData' => $request->all(),
+                'formError' => implode(' ', $exception->errors()),
+            ]);
+        }
         $this->safePdf($id);
         audit('client_contract.create', 'ClientContract', $id);
         flash('success', 'Contrat enregistré et PDF généré.');

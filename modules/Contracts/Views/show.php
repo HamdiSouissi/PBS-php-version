@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @var list<array<string,mixed>> $history
  */
 $cycleLabels = ['monthly' => 'Mensuel', 'quarterly' => 'Trimestriel', 'half_yearly' => 'Semestriel', 'yearly' => 'Annuel', 'one_shot' => 'Ponctuel'];
+$paymentLabels = ['cycle' => 'Selon le cycle de facturation', 'full' => '100 % à la signature', 'milestones' => '40 % à la signature / 40 % à la livraison V0 / 20 % à la livraison finale'];
 $renewalLabels = ['none' => 'Aucun', 'tacit' => 'Tacite', 'express' => 'Exprès'];
 
 $actions = '<form method="post" action="/contracts/' . (int) $contract['id'] . '/pdf">'
@@ -37,6 +38,7 @@ if ($pdfDoc !== null) {
                 <li class="list-group-item d-flex justify-content-between"><span>Date d'effet</span><span><?= e(date('d/m/Y', strtotime((string) $contract['starts_on']))) ?></span></li>
                 <li class="list-group-item d-flex justify-content-between"><span>Date de fin</span><span><?= e($contract['ends_on'] ? date('d/m/Y', strtotime((string) $contract['ends_on'])) : 'Indéterminée') ?></span></li>
                 <li class="list-group-item d-flex justify-content-between"><span>Cycle</span><span><?= e($cycleLabels[$contract['billing_cycle']] ?? $contract['billing_cycle']) ?></span></li>
+                <li class="list-group-item"><span>Modalités de paiement : </span><strong><?= e($paymentLabels[$contract['payment_terms'] ?? ''] ?? 'Non précisées (contrat historique)') ?></strong></li>
                 <li class="list-group-item d-flex justify-content-between"><span>Renouvellement</span><span><?= e($renewalLabels[$contract['renewal_mode']] ?? $contract['renewal_mode']) ?></span></li>
                 <li class="list-group-item d-flex justify-content-between"><span>Préavis</span><span><?= (int) $contract['notice_days'] ?> jours</span></li>
                 <li class="list-group-item d-flex justify-content-between"><span>Montant HT</span><strong><?= money_format((float) $contract['amount_ht']) ?></strong></li>
@@ -63,6 +65,10 @@ if ($pdfDoc !== null) {
                     </li>
                 <?php endforeach; ?>
             </ul>
+        </div>
+        <div class="card">
+            <div class="card-header">Prestations et services proposés</div>
+            <div class="card-body small"><?= !empty($contract['services_description']) ? nl2br(e((string) $contract['services_description'])) : 'Non renseignés (contrat historique).' ?></div>
         </div>
         <?php if (($contract['notes'] ?? '') !== ''): ?>
             <div class="card">
