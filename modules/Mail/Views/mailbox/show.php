@@ -15,8 +15,8 @@ $replyTo = $message->fromEmail;
     ['label' => $folder],
 ]) ?>
 
-<div class="page-body">
-    <div class="card">
+<div class="page-body mail-workspace">
+    <div class="card mail-reading-card">
         <div class="card-header d-flex flex-wrap align-items-center gap-2">
             <a href="/mail?folder=<?= urlencode($folder) ?>" class="btn btn-sm btn-outline-secondary">
                 <i data-lucide="arrow-left"></i> Retour
@@ -53,12 +53,12 @@ $replyTo = $message->fromEmail;
                     <?= csrf_field() ?>
                     <input type="hidden" name="folder" value="<?= e($folder) ?>">
                     <input type="hidden" name="id" value="<?= $message->sequence ?>">
-                    <button class="btn btn-sm btn-outline-danger"><i data-lucide="trash-2"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" aria-label="Supprimer le message"><i data-lucide="trash-2"></i></button>
                 </form>
             </div>
         </div>
 
-        <div class="card-body border-bottom">
+        <div class="card-body border-bottom mail-message-meta">
             <h5 class="mb-2"><?= e($message->subject) ?></h5>
             <dl class="row mb-0 small">
                 <dt class="col-sm-1">De</dt>
@@ -76,7 +76,7 @@ $replyTo = $message->fromEmail;
             </dl>
         </div>
 
-        <div class="card-body">
+        <div class="card-body mail-message-content">
             <?php if ($message->htmlBody !== ''): ?>
                 <iframe sandbox="" class="mail-html-frame w-100 border-0" style="min-height:420px"
                         srcdoc="<?= e($message->htmlBody) ?>" title="Contenu du message"></iframe>

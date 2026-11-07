@@ -13,7 +13,7 @@ $messages = $result['messages'];
 ?>
 <?= $viewRenderer->pageHeader('Boîte mail', [['label' => 'Messagerie']]) ?>
 
-<div class="page-body">
+<div class="page-body mail-workspace">
 <?php if (!$hasMailbox): ?>
     <div class="card">
         <div class="card-body text-center py-5">
@@ -25,16 +25,18 @@ $messages = $result['messages'];
 <?php else: ?>
     <div class="row g-3">
         <div class="col-lg-3">
-            <div class="card">
-                <div class="card-body p-2">
+            <div class="card mail-sidebar">
+                <div class="card-body">
+                    <div class="mail-sidebar-heading"><span class="mail-sidebar-icon"><i data-lucide="mail"></i></span><div><strong>Messagerie</strong><small>Votre espace de travail</small></div></div>
                     <a href="/mail/compose" class="btn btn-primary w-100 mb-2">
                         <i data-lucide="pen-square" class="me-1"></i> Écrire
                     </a>
-                    <nav class="nav flex-column nav-mail">
+                    <div class="mail-section-label">Dossiers</div>
+                    <nav class="nav flex-column nav-mail" aria-label="Dossiers de messagerie">
                         <?php foreach ($folders as $mailFolder): ?>
-                            <a class="nav-link <?= $mailFolder->name === $folder ? 'active' : '' ?>"
+                            <a class="nav-link <?= $mailFolder->name === $folder ? 'active' : '' ?>" <?= $mailFolder->name === $folder ? 'aria-current="page"' : '' ?>
                                href="/mail?folder=<?= urlencode($mailFolder->name) ?>">
-                                <span><?= e($mailFolder->label) ?></span>
+                                <span class="mail-folder-name"><i data-lucide="<?= $mailFolder->name === 'INBOX' ? 'inbox' : 'folder' ?>"></i><?= e($mailFolder->label) ?></span>
                                 <?php if ($mailFolder->unseen > 0): ?>
                                     <span class="badge text-bg-danger rounded-pill"><?= $mailFolder->unseen ?></span>
                                 <?php endif; ?>
@@ -46,8 +48,8 @@ $messages = $result['messages'];
         </div>
 
         <div class="col-lg-9">
-            <div class="card">
-                <div class="card-header d-flex flex-wrap align-items-center gap-2">
+            <div class="card mail-list-card">
+                <div class="card-header mail-list-header d-flex flex-wrap align-items-center gap-2">
                     <h6 class="mb-0 me-auto"><?= e($folder === 'INBOX' ? 'Boîte de réception' : $folder) ?>
                         <span class="text-muted small">(<?= (int) $result['total'] ?> message<?= $result['total'] > 1 ? 's' : '' ?>)</span>
                     </h6>
@@ -55,12 +57,12 @@ $messages = $result['messages'];
                         <input type="hidden" name="folder" value="<?= e($folder) ?>">
                         <input type="search" class="form-control form-control-sm" name="q"
                                value="<?= e($query) ?>" placeholder="Rechercher dans le dossier…">
-                        <button class="btn btn-sm btn-outline-primary"><i data-lucide="search"></i></button>
+                        <button class="btn btn-sm btn-outline-primary" aria-label="Rechercher"><i data-lucide="search"></i></button>
                     </form>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 mail-message-list">
                         <tbody>
                         <?php if ($messages === []): ?>
                             <tr><td class="text-center text-muted py-4">Aucun message dans ce dossier.</td></tr>
@@ -73,7 +75,7 @@ $messages = $result['messages'];
                                         <input type="hidden" name="folder" value="<?= e($folder) ?>">
                                         <input type="hidden" name="id" value="<?= $message->sequence ?>">
                                         <input type="hidden" name="flagged" value="<?= $message->flagged ? 0 : 1 ?>">
-                                        <button class="btn btn-link btn-sm p-0 text-<?= $message->flagged ? 'warning' : 'muted' ?>">
+                                        <button class="btn btn-link btn-sm p-0 text-<?= $message->flagged ? 'warning' : 'muted' ?>" aria-label="<?= $message->flagged ? 'Retirer le marqueur' : 'Marquer comme important' ?>">
                                             <i data-lucide="star"></i>
                                         </button>
                                     </form>
@@ -99,7 +101,7 @@ $messages = $result['messages'];
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="folder" value="<?= e($folder) ?>">
                                         <input type="hidden" name="id" value="<?= $message->sequence ?>">
-                                        <button class="btn btn-sm btn-link text-danger p-0" title="Supprimer">
+                                        <button class="btn btn-sm btn-link text-danger p-0" title="Supprimer" aria-label="Supprimer le message">
                                             <i data-lucide="trash-2"></i>
                                         </button>
                                     </form>

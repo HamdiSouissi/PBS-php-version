@@ -107,6 +107,44 @@ final class PdfDocumentTest extends TestCase
         }
     }
 
+    public function testHeaderLeavesSpaceBeforeBodyOnEveryPage(): void
+    {
+        $pdf = new PdfDocument();
+        $pdf->setCompany([
+            'legal_name' => 'Société test', 'address' => '25 rue de Paris',
+            'postal_code' => '75001', 'city' => 'Paris', 'phone' => '0102030405',
+            'email' => 'contact@example.org', 'siret' => '12345678901234',
+        ]);
+        $reflection = new \ReflectionClass($pdf);
+        $engine = $reflection->getProperty('pdf');
+        $pdf->addPage();
+        $firstY = $engine->getValue($pdf)->GetY();
+        self::assertTrue($firstY >= 35.8, 'Le corps doit commencer après le contenu de l’en-tête et un espace de 5 mm.');
+        $pdf->addPage();
+        self::assertEqualsWithDelta($firstY, $engine->getValue($pdf)->GetY(), 0.01);
+    }
+
+    public function testAutomaticPageBreakKeepsHeaderSpacing(): void
+    {
+        $pdf = new PdfDocument();
+        $pdf->setCompany(['legal_name' => 'Société test', 'email' => 'contact@example.org', 'siret' => '12345678901234']);
+        $engine = (new \ReflectionClass($pdf))->getProperty('pdf')->getValue($pdf);
+        $header = $engine->headerCallback;
+        $positions = [];
+        $engine->headerCallback = static function (\FPDF $fpdf) use ($header, &$positions): void {
+            $header($fpdf);
+            $positions[] = $fpdf->GetY();
+        };
+        $pdf->addPage();
+        for ($i = 0; $i < 120; $i++) {
+            $pdf->paragraph('Ligne de contenu permettant de provoquer une pagination automatique.');
+        }
+        self::assertTrue(count($positions) > 1, 'Le document doit contenir plusieurs pages.');
+        foreach ($positions as $position) {
+            self::assertTrue($position >= 35.8, 'Chaque en-tête doit être suivi de 5 mm de blanc.');
+        }
+    }
+
     public function testDenseBulletinStaysOnOnePage(): void
     {
         $pdf = new PdfDocument();
