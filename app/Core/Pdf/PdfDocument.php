@@ -10,8 +10,7 @@ namespace App\Core\Pdf;
  * toutes les chaînes UTF-8 (accents français, €) sont converties à l'écriture.
  *
  * Charte graphique des documents :
- *  - fond blanc, texte foncé, aucune teinte bleue ni dégradé ;
- *  - l'accent corail n'est utilisé que pour les filets, titres et totaux ;
+ *  - fond blanc, texte foncé et accent bleu de marque ;
  *  - en-tête = logo + identité société uniquement (le type et le numéro de
  *    document vivent dans le corps) ;
  *  - pied de page répété sur chaque page : coordonnées, mentions légales et
@@ -617,7 +616,7 @@ class PdfDocument
 
         // Réserver une marge après le bas réel du texte et du logo, sur chaque
         // page (y compris les sauts automatiques et les bulletins compactés).
-        $pdf->SetXY(16, max($pdf->GetY(), 27.0) + 5.0);
+        $pdf->SetXY(16, max($pdf->GetY(), 27.0) + 8.0);
     }
 
     private function renderFooter(\FPDF $pdf): void

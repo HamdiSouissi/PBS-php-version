@@ -13,8 +13,7 @@ use App\Core\Pdf\PdfDocument;
  * reprend les clauses essentielles du droit du travail français et les
  * données réelles du salarié et de son contrat.
  *
- * Il s'agit d'un modèle type : une mention visible oblige à une relecture
- * juridique avant toute signature.
+ * Le contenu doit être vérifié et adapté au cas concerné avant signature.
  */
 final class EmployeeContractPdf implements PdfTemplate
 {
@@ -44,13 +43,6 @@ final class EmployeeContractPdf implements PdfTemplate
         $title = 'Contrat ' . mb_strtolower($typeLabel) . ' — ' . $contract['last_name'] . ' ' . $contract['first_name'];
         $pdf->setDocumentTitle($title)->addPage();
         $pdf->h1('CONTRAT DE TRAVAIL — ' . mb_strtoupper($typeLabel));
-
-        $pdf->noticeBox(
-            "DOCUMENT TYPE — RELECTURE JURIDIQUE OBLIGATOIRE.\n"
-            . "Ce contrat est généré à partir des données enregistrées dans l'application. "
-            . "Il doit être relu, vérifié et adapté par un juriste ou un conseil en droit social "
-            . "avant toute signature. Il ne se substitue pas aux conventions collective et d'entreprise applicables."
-        );
 
         $employeeName = $contract['first_name'] . ' ' . mb_strtoupper((string) $contract['last_name']);
         $companyName = (string) $contract['legal_name'];

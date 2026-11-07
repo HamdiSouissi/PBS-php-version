@@ -119,7 +119,7 @@ final class PdfDocumentTest extends TestCase
         $engine = $reflection->getProperty('pdf');
         $pdf->addPage();
         $firstY = $engine->getValue($pdf)->GetY();
-        self::assertTrue($firstY >= 35.8, 'Le corps doit commencer après le contenu de l’en-tête et un espace de 5 mm.');
+        self::assertTrue($firstY >= 38.8, 'Le corps doit commencer après le contenu de l’en-tête et un espace de 8 mm.');
         $pdf->addPage();
         self::assertEqualsWithDelta($firstY, $engine->getValue($pdf)->GetY(), 0.01);
     }
@@ -141,7 +141,7 @@ final class PdfDocumentTest extends TestCase
         }
         self::assertTrue(count($positions) > 1, 'Le document doit contenir plusieurs pages.');
         foreach ($positions as $position) {
-            self::assertTrue($position >= 35.8, 'Chaque en-tête doit être suivi de 5 mm de blanc.');
+            self::assertTrue($position >= 38.8, 'Chaque en-tête doit être suivi de 8 mm de blanc.');
         }
     }
 
@@ -202,7 +202,7 @@ final class PdfDocumentTest extends TestCase
     {
         $pdf = new PdfDocument();
         $pdf->setDocumentTitle('Contrat')->addPage();
-        $pdf->noticeBox("DOCUMENT TYPE — RELECTURE JURIDIQUE OBLIGATOIRE.\nTexte assez long pour vérifier que le cadre s'agrandit correctement sur plusieurs lignes sans jamais rogner le contenu de l'encadré.");
+        $pdf->noticeBox("INFORMATION IMPORTANTE.\nTexte assez long pour vérifier que le cadre s'agrandit correctement sur plusieurs lignes sans jamais rogner le contenu de l'encadré.");
         $pdf->article('1', 'Parties', 'Corps de l\'article sur plusieurs lignes avec des accents français et des montants 3 200,00 €.');
         $pdf->signatureBlock(
             "Pour l'employeur\nSociété test\nNom et prénom : …………\nQualité : …………\nFait à ……, le ……\nSignature (mention « Lu et approuvé »)",
@@ -212,8 +212,8 @@ final class PdfDocumentTest extends TestCase
         $binary = $pdf->output();
         self::assertStringContainsString('%PDF-', substr($binary, 0, 5));
         self::assertTrue(
-            str_contains($this->decompressedText($binary), $pdf->t('RELECTURE JURIDIQUE OBLIGATOIRE')),
-            'L\'encadré de relecture juridique doit être présent dans le document.'
+            str_contains($this->decompressedText($binary), $pdf->t('INFORMATION IMPORTANTE')),
+            'L\'encadré doit être présent dans le document.'
         );
     }
 
