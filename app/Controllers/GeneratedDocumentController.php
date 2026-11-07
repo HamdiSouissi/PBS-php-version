@@ -39,7 +39,7 @@ final class GeneratedDocumentController extends Controller
     {
         $db = db();
         $document = $db->fetchOne('SELECT * FROM documents WHERE id = :id', ['id' => $id]);
-        if ($document === null) {
+        if ($document === null || ($document['disk'] ?? '') !== 'exports' || ($document['mime'] ?? '') !== 'application/pdf') {
             throw new NotFoundException('Document introuvable.');
         }
 
@@ -55,7 +55,7 @@ final class GeneratedDocumentController extends Controller
         // Résolution sécurisée : disque "exports" uniquement, sans traversée.
         $root = realpath(storage_path('exports'));
         $full = realpath($root . DIRECTORY_SEPARATOR . (string) $document['path']);
-        if ($root === false || $full === false || !str_starts_with($full, $root) || !is_file($full)) {
+        if ($root === false || $full === false || !str_starts_with($full, rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR) || !is_file($full)) {
             throw new NotFoundException('Fichier PDF introuvable sur le disque.');
         }
 

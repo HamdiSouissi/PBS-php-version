@@ -88,3 +88,29 @@ déclarations (TVA, liasse) nécessitent la relecture d'un **expert-comptable**.
 - [ ] Volumes `mysqldata` et `storage` inclus dans la politique de sauvegarde
 - [ ] Accès restreint aux fichiers `storage/` (permissions 770, propriétaire applicatif)
 - [ ] Revue des permissions des rôles après création des utilisateurs réels
+
+### Proxy inverse et passerelle de développement
+
+Par défaut, l'adresse IP et HTTPS ne sont pas déduits des en-têtes transmis par
+le client. Pour un proxy inverse maîtrisé, `TRUSTED_PROXIES` contient uniquement
+ses adresses IP exactes, séparées par des virgules (pas de plage CIDR). Configurer
+le proxy pour supprimer les en-têtes entrants et reconstruire `X-Forwarded-For`
+et `X-Forwarded-Proto`, et empêcher tout accès direct à l'application. Sans
+cette configuration, les limites de débit et journaux peuvent identifier le
+proxy plutôt que chaque client. Ne pas faire confiance à un proxy non maîtrisé.
+`CF-Connecting-IP` n'est pas utilisé. En production, utiliser HTTPS et laisser
+`SESSION_SECURE=true` ; une installation locale HTTP peut définir explicitement
+`SESSION_SECURE=false` uniquement hors production.
+
+La passerelle HTTP `console-gateway.php` est désactivée par défaut. Préférer
+`bin/console` ; pour un besoin de développement strictement local, elle exige
+`APP_ENV=development`, `CONSOLE_GATEWAY_ENABLED=true` et un secret aléatoire
+`CONSOLE_GATEWAY_TOKEN` d'au moins 32 caractères, fourni dans `X-Gateway-Token`
+avec une requête POST. Ne jamais l'exposer via un proxy ou sur Internet, même
+avec un secret. Désactiver cette option après utilisation.
+
+Appliquer les migrations avant le déploiement. Le limiteur actuel utilise un
+cache avec une opération lecture/écriture non atomique : en cas de trafic
+concurrent ou de plusieurs serveurs, compléter par un contrôle de débit atomique
+au niveau du frontal partagé. Les permissions documentaires génériques doivent
+être attribuées avec précaution, conformément aux règles métier existantes.

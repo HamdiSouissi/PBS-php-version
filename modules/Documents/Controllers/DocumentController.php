@@ -149,7 +149,7 @@ final class DocumentController extends Controller
         }
         $root = realpath(storage_path($disk));
         $full = $root === false ? false : realpath($root . DIRECTORY_SEPARATOR . (string) $document['path']);
-        if ($root === false || $full === false || !str_starts_with($full, $root) || !is_file($full)) {
+        if ($root === false || $full === false || !str_starts_with($full, rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR) || !is_file($full)) {
             throw new NotFoundException('Fichier introuvable sur le disque.');
         }
         return $full;

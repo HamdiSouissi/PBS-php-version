@@ -29,18 +29,19 @@ $app->bootstrap();
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (config('app.env') === 'production') {
+// Désactivée par défaut ; ne jamais l'exposer via un proxy inverse.
+$secret = (string) env('CONSOLE_GATEWAY_TOKEN', '');
+$provided = (string) ($_SERVER['HTTP_X_GATEWAY_TOKEN'] ?? '');
+if (config('app.env') !== 'development'
+    || env('CONSOLE_GATEWAY_ENABLED', 'false') !== true
+    || strlen($secret) < 32
+    || !in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)
+    || isset($_SERVER['HTTP_X_FORWARDED_FOR'])
+    || isset($_SERVER['HTTP_FORWARDED'])
+    || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+    || !hash_equals($secret, $provided)) {
     http_response_code(404);
     echo json_encode(['success' => false, 'error' => 'Not found']);
-    exit;
-}
-
-// Protection : n'écouter que les requêtes locales.
-$remoteIp = $_SERVER['REMOTE_ADDR'] ?? '';
-$allowed = ['127.0.0.1', '::1', 'localhost'];
-if (!in_array($remoteIp, $allowed, true)) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'error' => 'Gateway locale uniquement.']);
     exit;
 }
 

@@ -102,6 +102,10 @@ final class UserService
      */
     public function beginTotpEnrollment(User $user): array
     {
+        $fresh = $this->users->findWithRights($user->id);
+        if ($fresh === null || $fresh->totpEnrolled) {
+            throw new ValidationException(['totp' => 'La double authentification est déjà activée. Contactez un administrateur pour la réinitialiser.']);
+        }
         $secret = $this->totp->generateSecret();
         $this->db->execute(
             'UPDATE users SET totp_secret = :s, totp_enrolled = FALSE WHERE id = :id',

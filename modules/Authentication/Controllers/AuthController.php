@@ -81,7 +81,7 @@ final class AuthController extends Controller
         $user = \App\Core\Application::container()
             ->get(\Modules\Authentication\Repositories\UserRepository::class)
             ->findWithRights((int) $pendingId);
-        if ($user === null || !$this->authService->validateTwoFactor($user, (string) $request->input('code', ''))) {
+        if ($user === null || !$user->isActive || !$user->totpEnrolled || !$this->authService->validateTwoFactor($user, (string) $request->input('code', ''))) {
             // Protection contre l'énumération des codes TOTP.
             $_SESSION['2fa_attempts'] = (int) ($_SESSION['2fa_attempts'] ?? 0) + 1;
             if ($_SESSION['2fa_attempts'] >= self::MAX_2FA_ATTEMPTS) {

@@ -79,18 +79,43 @@ final class Request
     public function isSecure(): bool
     {
         return ($this->server['HTTPS'] ?? '') === 'on'
-            || ($this->headers['x-forwarded-proto'] ?? '') === 'https';
+            || ($this->isTrustedProxy() && strtolower($this->headers['x-forwarded-proto'] ?? '') === 'https');
+    }
+
+    /** @return list<string> */
+    private function trustedProxies(): array
+    {
+        return array_values(array_filter(array_map('trim', explode(',', (string) (getenv('TRUSTED_PROXIES') ?: ''))),
+            static fn (string $ip): bool => filter_var($ip, FILTER_VALIDATE_IP) !== false));
+    }
+
+    private function isTrustedProxy(): bool
+    {
+        return in_array((string) ($this->server['REMOTE_ADDR'] ?? ''), $this->trustedProxies(), true);
     }
 
     public function ip(): string
     {
-        foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'] as $key) {
-            if (!empty($this->server[$key])) {
-                $ip = explode(',', (string) $this->server[$key])[0];
-                return trim($ip);
+        $remote = (string) ($this->server['REMOTE_ADDR'] ?? '');
+        if (filter_var($remote, FILTER_VALIDATE_IP) === false) {
+            return '0.0.0.0';
+        }
+        // Les en-têtes ne sont fiables que depuis un proxy explicitement déclaré.
+        $trusted = $this->trustedProxies();
+        if (!in_array($remote, $trusted, true)) {
+            return $remote;
+        }
+        $forwarded = array_map('trim', explode(',', (string) ($this->server['HTTP_X_FORWARDED_FOR'] ?? '')));
+        $chain = array_merge($forwarded, [$remote]);
+        for ($i = count($chain) - 1; $i >= 0; $i--) {
+            if (filter_var($chain[$i], FILTER_VALIDATE_IP) === false) {
+                return $remote;
+            }
+            if (!in_array($chain[$i], $trusted, true)) {
+                return $chain[$i];
             }
         }
-        return '0.0.0.0';
+        return $remote;
     }
 
     public function userAgent(): string
@@ -156,9 +181,14 @@ final class Request
         return null;
     }
 
+    public function isApiRoute(): bool
+    {
+        return str_starts_with($this->path(), '/api/');
+    }
+
     public function isApi(): bool
     {
-        return str_starts_with($this->path(), '/api/')
+        return $this->isApiRoute()
             || $this->header('accept') === 'application/json';
     }
 

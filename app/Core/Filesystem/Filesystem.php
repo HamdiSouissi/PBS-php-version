@@ -23,10 +23,17 @@ final class Filesystem
 
     public function path(string $relativePath): string
     {
-        $full = realpath($this->root) . DIRECTORY_SEPARATOR . ltrim($relativePath, '/\\');
-        $directory = dirname($full);
-        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-            throw new \RuntimeException("Création de dossier impossible : {$directory}");
+        $parts = $this->segments($relativePath);
+        $full = (string) realpath($this->root);
+        foreach ($parts as $index => $part) {
+            $full .= DIRECTORY_SEPARATOR . $part;
+            if (is_link($full)) {
+                throw new \RuntimeException('Lien symbolique interdit.');
+            }
+            if ($index < count($parts) - 1 && !is_dir($full)
+                && !mkdir($full, 0775) && !is_dir($full)) {
+                throw new \RuntimeException("Création de dossier impossible : {$full}");
+            }
         }
         return $full;
     }
@@ -53,7 +60,11 @@ final class Filesystem
 
     public function exists(string $relativePath): bool
     {
-        return is_file($this->root . DIRECTORY_SEPARATOR . ltrim($relativePath, '/\\'));
+        try {
+            return is_file($this->safeRealPath($relativePath));
+        } catch (\RuntimeException $exception) {
+            return false;
+        }
     }
 
     public function delete(string $relativePath): void
@@ -67,11 +78,26 @@ final class Filesystem
      */
     private function safeRealPath(string $relativePath): string
     {
+        $parts = $this->segments($relativePath);
         $root = realpath($this->root);
-        $full = realpath($this->root . DIRECTORY_SEPARATOR . ltrim($relativePath, '/\\'));
-        if ($full === false || !str_starts_with($full, $root)) {
+        $full = realpath($this->root . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $parts));
+        if ($root === false || $full === false || !str_starts_with($full, rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR)) {
             throw new \RuntimeException('Chemin de fichier interdit.');
         }
         return $full;
+    }
+
+    /** @return list<string> */
+    private function segments(string $path): array
+    {
+        if ($path === '' || str_contains($path, "\0") || str_starts_with($path, '/') || str_starts_with($path, '\\')
+            || preg_match('/^[a-zA-Z]:/', $path)) {
+            throw new \RuntimeException('Chemin de fichier interdit.');
+        }
+        $parts = preg_split('#[/\\\\]+#', $path);
+        if (!$parts || in_array('..', $parts, true) || in_array('.', $parts, true) || in_array('', $parts, true)) {
+            throw new \RuntimeException('Chemin de fichier interdit.');
+        }
+        return $parts;
     }
 }
