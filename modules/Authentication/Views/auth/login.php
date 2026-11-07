@@ -3,36 +3,36 @@
 declare(strict_types=1);
 /** @var string $title */
 ?>
-<h2 class="h5 mb-3 text-center">Connexion</h2>
-<form method="post" action="/login" novalidate>
+<div class="login-heading">
+    <span class="login-kicker">BIENVENUE CHEZ VOUS</span>
+    <h2>Heureux de vous revoir<span>.</span></h2>
+    <p>Connectez-vous pour accéder à votre espace.</p>
+</div>
+<form class="login-form" method="post" action="/login" novalidate>
     <?= csrf_field() ?>
-    <div class="mb-3">
-        <label class="form-label">Adresse e-mail</label>
-        <div class="input-group">
-            <span class="input-group-text"><i data-lucide="mail"></i></span>
-            <input type="email" name="email" class="form-control" required autofocus
-                   value="<?= e(old('email')) ?>" autocomplete="username">
+    <div class="login-field">
+        <label for="login-email">Adresse e-mail</label>
+        <div class="login-input-wrap">
+            <i data-lucide="mail" aria-hidden="true"></i>
+            <input id="login-email" type="email" name="email" required autofocus
+                   value="<?= e(old('email')) ?>" autocomplete="username" placeholder="vous@entreprise.fr">
         </div>
     </div>
-    <div class="mb-3">
-        <label class="form-label">Mot de passe</label>
-        <div class="input-group">
-            <span class="input-group-text"><i data-lucide="lock"></i></span>
-            <input type="password" name="password" class="form-control" required autocomplete="current-password">
+    <div class="login-field">
+        <div class="login-label-row">
+            <label for="login-password">Mot de passe</label>
+            <a href="/forgot-password">Mot de passe oublié ?</a>
+        </div>
+        <div class="login-input-wrap">
+            <i data-lucide="lock-keyhole" aria-hidden="true"></i>
+            <input id="login-password" type="password" name="password" required autocomplete="current-password" placeholder="Saisissez votre mot de passe">
+            <button class="login-password-toggle" type="button" data-password-toggle aria-label="Afficher le mot de passe" aria-pressed="false" hidden><span>Afficher</span></button>
         </div>
     </div>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="remember" id="remember" value="1">
-            <label class="form-check-label small" for="remember">Se souvenir de moi</label>
-        </div>
-        <a href="/forgot-password" class="small">Mot de passe oublié ?</a>
+    <div class="login-remember">
+        <input type="checkbox" name="remember" id="remember" value="1">
+        <label for="remember">Se souvenir de moi</label>
     </div>
-    <button class="btn btn-primary w-100" type="submit">
-        <i data-lucide="log-in"></i>Se connecter
-    </button>
+    <button class="login-submit" type="submit"><span>Se connecter</span><i data-lucide="arrow-right" aria-hidden="true"></i></button>
 </form>
-<p class="text-muted small mt-3 mb-0">
-    Compte de démonstration initial : <code>admin@prime-vision-solutions.fr</code> / <code>PBS@2026!admin</code>
-    (changement obligatoire à la première connexion).
-</p>
+<div class="login-reassurance"><i data-lucide="lock-keyhole" aria-hidden="true"></i><span>Votre espace, en toute confidentialité.</span></div>
