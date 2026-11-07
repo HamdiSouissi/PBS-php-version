@@ -46,6 +46,45 @@ if ($pdfDoc !== null) {
             </ul>
         </div>
     </div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">Signature électronique simple</div>
+            <div class="card-body">
+                <p class="small">La signature porte sur une copie figée du dernier PDF. Elle ne vérifie pas l’identité du client et ne constitue pas une signature qualifiée eIDAS. Conservez le contrat figé et le justificatif ensemble.</p>
+                <?php if (!empty($signatureLink)): ?>
+                    <div class="alert alert-warning">Lien personnel affiché une seule fois : <input class="form-control" readonly value="<?= e((string) $signatureLink) ?>">Copiez-le et transmettez-le de manière sécurisée. Il expire après 7 jours ; il donne accès au contrat et permet de signer.</div>
+                <?php endif; ?>
+                <?php if (container()->get(\App\Core\Auth\AuthManager::class)->hasPermission('contracts.write') && $pdfDoc !== null): ?>
+                <form method="post" action="/contracts/<?= (int) $contract['id'] ?>/signatures" class="row g-2">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="document_id" value="<?= (int) $pdfDoc['id'] ?>">
+                    <div class="col-md-4"><label class="form-label">Nom du signataire client</label><input class="form-control" name="client_name" maxlength="180" required></div>
+                    <div class="col-md-4"><label class="form-label">E-mail du signataire client</label><input type="email" class="form-control" name="client_email" maxlength="254" required></div>
+                    <div class="col-md-4"><label class="form-label">Transmission</label><select class="form-select" name="delivery"><option value="link">Lien à transmettre</option><option value="email">Envoyer par e-mail</option></select></div>
+                    <div class="col-12"><label><input type="checkbox" name="consent" value="1" required> <?= e(\Modules\Contracts\Services\ContractSignatureService::PROVIDER_CONSENT) ?></label></div>
+                    <div class="col-12"><button class="btn btn-primary" type="submit">Signer et préparer l’invitation</button></div>
+                </form>
+                <?php endif; ?>
+                <hr><h3 class="h6">Historique des signatures</h3>
+                <?php if (empty($signatures)): ?><p class="text-muted">Aucune invitation.</p><?php endif; ?>
+                <?php foreach ($signatures as $sig): ?>
+                    <div class="border rounded p-2 mb-2 small">
+                        <strong><?= e((string) $sig['client_name']) ?></strong> (<?= e((string) $sig['client_email']) ?>) —
+                        <?php if ($sig['client_signed_at']): ?>Signé le <?= e((string) $sig['client_signed_at']) ?>
+                        <?php elseif ($sig['revoked_at']): ?>Révoqué
+                        <?php elseif ($sig['expires_at'] <= date('Y-m-d H:i:s')): ?>Expiré
+                        <?php else: ?>En attente jusqu’au <?= e((string) $sig['expires_at']) ?><?php endif; ?> (heure serveur).
+                        <div>Prestataire : <?= e((string) $sig['provider_name']) ?> — <?= e((string) $sig['provider_signed_at']) ?></div>
+                        <a href="/contracts/<?= (int) $contract['id'] ?>/signatures/<?= (int) $sig['id'] ?>/document">Contrat figé</a>
+                        <?php if ($sig['client_signed_at']): ?> · <a href="/contracts/<?= (int) $contract['id'] ?>/signatures/<?= (int) $sig['id'] ?>/receipt">Justificatif</a><?php endif; ?>
+                        <?php if (!$sig['client_signed_at'] && !$sig['revoked_at'] && container()->get(\App\Core\Auth\AuthManager::class)->hasPermission('contracts.write')): ?>
+                        <form method="post" action="/contracts/<?= (int) $contract['id'] ?>/signatures/<?= (int) $sig['id'] ?>/revoke"><?= csrf_field() ?><button class="btn btn-sm btn-outline-danger mt-1">Révoquer le lien</button></form>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
     <div class="col-lg-7">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">

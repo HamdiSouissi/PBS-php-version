@@ -1149,3 +1149,29 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     created_at       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages(conversation_id, id);
+
+CREATE TABLE contract_signatures (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    contract_id INTEGER NOT NULL REFERENCES client_contracts(id),
+    document_id INTEGER NOT NULL REFERENCES documents(id),
+    snapshot_name TEXT NOT NULL,
+    document_sha256 TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    client_name TEXT NOT NULL,
+    client_email TEXT NOT NULL,
+    provider_user_id INTEGER NOT NULL REFERENCES users(id),
+    provider_name TEXT NOT NULL,
+    provider_email TEXT NOT NULL,
+    provider_consent TEXT NOT NULL,
+    client_consent TEXT,
+    provider_signed_at TEXT NOT NULL,
+    provider_ip TEXT NOT NULL,
+    provider_agent TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    client_signed_at TEXT,
+    client_ip TEXT,
+    client_agent TEXT,
+    revoked_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_signature_contract ON contract_signatures(contract_id);

@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 use App\Core\Router\Router;
 use Modules\Contracts\Controllers\ClientContractController;
+use Modules\Contracts\Controllers\ContractSignatureController;
 
 return static function (Router $router): void {
+    $router->get('/signature/{token}', [ContractSignatureController::class, 'clientPage']);
+    $router->get('/signature/{token}/document', [ContractSignatureController::class, 'clientDocument']);
+    $router->get('/signature/{token}/receipt', [ContractSignatureController::class, 'clientReceipt']);
+    $router->post('/signature/{token}', [ContractSignatureController::class, 'clientSign'])->middleware('csrf');
+
     $router->group(['auth', 'csrf'], '/contracts', static function (Router $router): void {
         $router->get('', [ClientContractController::class, 'index'])
             ->middleware('permission:contracts.read')->name('contracts.index');
@@ -13,6 +19,10 @@ return static function (Router $router): void {
             ->middleware('permission:contracts.write');
         $router->post('', [ClientContractController::class, 'store'])
             ->middleware('permission:contracts.write');
+        $router->post('/{id}/signatures', [ContractSignatureController::class, 'start'])->middleware('permission:contracts.write');
+        $router->post('/{id}/signatures/{signature}/revoke', [ContractSignatureController::class, 'revoke'])->middleware('permission:contracts.write');
+        $router->get('/{id}/signatures/{signature}/document', [ContractSignatureController::class, 'staffDocument'])->middleware('permission:contracts.read');
+        $router->get('/{id}/signatures/{signature}/receipt', [ContractSignatureController::class, 'staffReceipt'])->middleware('permission:contracts.read');
         $router->get('/{id}', [ClientContractController::class, 'show'])
             ->middleware('permission:contracts.read')->name('contracts.show');
         $router->post('/{id}/pdf', [ClientContractController::class, 'regeneratePdf'])

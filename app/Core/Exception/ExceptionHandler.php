@@ -28,7 +28,7 @@ final class ExceptionHandler
     {
         $status = $this->statusFor($exception);
         $context = [
-            'path' => $request->path(),
+            'path' => str_starts_with($request->path(), '/signature/') ? '/signature/[masqué]' : $request->path(),
             'method' => $request->method(),
             'ip' => $request->ip(),
         ];
@@ -39,7 +39,7 @@ final class ExceptionHandler
                 'exception' => $exception::class,
                 'file' => $exception->getFile(),
                 'line' => $exception->getLine(),
-                'trace' => $exception->getTraceAsString(),
+                'trace' => str_starts_with($request->path(), '/signature/') ? '[masquée]' : $exception->getTraceAsString(),
             ]);
         } else {
             $this->logger->warning($exception->getMessage(), $context);
@@ -48,12 +48,18 @@ final class ExceptionHandler
         // Les requêtes AJAX navigateur (X-Requested-With) reposent sur la
         // session et le CSRF mais attendent une charge JSON exploitable.
         if ($request->isApi() || $request->isAjax()) {
-            return $this->jsonResponse($exception, $status);
+            return $this->jsonResponse($exception, $status, !str_starts_with($request->path(), '/signature/'));
         }
-        return $this->htmlResponse($exception, $status);
+        $response = $this->htmlResponse($exception, $status, !str_starts_with($request->path(), '/signature/'));
+        if (str_starts_with($request->path(), '/signature/')) {
+            $response->withHeader('Cache-Control', 'no-store');
+            $response->withHeader('Referrer-Policy', 'no-referrer');
+            $response->withHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+        }
+        return $response;
     }
 
-    private function jsonResponse(Throwable $exception, int $status): JsonResponse
+    private function jsonResponse(Throwable $exception, int $status, bool $allowDebug = true): JsonResponse
     {
         $payload = [
             'success' => false,
@@ -68,20 +74,20 @@ final class ExceptionHandler
         if ($exception instanceof ValidationException) {
             $payload['error']['fields'] = $exception->errors();
         }
-        if ($this->debug) {
+        if ($this->debug && $allowDebug) {
             $payload['error']['file'] = $exception->getFile() . ':' . $exception->getLine();
             $payload['error']['trace'] = explode("\n", $exception->getTraceAsString());
         }
         return new JsonResponse($payload, $status);
     }
 
-    private function htmlResponse(Throwable $exception, int $status): Response
+    private function htmlResponse(Throwable $exception, int $status, bool $allowDebug = true): Response
     {
         try {
             $html = $this->viewRenderer->renderTemplate('errors/generic', [
                 'status' => $status,
                 'message' => $status >= 500 && !$this->debug ? 'Une erreur interne est survenue.' : $exception->getMessage(),
-                'exception' => $this->debug ? $exception : null,
+                'exception' => $this->debug && $allowDebug ? $exception : null,
             ], 'layouts/minimal');
         } catch (Throwable) {
             $html = $this->fallbackHtml($status, $exception);
