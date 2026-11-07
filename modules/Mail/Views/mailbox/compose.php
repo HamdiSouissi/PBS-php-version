@@ -13,8 +13,9 @@ $fieldClass = static fn (string $field): string => isset($errors[$field]) ? 'is-
 ?>
 <?= $viewRenderer->pageHeader('Nouveau message', [['label' => 'Boîte mail', 'href' => '/mail'], ['label' => 'Écrire']]) ?>
 
-<div class="page-body">
-    <div class="card">
+<div class="page-body mail-workspace">
+    <div class="card mail-compose-card">
+        <div class="mail-compose-heading"><span class="mail-sidebar-icon"><i data-lucide="pen-line"></i></span><div><strong>Rédiger un message</strong><small>Préparez votre envoi et ajoutez vos pièces jointes.</small></div></div>
         <div class="card-body">
             <?php if (isset($errors['form'])): ?>
                 <div class="alert alert-danger"><?= e($errors['form']) ?></div>

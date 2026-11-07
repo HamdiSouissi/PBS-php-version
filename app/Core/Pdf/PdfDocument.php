@@ -615,8 +615,9 @@ class PdfDocument
             $pdf->Cell($pageWidth - $rightX, 4.6, $this->t($identityLine), 0, 1);
         }
 
-        // Aucun filet coloré entre l'en-tête et le corps : l'en-tête est
-        // délimité par la marge haute, les titres de section marquent le contenu.
+        // Réserver une marge après le bas réel du texte et du logo, sur chaque
+        // page (y compris les sauts automatiques et les bulletins compactés).
+        $pdf->SetXY(16, max($pdf->GetY(), 27.0) + 5.0);
     }
 
     private function renderFooter(\FPDF $pdf): void

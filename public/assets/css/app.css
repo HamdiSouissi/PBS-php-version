@@ -2031,3 +2031,37 @@ thead.table-light th {
 }
 
 .chat-dock-item-icon { width: 1rem; height: 1rem; flex: 0 0 auto; color: var(--c-muted); }
+
+/* Messagerie : lecture et rédaction sobres, adaptées aux thèmes de l'application. */
+.mail-workspace .mail-sidebar .card-body { padding: 1.15rem; }
+.mail-sidebar-heading, .mail-compose-heading { display: flex; align-items: center; gap: .8rem; }
+.mail-sidebar-heading { margin-bottom: 1.2rem; }
+.mail-sidebar-heading strong, .mail-compose-heading strong { display: block; color: var(--c-ink); font-size: .94rem; }
+.mail-sidebar-heading small, .mail-compose-heading small { display: block; color: var(--c-muted); font-size: .78rem; }
+.mail-sidebar-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: 11px; color: var(--accent); background: var(--accent-subtle); }
+.mail-sidebar-icon svg, .mail-folder-name svg { width: 18px; height: 18px; }
+.mail-section-label { margin: 1.3rem .55rem .45rem; color: var(--c-muted); font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.nav-mail { gap: .2rem; }
+.nav-mail .nav-link { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .7rem .75rem; border-radius: var(--r-sm); color: var(--c-secondary); font-size: .875rem; }
+.nav-mail .nav-link:hover { background: var(--c-surface-2); color: var(--c-ink); }
+.nav-mail .nav-link.active { color: var(--accent); background: var(--accent-subtle); font-weight: 700; }
+.mail-folder-name { display: flex; align-items: center; gap: .65rem; min-width: 0; overflow-wrap: anywhere; }
+.mail-folder-name svg { flex-shrink: 0; }
+.mail-list-header { padding: 1.25rem 1.4rem; }
+.mail-list-header form { max-width: 100%; }
+.mail-message-list td { padding-top: 1rem; padding-bottom: 1rem; border-color: var(--c-border-subtle); }
+.mail-message-list a:hover { color: var(--accent) !important; }
+.mail-compose-card { max-width: 960px; margin-inline: auto; }
+.mail-compose-heading { padding: 1.35rem 1.5rem; border-bottom: 1px solid var(--c-border-subtle); background: var(--c-surface-2); }
+.mail-compose-card .card-body { padding: 1.5rem; }
+.mail-compose-card textarea { min-height: 240px; line-height: 1.6; }
+.mail-message-meta { padding: 1.5rem; background: var(--c-surface-2); overflow-wrap: anywhere; }
+.mail-message-meta h5 { color: var(--c-ink); font-size: 1.15rem; }
+.mail-message-meta dt { color: var(--c-muted); }
+.mail-message-content { padding: 1.5rem; line-height: 1.7; overflow-wrap: anywhere; }
+.mail-text-body { color: var(--c-body); }
+@media (max-width: 575.98px) {
+    .mail-list-header, .mail-compose-card .card-body, .mail-message-meta, .mail-message-content { padding: 1rem; }
+    .mail-list-header form { width: 100%; }
+    .mail-list-header form input { min-width: 0; flex: 1; }
+}

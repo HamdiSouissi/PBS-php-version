@@ -14,6 +14,7 @@ use App\Core\Pdf\PdfDocument;
 use App\Services\MailerService;
 use Modules\Contracts\Services\ClientContractService;
 use Modules\Contracts\Services\ContractSignatureService;
+use Modules\Contracts\Services\SignatureInvitationEmail;
 
 final class ContractSignatureController extends Controller
 {
@@ -27,7 +28,7 @@ final class ContractSignatureController extends Controller
     public function start(Request $request, int $id): Response
     {
         $this->auth()->requirePermission('contracts.write');
-        $this->contracts->getOrFail($id);
+        $contract = $this->contracts->getOrFail($id);
         try {
             if ($request->input('consent') !== '1') {
                 throw new ValidationException(['consent' => 'Confirmez votre signature du PDF avant de continuer.']);
@@ -45,9 +46,14 @@ final class ContractSignatureController extends Controller
             // Le lien n'est conservé en clair que dans la session de l'émetteur, pour un seul affichage.
             $_SESSION['_contract_signature_link_' . $id] = $url;
             if ($mode === 'email') {
-                $sent = $this->mailer->send(trim((string) $request->input('client_email')), 'Invitation à signer un contrat',
-                    '<p>Un contrat vous attend pour signature électronique simple.</p><p><a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">Consulter et signer le contrat</a></p><p>Ce lien personnel expire dans 7 jours. Ne le transférez pas.</p>',
-                    "Un contrat vous attend pour signature électronique simple. Lien personnel, valable 7 jours :\n" . $url);
+                $name = trim((string) $request->input('client_name'));
+                $reference = (string) $contract['contract_number'];
+                $sent = $this->mailer->send(
+                    trim((string) $request->input('client_email')),
+                    'Invitation à signer un contrat',
+                    SignatureInvitationEmail::html($url, $name, $reference),
+                    SignatureInvitationEmail::text($url, $name, $reference)
+                );
                 flash($sent ? 'success' : 'error', $sent ? 'Signature enregistrée et invitation transmise par e-mail.' : 'Signature enregistrée, mais l’e-mail n’a pas été envoyé. Utilisez le lien affiché ou vérifiez le SMTP.');
             } else {
                 flash('success', 'Signature enregistrée. Copiez et transmettez le lien personnel au client.');
