@@ -130,7 +130,7 @@ $pageTitle = $title ?? 'Prime Business Suite';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
-    <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+    <link rel="icon" type="image/png" href="<?= e(asset('assets/img/favicon.png')) ?>">
     <title><?= e($pageTitle) ?> — Prime Business Suite</title>
     <script>
         /* Thème appliqué avant le premier affichage : aucun clignotement. */
@@ -152,7 +152,7 @@ $pageTitle = $title ?? 'Prime Business Suite';
 <div class="wrapper d-flex">
     <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
         <a class="sidebar-brand text-decoration-none" href="/dashboard">
-            <span class="brand-tile"><img src="/assets/img/logo-mark.png" alt="Logo Prime Vision Solutions"></span>
+            <span class="brand-tile"><img src="<?= e(asset('assets/img/logo-mark.png')) ?>" alt="Logo Prime Vision Solutions"></span>
             <span class="brand-wordmark">
                 <span class="brand-name">Prime Business Suite</span>
                 <span class="brand-sub">Prime Vision Solutions</span>

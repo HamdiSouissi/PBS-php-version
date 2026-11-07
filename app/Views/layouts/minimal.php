@@ -17,7 +17,7 @@ $toastIcons = ['success' => 'circle-check', 'warning' => 'triangle-alert', 'erro
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+    <link rel="icon" type="image/png" href="<?= e(asset('assets/img/favicon.png')) ?>">
     <title><?= e($title ?? 'Connexion') ?> — Prime Business Suite</title>
     <script>
         (function () {
@@ -41,10 +41,7 @@ $toastIcons = ['success' => 'circle-check', 'warning' => 'triangle-alert', 'erro
 <?php if (!empty($loginPage)): ?>
 <div class="login-shell">
     <aside class="login-intro" aria-label="Prime Business Suite">
-        <div class="login-brand">
-            <span class="login-brand-mark"><img src="/assets/img/logo-mark.png" alt=""></span>
-            <span><strong>PRIME VISION</strong><small>SOLUTIONS</small></span>
-        </div>
+        <div class="login-brand"><img src="<?= e(asset('assets/img/logo-full.png')) ?>" alt="Prime Vision Solutions"></div>
         <div class="login-intro-copy">
             <span class="login-eyebrow"><span></span> VOTRE ESPACE DE TRAVAIL</span>
             <h1>Les idées avancent.<br><em>Votre entreprise aussi.</em></h1>
@@ -55,11 +52,11 @@ $toastIcons = ['success' => 'circle-check', 'warning' => 'triangle-alert', 'erro
     </aside>
     <main class="login-panel">
         <div class="login-panel-inner">
-            <div class="login-mobile-brand"><img src="/assets/img/logo-mark.png" alt=""> <span>PRIME VISION <small>SOLUTIONS</small></span></div>
+            <div class="login-mobile-brand"><img src="<?= e(asset('assets/img/logo-full.png')) ?>" alt="Prime Vision Solutions"></div>
             <div class="login-panel-top"><span>ESPACE PRIVÉ</span><span class="login-secure"><i data-lucide="shield-check"></i> Connexion sécurisée</span></div>
 <?php else: ?>
 <main class="auth-card">
-    <img class="auth-logo" src="/assets/img/logo-full.png" alt="Prime Vision Solutions">
+    <img class="auth-logo" src="<?= e(asset('assets/img/logo-full.png')) ?>" alt="Prime Vision Solutions">
     <p class="auth-tagline">Prime Business Suite · gestion d'entreprise</p>
     <?php endif; ?>
 
