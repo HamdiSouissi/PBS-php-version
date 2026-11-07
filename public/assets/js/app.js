@@ -191,22 +191,36 @@ const App = {
     },
 
     /* --- Icônes : Lucide + compatibilité des anciens <i class="bi-…"> ---- */
-    initIcons() {
-        const upgrade = (rootNode = document) => {
-            rootNode.querySelectorAll('i.bi, i[class*="bi-"]').forEach((el) => {
-                const match = el.className.match(/bi-([a-z0-9-]+)/);
-                if (!match) return;
-                const lucideName = ICON_MAP[match[1]];
-                if (!lucideName) return;
-                el.setAttribute('data-lucide', lucideName);
-                el.removeAttribute('class');
-                el.classList.add('pbs-icon-slot');
-            });
-            if (window.lucide) window.lucide.createIcons();
-        };
-        upgrade();
+    refreshIcons() {
+        document.querySelectorAll('i.bi, i[class*="bi-"]').forEach((el) => {
+            const match = el.className.match(/bi-([a-z0-9-]+)/);
+            const name = match && ICON_MAP[match[1]];
+            if (!name) return;
+            el.setAttribute('data-lucide', name);
+            el.removeAttribute('class');
+            el.classList.add('pbs-icon-slot');
+        });
+        if (!window.lucide) return;
 
-        // Gère les noeuds ajoutés dynamiquement (lignes de facture, modales…).
+        // Lucide conserve data-lucide sur les SVG créés. Ne jamais les passer
+        // à createIcons : ils seraient remplacés à chaque mutation du DOM.
+        const pending = Array.from(document.querySelectorAll('[data-lucide]'))
+            .filter((el) => el.tagName.toLowerCase() !== 'svg');
+        if (pending.length === 0) return;
+        pending.forEach((el) => el.setAttribute('data-pbs-icon-pending', el.getAttribute('data-lucide')));
+        try {
+            window.lucide.createIcons({ nameAttr: 'data-pbs-icon-pending' });
+        } finally {
+            document.querySelectorAll('[data-pbs-icon-pending]')
+                .forEach((el) => el.removeAttribute('data-pbs-icon-pending'));
+        }
+    },
+
+    initIcons() {
+        this.refreshIcons();
+
+        // Les remplacements Lucide déclenchent aussi l'observateur : le
+        // balayage suivant ne touche qu'aux nouveaux placeholders, jamais aux SVG.
         let scheduled = false;
         const observer = new MutationObserver((mutations) => {
             if (!mutations.some((m) => m.addedNodes.length)) return;
@@ -214,7 +228,7 @@ const App = {
             scheduled = true;
             requestAnimationFrame(() => {
                 scheduled = false;
-                upgrade();
+                this.refreshIcons();
             });
         });
         observer.observe(document.body, { childList: true, subtree: true });
@@ -333,7 +347,7 @@ const App = {
         el.querySelector('.toast-message').textContent = message;
         if (title) el.querySelector('.toast-title').textContent = title;
         region.appendChild(el);
-        if (window.lucide) window.lucide.createIcons();
+        this.refreshIcons();
         this.scheduleDismiss(el);
     },
 
@@ -540,7 +554,7 @@ const App = {
                         <span data-lucide="search-x"></span>
                         <div>Aucune commande correspondante.</div>
                     </div>`;
-                if (window.lucide) window.lucide.createIcons();
+                this.refreshIcons();
                 return;
             }
             const recents = q === '' ? recent() : [];
@@ -563,7 +577,7 @@ const App = {
                         <span class="palette-hint">${it.hint || ''}</span>
                     </a>`;
                 }).join('')}`).join('');
-            if (window.lucide) window.lucide.createIcons();
+            this.refreshIcons();
         };
 
         const open = () => {

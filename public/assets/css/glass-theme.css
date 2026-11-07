@@ -330,6 +330,8 @@ body.auth-body {
     transition: color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 .sidebar .nav-link svg.lucide { transition: transform .18s ease, color .18s ease; }
+/* Le lien ou le bouton reste la cible du clic, jamais un tracé SVG remplacé. */
+.sidebar .nav-link svg, .sidebar-rail-toggle svg { pointer-events: none; }
 .sidebar .nav-link:hover {
     background: var(--sidebar-hover);
     border-color: var(--c-border);

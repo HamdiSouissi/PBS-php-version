@@ -114,7 +114,7 @@
             item.addEventListener('click', () => openConversation(conversation.id));
             els.list.appendChild(item);
         });
-        if (window.lucide) window.lucide.createIcons();
+        window.PBSApp?.refreshIcons();
     }
 
     function renderMessages(messages, append = false) {
