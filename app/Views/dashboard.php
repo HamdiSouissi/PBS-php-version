@@ -128,21 +128,21 @@ $greeting = $displayName !== '' ? 'Bonjour, ' . $displayName : 'Tableau de bord'
     </div>
 <?php endif; ?>
 
-<section class="kpi-grid mb-4" aria-label="Indicateurs clés">
+<section class="kpi-grid dashboard-kpis mb-4" aria-label="Indicateurs clés">
     <?php foreach ($kpiCards as $i => $card): ?>
         <article class="kpi-card">
             <div class="kpi-top">
                 <span class="kpi-icon <?= e($card['tone']) ?>">
                     <i data-lucide="<?= e($card['icon']) ?>"></i>
                 </span>
+                <span class="kpi-label"><?= e($card['label']) ?></span>
             </div>
             <div class="kpi-value tnum"
                  data-countup="<?= e((string) $card['raw']) ?>"
                  data-decimals="<?= e((string) $card['decimals']) ?>"
                  <?= isset($card['currency']) ? 'data-currency="' . e($card['currency']) . '"' : '' ?>><?= e($card['value']) ?></div>
-            <div class="kpi-label"><?= e($card['label']) ?></div>
             <?php if (!empty($card['sub'])): ?>
-                <div class="small text-muted mt-1"><?= e($card['sub']) ?></div>
+                <div class="kpi-detail"><?= e($card['sub']) ?></div>
             <?php endif; ?>
         </article>
     <?php endforeach; ?>
