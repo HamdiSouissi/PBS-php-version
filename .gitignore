@@ -34,6 +34,8 @@ storage/encryption/*.key
 !/storage/uploads/.gitkeep
 /storage/documents/*
 !/storage/documents/.gitkeep
+/storage/contract-signatures/*
+!/storage/contract-signatures/.gitkeep
 /storage/exports/*
 !/storage/exports/.gitkeep
 /storage/backups/*

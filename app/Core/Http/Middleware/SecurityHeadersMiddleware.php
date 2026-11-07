@@ -17,7 +17,11 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         $response = $next($request);
         $response->withHeader('X-Content-Type-Options', 'nosniff');
         $response->withHeader('X-Frame-Options', 'DENY');
-        $response->withHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->withHeader('Referrer-Policy', str_starts_with($request->path(), '/signature/') ? 'no-referrer' : 'strict-origin-when-cross-origin');
+        if (str_starts_with($request->path(), '/signature/')) {
+            $response->withHeader('Cache-Control', 'no-store');
+            $response->withHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+        }
         // Toutes les bibliothèques front sont self-hosted (public/assets/vendor) :
         // aucune origine tierce n'est nécessaire. 'unsafe-inline' couvre les
         // scripts de thème anti-scintillement et les styles à jetons des vues.

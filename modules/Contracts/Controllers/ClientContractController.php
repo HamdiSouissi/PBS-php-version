@@ -12,6 +12,7 @@ use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Pdf\PdfManager;
 use Modules\Contracts\Services\ClientContractService;
+use Modules\Contracts\Services\ContractSignatureService;
 
 /**
  * Contrats commerciaux clients avec génération/régénération PDF.
@@ -21,7 +22,8 @@ final class ClientContractController extends Controller
     public function __construct(
         private readonly ClientContractService $contracts,
         private readonly Connection $db,
-        private readonly PdfManager $pdf
+        private readonly PdfManager $pdf,
+        private readonly ContractSignatureService $signatures
     ) {
     }
 
@@ -80,12 +82,16 @@ final class ClientContractController extends Controller
     public function show(Request $request, int $id): Response
     {
         $this->auth()->requirePermission('contracts.read');
-        return $this->view('Contracts::show', [
+        $response = $this->view('Contracts::show', [
             'title' => 'Contrat ' . $this->contracts->getOrFail($id)['contract_number'],
             'contract' => $this->contracts->getOrFail($id),
             'pdfDoc' => $this->pdf->latestFor('client_contract', $id),
             'history' => $this->pdf->historyFor('client_contract', $id),
+            'signatures' => $this->signatures->history($id),
+            'signatureLink' => $_SESSION['_contract_signature_link_' . $id] ?? null,
         ]);
+        unset($_SESSION['_contract_signature_link_' . $id]);
+        return $response->withHeader('Cache-Control', 'no-store');
     }
 
     public function regeneratePdf(Request $request, int $id): Response
