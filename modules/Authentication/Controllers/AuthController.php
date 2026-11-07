@@ -30,6 +30,7 @@ final class AuthController extends Controller
     {
         return $this->view('Authentication::auth/login', [
             'title' => 'Connexion',
+            'loginPage' => true,
         ], 'layouts/minimal');
     }
 
