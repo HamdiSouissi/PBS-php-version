@@ -39,6 +39,8 @@ $router->group(['auth', 'csrf'], '', static function (\App\Core\Router\Router $r
         ->middleware('permission:users.write');
     $router->post('/settings/users/{id}/update', [UserController::class, 'update'])
         ->middleware('permission:users.write');
+    $router->post('/settings/users/{id}/delete', [UserController::class, 'delete'])
+        ->middleware('role:admin');
     $router->post('/settings/users/{id}/totp/disable', [UserController::class, 'disableTotp'])
         ->middleware('permission:users.write');
 

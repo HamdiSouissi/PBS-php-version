@@ -39,7 +39,7 @@ final class UserRepository extends BaseRepository
     public function findByEmail(string $email): ?User
     {
         $row = $this->db->fetchOne(
-            $this->selectWithRights() . ' WHERE u.email = :email GROUP BY u.id',
+            $this->selectWithRights() . ' WHERE u.email = :email AND u.deleted_at IS NULL GROUP BY u.id',
             ['email' => mb_strtolower(trim($email))]
         );
         return $row === null ? null : User::fromRow($row);
@@ -48,7 +48,7 @@ final class UserRepository extends BaseRepository
     public function findWithRights(int $id): ?User
     {
         $row = $this->db->fetchOne(
-            $this->selectWithRights() . ' WHERE u.id = :id GROUP BY u.id',
+            $this->selectWithRights() . ' WHERE u.id = :id AND u.deleted_at IS NULL GROUP BY u.id',
             ['id' => $id]
         );
         return $row === null ? null : User::fromRow($row);
@@ -65,6 +65,7 @@ final class UserRepository extends BaseRepository
              FROM users u
              LEFT JOIN role_user ru ON ru.user_id = u.id
              LEFT JOIN roles r ON r.id = ru.role_id
+             WHERE u.deleted_at IS NULL
              GROUP BY u.id
              ORDER BY u.created_at DESC
              LIMIT {$perPage} OFFSET {$offset}"

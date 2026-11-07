@@ -111,3 +111,17 @@ administrateur nominatif et désactiver ce compte :
 ```bash
 php bin/console user:create --email=nom@entreprise.fr --password='...' --role=admin
 ```
+
+### Suppression d'un compte
+
+Depuis **Utilisateurs**, un administrateur peut supprimer un autre compte après
+confirmation. Il ne peut pas supprimer le sien. La suppression révoque l'accès,
+les rôles, jetons et paramètres de boîte mail enregistrés, et détache le compte
+de la fiche salarié sans supprimer celle-ci. L'adresse de connexion est libérée.
+
+Il s'agit d'une suppression logique : l'identifiant et le nom du compte restent
+conservés pour l'historique, les messages, les journaux et les preuves de
+signature ; ces données ne sont pas effacées. Ce n'est donc pas une suppression
+complète des données personnelles. Une adresse réutilisée crée un nouveau compte,
+sans accès aux anciennes conversations ni aux anciennes autorisations. Appliquer
+la migration `20261107_000020_deleted_users.sql` avant le déploiement.

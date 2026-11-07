@@ -23,6 +23,7 @@ CREATE TABLE users (
     locked_until TEXT,
     last_login_at TEXT,
     must_change_password INTEGER NOT NULL DEFAULT 0,
+    deleted_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
