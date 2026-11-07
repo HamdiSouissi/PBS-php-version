@@ -32,6 +32,7 @@ $toastIcons = ['success' => 'circle-check', 'warning' => 'triangle-alert', 'erro
     </script>
     <link href="<?= e(asset('assets/vendor/bootstrap/bootstrap.min.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset('assets/css/app.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('assets/css/glass-theme.css')) ?>" rel="stylesheet">
 </head>
 <body class="auth-body">
 <main class="auth-card">

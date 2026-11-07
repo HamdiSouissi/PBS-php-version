@@ -6,7 +6,7 @@ vanille ES2024 pour les comportements.
 
 ## 1. Jetons de design
 
-Tous les jetons vivent dans `public/assets/css/app.css` (`:root`) :
+Les jetons de base vivent dans `public/assets/css/app.css` (`:root`). La charte Prime Glass les complète dans `public/assets/css/glass-theme.css`, chargé après les styles communs sur les layouts applicatif et minimal. Le fond photographique est local ; les surfaces translucides disposent de couleurs de repli et le thème sombre conserve ses propres contrastes. Les principaux jetons sont :
 
 - **Couleurs** : neutres (`--c-bg`, `--c-surface`, `--c-border`, `--c-ink`,
   `--c-body`, `--c-secondary`, `--c-muted`), un accent unique (`--accent`),

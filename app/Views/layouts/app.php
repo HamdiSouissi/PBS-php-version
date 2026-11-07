@@ -146,6 +146,7 @@ $pageTitle = $title ?? 'Prime Business Suite';
     </script>
     <link href="<?= e(asset('assets/vendor/bootstrap/bootstrap.min.css')) ?>" rel="stylesheet">
     <link href="<?= e(asset('assets/css/app.css')) ?>" rel="stylesheet">
+    <link href="<?= e(asset('assets/css/glass-theme.css')) ?>" rel="stylesheet">
 </head>
 <body>
 <div class="wrapper d-flex">
