@@ -15,8 +15,7 @@ use App\Core\Pdf\PdfLabels;
  * et les clauses essentielles du droit commercial français, notamment les
  * pénalités de retard et l'indemnité forfaitaire de recouvrement.
  *
- * Il s'agit d'un modèle type : une mention visible oblige à une relecture
- * juridique avant toute signature.
+ * Le contenu doit être vérifié et adapté au cas concerné avant signature.
  */
 final class ClientContractPdf implements PdfTemplate
 {
@@ -43,13 +42,6 @@ final class ClientContractPdf implements PdfTemplate
         $title = 'Contrat client ' . $contract['contract_number'];
         $pdf->setDocumentTitle($title)->addPage();
         $pdf->h1('CONTRAT DE PRESTATIONS');
-
-        $pdf->noticeBox(
-            "DOCUMENT TYPE — RELECTURE JURIDIQUE OBLIGATOIRE.\n"
-            . "Ce contrat est généré à partir des données enregistrées dans l'application. "
-            . "Il doit être relu, vérifié et adapté par un juriste ou un conseil juridique "
-            . "avant toute signature, en fonction des conditions particulières de la prestation."
-        );
 
         $pdf->keyValueTable([
             ['Référence', (string) $contract['contract_number']],

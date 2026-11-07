@@ -75,7 +75,11 @@ final class ClientContractTermsTest extends DatabaseTestCase
         self::assertTrue(str_contains($pdf->text, '20 % est facturé à la livraison finale'));
         self::assertTrue(str_contains($pdf->text, 'Site vitrine et livraison V0'));
         self::assertTrue(str_contains($pdf->text, 'critères de recette'));
-        self::assertTrue(str_starts_with($pdf->output(), '%PDF'));
+        $binary = $pdf->output();
+        self::assertTrue(str_starts_with($binary, '%PDF'));
+        self::assertFalse(str_contains($this->pdfText($binary), 'RELECTURE JURIDIQUE OBLIGATOIRE'));
+        self::assertFalse(str_contains($this->pdfText($binary), 'DOCUMENT TYPE'));
+        self::assertTrue(str_contains($this->pdfText($binary), 'CONTRAT DE PRESTATIONS'));
         $data['payment_terms'] = 'full';
         $pdf = new ContractRecordingPdf();
         (new ClientContractPdf($this->db))->render($pdf, $service->create($data));
@@ -94,6 +98,17 @@ final class ClientContractTermsTest extends DatabaseTestCase
         self::assertTrue(str_contains($pdf->text, '30 jours nets'));
         self::assertFalse(str_contains($pdf->text, '40 % du prix HT'));
     }
+    private function pdfText(string $binary): string
+    {
+        preg_match_all('/stream\r?\n(.*?)endstream/s', $binary, $matches);
+        $text = '';
+        foreach ($matches[1] as $raw) {
+            $decoded = @gzuncompress($raw);
+            $text .= $decoded === false ? $raw : $decoded;
+        }
+        return $text;
+    }
+
 }
 
 final class ContractRecordingPdf extends PdfDocument
