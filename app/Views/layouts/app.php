@@ -158,6 +158,7 @@ $pageTitle = $title ?? 'Prime Business Suite';
 </script>
 <div class="wrapper d-flex">
     <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+        <div class="sidebar-header">
         <a class="sidebar-brand text-decoration-none" href="/dashboard">
             <span class="brand-tile"><img src="<?= e(asset('assets/img/logo-mark.png')) ?>" alt="Logo Prime Vision Solutions"></span>
             <span class="brand-wordmark">
@@ -165,13 +166,11 @@ $pageTitle = $title ?? 'Prime Business Suite';
                 <span class="brand-sub">Prime Vision Solutions</span>
             </span>
         </a>
-        <div class="sidebar-controls">
-            <button class="sidebar-rail-toggle" id="railToggle" type="button" hidden
-                    aria-label="Réduire la barre latérale" aria-controls="sidebar" aria-expanded="true"
-                    title="Réduire la barre latérale">
-                <i data-lucide="chevron-left" aria-hidden="true"></i>
-                <span>Réduire</span>
-            </button>
+        <button class="sidebar-rail-toggle" id="railToggle" type="button" hidden
+                aria-label="Réduire la barre latérale" aria-controls="sidebar" aria-expanded="true"
+                title="Réduire la barre latérale">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+        </button>
         </div>
         <nav class="nav flex-column">
             <?= $this->navItem('/dashboard', 'Tableau de bord', 'speedometer2') ?>

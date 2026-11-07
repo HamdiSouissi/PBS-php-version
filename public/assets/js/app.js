@@ -102,10 +102,11 @@ const App = {
     init() {
         if (this.initialized) return;
         this.initialized = true;
+        // La navigation doit rester utilisable même si un autre composant échoue.
+        this.initSidebar();
         this.initTheme();
         this.initClock();
         this.initIcons();
-        this.initSidebar();
         this.initToasts();
         this.initConfirm();
         this.initAjaxForms();
@@ -228,6 +229,8 @@ const App = {
         if (!sidebar) return;
 
         const desktop = window.matchMedia('(min-width: 992px)');
+        // La préférence reste utilisable en mémoire si localStorage est bloqué.
+        let railCollapsed = this.store.get('pbs-sidebar-rail') === '1';
         const tooltip = document.createElement('div');
         tooltip.className = 'sidebar-tooltip';
         tooltip.setAttribute('aria-hidden', 'true');
@@ -239,7 +242,7 @@ const App = {
             mobileToggle?.setAttribute('aria-expanded', 'false');
         };
         const updateRail = () => {
-            const collapsed = desktop.matches && this.store.get('pbs-sidebar-rail') === '1';
+            const collapsed = desktop.matches && railCollapsed;
             document.body.classList.toggle('sidebar-collapsed', collapsed);
             const label = collapsed ? 'Développer la barre latérale' : 'Réduire la barre latérale';
             railToggle?.setAttribute('aria-expanded', String(!collapsed));
@@ -266,13 +269,16 @@ const App = {
         if (railToggle) railToggle.hidden = false;
         updateRail();
         railToggle?.addEventListener('click', () => {
-            this.store.set('pbs-sidebar-rail', document.body.classList.contains('sidebar-collapsed') ? '0' : '1');
+            railCollapsed = !railCollapsed;
+            this.store.set('pbs-sidebar-rail', railCollapsed ? '1' : '0');
             updateRail();
         });
-        desktop.addEventListener('change', () => {
+        const onViewportChange = () => {
             closeMobile();
             updateRail();
-        });
+        };
+        if (desktop.addEventListener) desktop.addEventListener('change', onViewportChange);
+        else if (desktop.addListener) desktop.addListener(onViewportChange);
 
         const showTooltip = (link) => {
             if (!desktop.matches || !document.body.classList.contains('sidebar-collapsed')) return;
