@@ -93,7 +93,7 @@ body.auth-body {
     backdrop-filter: blur(24px) saturate(1.3);
 }
 .sidebar-brand { height: 80px; padding: 18px 16px; border-bottom-color: var(--c-border-subtle); }
-.brand-tile { border-radius: 13px; background: rgba(255, 255, 255, .82); }
+.brand-tile { background: transparent; border: 0; box-shadow: none; }
 .brand-name { font-size: .88rem; letter-spacing: -.025em; }
 .brand-sub { margin-top: 3px; font-size: .62rem; letter-spacing: .06em; }
 .sidebar .nav { padding: 12px 12px 28px; }
@@ -177,11 +177,8 @@ body.auth-body {
     .card, .kpi-card { background: white !important; box-shadow: none; backdrop-filter: none; }
 }
 
-/* Les logos marine conservent leurs couleurs et restent lisibles en thème sombre. */
-:root[data-bs-theme='dark'] .auth-logo {
-    height: 64px;
-    max-width: 100%;
-    padding: 8px 14px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, .94);
+/* Variante claire sans fond pour préserver la lisibilité en thème sombre. */
+:root[data-bs-theme='dark'] .auth-logo,
+:root[data-bs-theme='dark'] .brand-tile img {
+    filter: brightness(0) invert(1);
 }
