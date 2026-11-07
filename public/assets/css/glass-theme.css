@@ -176,3 +176,12 @@ body.auth-body {
     body { background: white !important; }
     .card, .kpi-card { background: white !important; box-shadow: none; backdrop-filter: none; }
 }
+
+/* Les logos marine conservent leurs couleurs et restent lisibles en thème sombre. */
+:root[data-bs-theme='dark'] .auth-logo {
+    height: 64px;
+    max-width: 100%;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .94);
+}
