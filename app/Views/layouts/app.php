@@ -149,8 +149,16 @@ $pageTitle = $title ?? 'Prime Business Suite';
     <link href="<?= e(asset('assets/css/glass-theme.css')) ?>" rel="stylesheet">
 </head>
 <body>
+<script>
+    try {
+        if (window.matchMedia('(min-width: 992px)').matches && localStorage.getItem('pbs-sidebar-rail') === '1') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    } catch (e) { /* stockage indisponible */ }
+</script>
 <div class="wrapper d-flex">
     <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+        <div class="sidebar-header">
         <a class="sidebar-brand text-decoration-none" href="/dashboard">
             <span class="brand-tile"><img src="<?= e(asset('assets/img/logo-mark.png')) ?>" alt="Logo Prime Vision Solutions"></span>
             <span class="brand-wordmark">
@@ -158,6 +166,12 @@ $pageTitle = $title ?? 'Prime Business Suite';
                 <span class="brand-sub">Prime Vision Solutions</span>
             </span>
         </a>
+        <button class="sidebar-rail-toggle" id="railToggle" type="button" hidden
+                aria-label="Réduire la barre latérale" aria-controls="sidebar" aria-expanded="true"
+                title="Réduire la barre latérale">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+        </button>
+        </div>
         <nav class="nav flex-column">
             <?= $this->navItem('/dashboard', 'Tableau de bord', 'speedometer2') ?>
             <?php foreach ($navSections as $section): ?>
@@ -194,11 +208,6 @@ $pageTitle = $title ?? 'Prime Business Suite';
                     aria-label="Ouvrir le menu de navigation" aria-controls="sidebar" aria-expanded="false">
                 <i data-lucide="menu"></i>
             </button>
-            <button class="icon-btn d-none d-lg-grid" id="railToggle" type="button"
-                    aria-label="Replier la barre latérale" title="Replier / déplier la barre latérale">
-                <i data-lucide="panel-left"></i>
-            </button>
-
             <div class="me-auto"></div>
 
             <button type="button" class="search-trigger" data-palette-open aria-label="Recherche globale">

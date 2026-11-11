@@ -58,21 +58,71 @@ final class UserService
      */
     public function updateUser(int $id, array $data, array $roleIds): User
     {
-        $this->users->findOrFail($id);
-        $update = array_filter([
-            'first_name' => $data['first_name'] ?? null,
-            'last_name' => $data['last_name'] ?? null,
-            'is_active' => $data['is_active'] ?? null,
-            'updated_at' => date('Y-m-d H:i:s'),
-        ], static fn ($value) => $value !== null);
-        if ($update !== []) {
-            $this->users->updateProfile($id, $update);
+        return $this->db->transaction(function (Connection $db) use ($id, $data, $roleIds): User {
+            $row = $db->fetchOne('SELECT id, deleted_at FROM users WHERE id = :id'
+                . ($db->isSqlite() ? '' : ' FOR UPDATE'), ['id' => $id]);
+            if ($row === null || $row['deleted_at'] !== null) {
+                throw new \App\Core\Exception\NotFoundException('Utilisateur introuvable.');
+            }
+            $update = array_filter([
+                'first_name' => $data['first_name'] ?? null,
+                'last_name' => $data['last_name'] ?? null,
+                'is_active' => $data['is_active'] ?? null,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ], static fn ($value) => $value !== null);
+            if ($update !== []) {
+                $this->users->updateProfile($id, $update);
+            }
+            if ($roleIds !== []) {
+                $this->users->syncRoles($id, $roleIds);
+            }
+            audit('user.update', 'User', $id);
+            return $this->users->findWithRights($id) ?? throw new AppException('Utilisateur illisible.');
+        });
+    }
+
+    /**
+     * Révoque un compte tout en préservant les historiques et preuves liés à son identifiant.
+     */
+    public function deleteUser(int $id, int $actorId): void
+    {
+        if ($id === $actorId) {
+            throw new AppException('Vous ne pouvez pas supprimer votre propre compte.');
         }
-        if ($roleIds !== []) {
-            $this->users->syncRoles($id, $roleIds);
-        }
-        audit('user.update', 'User', $id);
-        return $this->users->findWithRights($id) ?? throw new AppException('Utilisateur illisible.');
+        $this->db->transaction(function (Connection $db) use ($id, $actorId): void {
+            // Verrouiller tous les administrateurs dans un ordre stable évite que
+            // deux administrateurs se suppriment mutuellement en parallèle.
+            $admins = $db->fetchAll(
+                "SELECT u.id FROM users u JOIN role_user ru ON ru.user_id = u.id
+                 JOIN roles r ON r.id = ru.role_id WHERE r.code = 'admin'
+                 AND u.is_active = 1 AND u.deleted_at IS NULL ORDER BY u.id"
+                . ($db->isSqlite() ? '' : ' FOR UPDATE')
+            );
+            if (!in_array($actorId, array_map(static fn (array $row): int => (int) $row['id'], $admins), true)) {
+                throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs actifs.');
+            }
+            $user = $this->users->findWithRights($id);
+            if ($user === null) {
+                throw new AppException('Ce compte est introuvable ou déjà supprimé.');
+            }
+            $updated = $db->execute(
+                'UPDATE users SET email = :email, password_hash = :password, is_active = 0,
+                 totp_secret = NULL, totp_enrolled = 0, totp_confirmed_at = NULL,
+                 failed_attempts = 0, locked_until = NULL, must_change_password = 0,
+                 deleted_at = ' . $db->nowExpression() . ', updated_at = ' . $db->nowExpression() . '
+                 WHERE id = :id AND deleted_at IS NULL',
+                ['email' => 'deleted-' . bin2hex(random_bytes(24)) . '@deleted.invalid',
+                 'password' => bin2hex(random_bytes(32)), 'id' => $id]
+            );
+            if ($updated !== 1) {
+                throw new AppException('Ce compte est introuvable ou déjà supprimé.');
+            }
+            foreach (['remember_tokens', 'password_resets', 'api_two_factor_challenges', 'role_user', 'mail_accounts'] as $table) {
+                $db->execute('DELETE FROM ' . $table . ' WHERE user_id = :id', ['id' => $id]);
+            }
+            $db->execute('UPDATE employees SET user_id = NULL WHERE user_id = :id', ['id' => $id]);
+            audit('user.delete', 'User', $id, ['email' => $user->email]);
+        });
     }
 
     public function changePassword(int $userId, string $current, string $new, string $confirmation): void

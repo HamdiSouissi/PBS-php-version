@@ -66,3 +66,20 @@ if ($report['status'] === 'approved') {
     <div class="card"><div class="card-header">Notes</div><div class="card-body small"><?= nl2br(e((string) $report['notes'])) ?></div></div>
 <?php endif; ?>
 </div>
+
+<?php if ($canAccessReceipts): ?>
+<div class="card mt-3"><div class="card-body">
+    <h2 class="h6">Justificatifs PDF</h2>
+    <?php if ($receipts === []): ?><p class="text-muted small">Aucun justificatif.</p><?php else: ?>
+        <ul><?php foreach ($receipts as $receipt): ?><li><a href="/expenses/<?= $id ?>/receipts/<?= (int) $receipt['id'] ?>"><?= e($receipt['original_name']) ?></a></li><?php endforeach; ?></ul>
+    <?php endif; ?>
+    <?php if ($canUploadReceipt && $report['status'] === 'draft'): ?>
+        <form method="post" enctype="multipart/form-data" action="/expenses/<?= $id ?>/receipts" class="d-flex flex-wrap gap-2">
+            <?= csrf_field() ?><label class="visually-hidden" for="receipt">Facture PDF</label>
+            <input id="receipt" class="form-control" type="file" name="receipt" accept=".pdf,application/pdf" required>
+            <button class="btn btn-primary" type="submit">Ajouter une facture PDF</button>
+            <small class="text-muted">PDF uniquement, 10 Mo maximum. Ajoutez plusieurs fichiers un par un avant soumission.</small>
+        </form>
+    <?php endif; ?>
+</div></div>
+<?php endif; ?>

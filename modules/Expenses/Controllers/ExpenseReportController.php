@@ -11,6 +11,7 @@ use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Pdf\PdfManager;
 use Modules\Expenses\Services\ExpenseReportService;
+use Modules\Expenses\Services\ExpenseReceiptService;
 
 /**
  * Notes de frais : saisie, workflow de validation et export PDF.
@@ -20,7 +21,8 @@ final class ExpenseReportController extends Controller
     public function __construct(
         private readonly ExpenseReportService $reports,
         private readonly Connection $db,
-        private readonly PdfManager $pdf
+        private readonly PdfManager $pdf,
+        private readonly ExpenseReceiptService $receipts
     ) {
     }
 
@@ -81,12 +83,58 @@ final class ExpenseReportController extends Controller
     public function show(Request $request, int $id): Response
     {
         $this->auth()->requirePermission('expenses.read');
+        $report = $this->reports->getOrFail($id);
+        $canAccessReceipts = $this->canAccessReceipts($report);
         return $this->view('Expenses::show', [
             'title' => 'Note de frais n°' . $id,
-            'report' => $this->reports->getOrFail($id),
+            'report' => $report,
+            'receipts' => $canAccessReceipts ? $this->receipts->forReport($id) : [],
+            'canAccessReceipts' => $canAccessReceipts,
+            'canUploadReceipt' => $canAccessReceipts && $this->auth()->hasAnyPermission(['expenses.request', 'expenses.approve']),
             'lines' => $this->reports->lines($id),
             'pdfDoc' => $this->pdf->latestFor('expense_report', $id),
         ]);
+    }
+
+    private function canAccessReceipts(array $report): bool
+    {
+        if ($this->auth()->hasAnyPermission(['expenses.approve', 'expenses.pay'])) {
+            return true;
+        }
+        return $this->db->fetchOne('SELECT id FROM employees WHERE id = :employee AND user_id = :user', [
+            'employee' => $report['employee_id'], 'user' => $this->auth()->id(),
+        ]) !== null;
+    }
+
+    private function requireReceiptAccess(int $id): void
+    {
+        $this->auth()->requirePermission('expenses.read');
+        if (!$this->canAccessReceipts($this->reports->getOrFail($id))) {
+            throw new \App\Core\Exception\AuthorizationException('Accès au justificatif refusé.');
+        }
+    }
+
+    public function uploadReceipt(Request $request, int $id): Response
+    {
+        $this->requireReceiptAccess($id);
+        $this->auth()->requireAnyPermission(['expenses.request', 'expenses.approve']);
+        $file = $request->file('receipt');
+        if ($file === null) {
+            throw new \App\Core\Exception\ValidationException(['receipt' => 'Sélectionnez un fichier PDF.']);
+        }
+        $this->receipts->upload($id, $file, (int) $this->auth()->id());
+        flash('success', 'Justificatif ajouté.');
+        return new RedirectResponse('/expenses/' . $id);
+    }
+
+    public function downloadReceipt(Request $request, int $id, int $receiptId): Response
+    {
+        $this->requireReceiptAccess($id);
+        $file = $this->receipts->download($id, $receiptId);
+        return Response::download($file['path'], 'application/pdf')
+            ->withHeader('Content-Disposition', "attachment; filename=\"justificatif.pdf\"; filename*=UTF-8''" . rawurlencode($file['name']))
+            ->withHeader('X-Content-Type-Options', 'nosniff')
+            ->withHeader('Cache-Control', 'private, no-store');
     }
 
     public function submit(Request $request, int $id): Response

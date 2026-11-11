@@ -15,6 +15,13 @@ if ($sheetPdf !== null) {
     $actions .= '<a class="btn btn-outline-secondary btn-sm" target="_blank" href="/pdf/' . (int) $sheetPdf['id'] . '/preview">'
         . '<i data-lucide="eye"></i>Aperçu</a>';
 }
+if ($canEditContact) {
+    $actions .= '<a class="btn btn-outline-secondary btn-sm" href="/employees/' . (int) $employee['id'] . '/edit"><i data-lucide="pencil"></i>Modifier la fiche</a>';
+}
+if ($canSendReset) {
+    $actions .= '<form method="post" action="/employees/' . (int) $employee['id'] . '/password-reset" data-confirm="Envoyer un lien de réinitialisation aux adresses personnelle et professionnelle disponibles ?">'
+        . csrf_field() . '<button class="btn btn-outline-secondary btn-sm" type="submit"><i data-lucide="mail"></i>Envoyer un lien de mot de passe</button></form>';
+}
 $actions .= '<button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#portalModal">'
     . '<i data-lucide="id-card"></i>Portail salarié</button>';
 $actions .= '<button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#terminateModal">'

@@ -11,6 +11,10 @@ return static function (Router $router): void {
         $router->get('/create', [EmployeeController::class, 'create'])->middleware('permission:employees.write');
         $router->post('', [EmployeeController::class, 'store'])->middleware('permission:employees.write');
         $router->get('/{id}', [EmployeeController::class, 'show'])->name('employees.show');
+        $router->get('/{id}/contact', [EmployeeController::class, 'editContact'])->middleware('permission:employees.write');
+        $router->post('/{id}/contact', [EmployeeController::class, 'updateContact'])->middleware('permission:employees.write');
+        $router->get('/{id}/edit', [EmployeeController::class, 'edit'])->middleware('permission:employees.write');
+        $router->post('/{id}/password-reset', [EmployeeController::class, 'sendPasswordReset'])->middleware('role:admin', 'throttle:employee-reset,10,900');
         $router->post('/{id}/update', [EmployeeController::class, 'update'])->middleware('permission:employees.write');
         $router->post('/{id}/terminate', [EmployeeController::class, 'terminate'])->middleware('permission:employees.write');
         $router->post('/{id}/portal', [EmployeeController::class, 'enablePortal'])->middleware('permission:employees.write');

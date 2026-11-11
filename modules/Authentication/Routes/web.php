@@ -19,9 +19,9 @@ $router->group(['guest', 'csrf'], '', static function (\App\Core\Router\Router $
     $router->get('/two-factor', [AuthController::class, 'showTwoFactor']);
     $router->post('/two-factor', [AuthController::class, 'verifyTwoFactor']);
     $router->get('/forgot-password', [AuthController::class, 'showForgot']);
-    $router->post('/forgot-password', [AuthController::class, 'sendResetLink']);
+    $router->post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:password-reset,5,900');
     $router->get('/reset-password', [AuthController::class, 'showReset']);
-    $router->post('/reset-password', [AuthController::class, 'resetPassword']);
+    $router->post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:password-reset-submit,10,900');
 });
 
 $router->post('/logout', [AuthController::class, 'logout'])->middleware('auth', 'csrf')->name('logout');
@@ -39,6 +39,8 @@ $router->group(['auth', 'csrf'], '', static function (\App\Core\Router\Router $r
         ->middleware('permission:users.write');
     $router->post('/settings/users/{id}/update', [UserController::class, 'update'])
         ->middleware('permission:users.write');
+    $router->post('/settings/users/{id}/delete', [UserController::class, 'delete'])
+        ->middleware('role:admin');
     $router->post('/settings/users/{id}/totp/disable', [UserController::class, 'disableTotp'])
         ->middleware('permission:users.write');
 
