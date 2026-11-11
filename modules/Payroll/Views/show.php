@@ -33,6 +33,7 @@ $actions .= '<form method="post" action="/payroll/' . (int) $payslip['id'] . '/p
 ) ?>
 
 <div class="page-body">
+<div class="alert alert-warning small">Calcul simplifié : prélèvement à la source, avantages, exonérations et autres éléments de paie ne sont pas calculés automatiquement. Faites vérifier le bulletin et les taux par un spécialiste avant utilisation.</div>
 <div class="row g-3">
     <div class="col-lg-8">
         <?php if ($lines !== []): ?>
@@ -40,7 +41,7 @@ $actions .= '<form method="post" action="/payroll/' . (int) $payslip['id'] . '/p
             <div class="card-header">Détail des cotisations</div>
             <div class="table-responsive">
                 <table class="table table-sm mb-0" data-sortable>
-                    <thead class="table-light"><tr><th>Cotisation</th><th class="text-end">Base</th><th class="text-end">Taux salarial</th><th class="text-end">Part salariale</th><th class="text-end">Part patronale</th></tr></thead>
+                    <thead class="table-light"><tr><th>Cotisation</th><th class="text-end">Base</th><th class="text-end">Taux salarial</th><th class="text-end">Part salariale</th><th class="text-end">Taux patronal</th><th class="text-end">Part patronale</th></tr></thead>
                     <tbody>
                     <?php foreach ($lines as $line): ?>
                         <tr>
@@ -48,6 +49,7 @@ $actions .= '<form method="post" action="/payroll/' . (int) $payslip['id'] . '/p
                             <td class="text-end tnum"><?= money_format((float) $line['base_amount']) ?></td>
                             <td class="text-end tnum"><?= e(rtrim(rtrim(number_format((float) $line['rate_employee'], 3, ',', ' '), '0'), ',')) ?> %</td>
                             <td class="text-end tnum"><?= money_format((float) $line['amount_employee']) ?></td>
+                            <td class="text-end tnum"><?= e(rtrim(rtrim(number_format((float) $line['rate_employer'], 3, ',', ' '), '0'), ',')) ?> %</td>
                             <td class="text-end tnum"><?= money_format((float) $line['amount_employer']) ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -58,6 +60,7 @@ $actions .= '<form method="post" action="/payroll/' . (int) $payslip['id'] . '/p
                         <td></td>
                         <td></td>
                         <td class="text-end tnum"><?= money_format((float) $payslip['total_employee']) ?></td>
+                        <td></td>
                         <td class="text-end tnum"><?= money_format((float) $payslip['total_employer']) ?></td>
                     </tr>
                     </tfoot>
@@ -75,8 +78,8 @@ $actions .= '<form method="post" action="/payroll/' . (int) $payslip['id'] . '/p
                 <li class="list-group-item d-flex justify-content-between"><span>Heures travaillées</span><strong class="tnum"><?= e(number_format((float) $payslip['hours_worked'], 2, ',', ' ')) ?> h</strong></li>
                 <li class="list-group-item d-flex justify-content-between"><span>Salaire brut</span><strong class="tnum"><?= money_format((float) $payslip['gross_salary']) ?></strong></li>
                 <li class="list-group-item d-flex justify-content-between"><span>Cotisations salariales</span><strong class="text-danger tnum">− <?= money_format((float) $payslip['total_employee']) ?></strong></li>
-                <li class="list-group-item d-flex justify-content-between"><span>Net imposable</span><strong class="tnum"><?= money_format((float) $payslip['net_taxable']) ?></strong></li>
-                <li class="list-group-item d-flex justify-content-between list-group-item-light"><span>Net à payer</span><strong class="fs-6 tnum"><?= money_format((float) $payslip['net_payable']) ?></strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Net imposable estimé</span><strong class="tnum"><?= money_format((float) $payslip['net_taxable']) ?></strong></li>
+                <li class="list-group-item d-flex justify-content-between list-group-item-light"><span>Net à payer avant impôt</span><strong class="fs-6 tnum"><?= money_format((float) $payslip['net_payable']) ?></strong></li>
                 <li class="list-group-item d-flex justify-content-between text-muted"><span>Charges patronales</span><span class="tnum"><?= money_format((float) $payslip['total_employer']) ?></span></li>
             </ul>
         </div>

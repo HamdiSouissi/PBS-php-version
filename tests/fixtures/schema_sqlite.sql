@@ -124,6 +124,7 @@ CREATE TABLE companies (
     email TEXT NOT NULL DEFAULT '',
     iban TEXT NOT NULL DEFAULT '',
     bic TEXT NOT NULL DEFAULT '',
+    naf_code TEXT NOT NULL DEFAULT '',
     urssaf_number TEXT NOT NULL DEFAULT '',
     collective_agreement TEXT NOT NULL DEFAULT '',
     logo_path TEXT,

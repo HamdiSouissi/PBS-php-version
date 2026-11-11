@@ -30,7 +30,7 @@ $orgActions = '<button form="company-form" class="btn btn-primary btn-sm" type="
                         'legal_form' => 'Forme juridique', 'siren' => 'SIREN (9 chiffres)', 'siret' => 'SIRET (14 chiffres)',
                         'vat_number' => 'N° TVA intracom.', 'address' => 'Adresse', 'postal_code' => 'Code postal',
                         'city' => 'Ville', 'phone' => 'Téléphone', 'email' => 'E-mail', 'iban' => 'IBAN', 'bic' => 'BIC',
-                        'urssaf_number' => 'N° URSSAF', 'collective_agreement' => 'Convention collective',
+                        'naf_code' => 'Code NAF / APE', 'urssaf_number' => 'N° URSSAF / MSA', 'collective_agreement' => 'Convention collective',
                     ];
                     foreach ($fields as $name => $label): ?>
                         <div class="col-md-6">

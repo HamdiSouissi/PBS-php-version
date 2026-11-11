@@ -46,11 +46,12 @@ final class OrganizationController extends Controller
             'iban' => 'nullable|iban',
             // CORRECTIF : champs présents dans le formulaire mais jamais enregistrés.
             'bic' => 'nullable|string|max:11',
+            'naf_code' => 'nullable|string|max:10',
             'urssaf_number' => 'nullable|string|max:20',
             'collective_agreement' => 'nullable|string|max:120',
         ]);
         // Colonnes texte NOT NULL : jamais de NULL.
-        foreach (['commercial_name', 'phone', 'email', 'address', 'postal_code', 'city', 'iban', 'bic', 'urssaf_number', 'collective_agreement'] as $field) {
+        foreach (['commercial_name', 'phone', 'email', 'address', 'postal_code', 'city', 'iban', 'bic', 'naf_code', 'urssaf_number', 'collective_agreement'] as $field) {
             if (array_key_exists($field, $data) && $data[$field] === null) {
                 $data[$field] = '';
             }

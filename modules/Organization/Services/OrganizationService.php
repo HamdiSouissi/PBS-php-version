@@ -39,7 +39,7 @@ final class OrganizationService
         $fields = [
             'legal_name', 'commercial_name', 'siren', 'siret', 'vat_number', 'legal_form',
             'address', 'postal_code', 'city', 'country', 'phone', 'email', 'iban', 'bic',
-            'urssaf_number', 'collective_agreement',
+            'naf_code', 'urssaf_number', 'collective_agreement',
         ];
         $update = array_intersect_key($data, array_flip($fields));
         if ($update === []) {
