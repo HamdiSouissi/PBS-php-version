@@ -104,12 +104,54 @@ final class EmployeeController extends Controller
                 ? db()->fetchOne('SELECT id, email, must_change_password FROM users WHERE id = :u', ['u' => $employee['user_id']])
                 : null,
             'leaveSummary' => $this->leaveBalances->summary($id),
+            'canEditContact' => $this->canEditContact(),
         ]);
+    }
+
+    private function canEditContact(): bool
+    {
+        return $this->auth()->hasPermission('employees.write')
+            && ($this->auth()->hasRole('admin') || $this->auth()->hasRole('rh'));
+    }
+
+    private function requireContactEditor(): void
+    {
+        if (!$this->canEditContact()) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs et RH.');
+        }
+    }
+
+    public function editContact(Request $request, int $id): Response
+    {
+        $this->requireContactEditor();
+        return $this->view('Employees::contact', [
+            'title' => 'Modifier les coordonnées',
+            'employee' => $this->employees->getOrFail($id),
+        ]);
+    }
+
+    public function updateContact(Request $request, int $id): Response
+    {
+        $this->requireContactEditor();
+        $data = $this->validator()->validate($request->all(), [
+            'personal_email' => 'nullable|string|email|max:180',
+            'professional_email' => 'nullable|string|email|max:180',
+            'phone' => 'nullable|string|max:40',
+            'address' => 'nullable|string|max:255',
+            'postal_code' => 'nullable|string|max:20',
+            'city' => 'nullable|string|max:120',
+            'iban' => 'nullable|string|iban',
+            'bic' => 'nullable|string|max:11',
+        ]);
+        $this->employees->update($id, array_map(static fn ($value) => $value ?? '', $data));
+        flash('success', 'Coordonnées mises à jour.');
+        return new RedirectResponse('/employees/' . $id);
     }
 
     public function update(Request $request, int $id): Response
     {
         $this->auth()->requirePermission('employees.write');
+        $this->requireContactEditor();
         $data = $this->validateEmployee($request);
         $this->employees->update($id, $data);
         flash('success', 'Salarié mis à jour.');

@@ -15,6 +15,9 @@ if ($sheetPdf !== null) {
     $actions .= '<a class="btn btn-outline-secondary btn-sm" target="_blank" href="/pdf/' . (int) $sheetPdf['id'] . '/preview">'
         . '<i data-lucide="eye"></i>Aperçu</a>';
 }
+if ($canEditContact) {
+    $actions .= '<a class="btn btn-outline-secondary btn-sm" href="/employees/' . (int) $employee['id'] . '/contact"><i data-lucide="pencil"></i>Modifier les coordonnées</a>';
+}
 $actions .= '<button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#portalModal">'
     . '<i data-lucide="id-card"></i>Portail salarié</button>';
 $actions .= '<button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#terminateModal">'

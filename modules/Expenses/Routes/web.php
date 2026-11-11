@@ -15,6 +15,8 @@ return static function (Router $router): void {
             ->middleware('permission:expenses.request');
         $router->get('/{id}', [ExpenseReportController::class, 'show'])
             ->middleware('permission:expenses.read')->name('expenses.show');
+        $router->post('/{id}/receipts', [ExpenseReportController::class, 'uploadReceipt'])->middleware('permission:expenses.read');
+        $router->get('/{id}/receipts/{receiptId}', [ExpenseReportController::class, 'downloadReceipt'])->middleware('permission:expenses.read');
         $router->post('/{id}/submit', [ExpenseReportController::class, 'submit'])
             ->middleware('permission:expenses.request');
         $router->post('/{id}/approve', [ExpenseReportController::class, 'approve'])
