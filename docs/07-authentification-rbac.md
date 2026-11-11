@@ -111,3 +111,29 @@ administrateur nominatif et désactiver ce compte :
 ```bash
 php bin/console user:create --email=nom@entreprise.fr --password='...' --role=admin
 ```
+
+### Suppression d'un compte
+
+Depuis **Utilisateurs**, un administrateur peut supprimer un autre compte après
+confirmation. Il ne peut pas supprimer le sien. La suppression révoque l'accès,
+les rôles, jetons et paramètres de boîte mail enregistrés, et détache le compte
+de la fiche salarié sans supprimer celle-ci. L'adresse de connexion est libérée.
+
+Il s'agit d'une suppression logique : l'identifiant et le nom du compte restent
+conservés pour l'historique, les messages, les journaux et les preuves de
+signature ; ces données ne sont pas effacées. Ce n'est donc pas une suppression
+complète des données personnelles. Une adresse réutilisée crée un nouveau compte,
+sans accès aux anciennes conversations ni aux anciennes autorisations. Appliquer
+la migration `20261107_000020_deleted_users.sql` avant le déploiement.
+
+### Réinitialisation du mot de passe salarié
+
+Le bouton « Modifier la fiche » est réservé aux administrateurs et RH disposant d'`employees.write` ; une fiche rattachée à un compte administrateur ne peut être modifiée que par un administrateur. L'adresse professionnelle d'un salarié avec compte devient son identifiant de connexion ; elle est obligatoire et ne peut appartenir à un autre compte. L'enregistrement est transactionnel et invalide les anciens liens de réinitialisation et jetons « se souvenir de moi » lorsque l'identifiant change. L'adresse personnelle reste une adresse de contact.
+
+Sur la fiche, seul un administrateur peut envoyer un lien de réinitialisation aux adresses personnelle et professionnelle valides renseignées (un seul envoi si elles sont identiques). Le salarié peut aussi utiliser « Mot de passe oublié » avec son identifiant de connexion. La réponse publique reste volontairement identique pour les adresses connues ou inconnues. Les liens expirent après une heure, sont à usage unique et une réinitialisation invalide les autres liens et les jetons de connexion persistante. Les sessions web déjà ouvertes ne sont pas automatiquement fermées.
+
+Configurer `APP_URL` avec l'URL publique HTTPS exacte et `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURE`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` et `MAIL_FROM_NAME` pour le SMTP transactionnel ; PHPMailer doit être installé via Composer. Vérifier la réception réelle et les dossiers indésirables après déploiement. Si l'envoi échoue, l'action administrateur le signale ; le formulaire public ne révèle ni l'existence du compte ni l'état de livraison. Activer le limiteur de débit et un proxy de confiance correctement configuré en production. Le limiteur existant n'est pas atomique sous forte concurrence.
+
+Pour une fiche existante sans compte, l'administrateur peut choisir « Ajouter un compte ». Le rôle salarié est présélectionné. Si l'adresse professionnelle n'est pas encore utilisée, un compte lié est créé avec un secret aléatoire et un e-mail d'invitation contenant l'identifiant et un lien personnel valable une heure est envoyé à cette adresse. Aucun mot de passe n'est envoyé. Si l'envoi échoue, le compte reste créé ; après vérification de la configuration SMTP, le bouton d'envoi d'un lien sur la fiche permet de recommencer.
+
+Si l'adresse professionnelle correspond déjà à un compte, une fenêtre propose l'envoi d'un lien à cette seule adresse ou le rattachement explicite du compte, sans modifier ses rôles ni son mot de passe. L'administrateur doit vérifier qu'il appartient bien au salarié. Un compte inactif ou déjà rattaché à un autre salarié ne peut pas être rattaché ou réinitialisé via ce parcours.

@@ -75,10 +75,12 @@ final class ViewRenderer
         $active = $isActive ? 'active' : '';
         $ariaCurrent = $isActive ? ' aria-current="page"' : '';
         return sprintf(
-            '<a class="nav-link %s" href="%s"%s><i class="bi bi-%s"></i><span>%s</span>%s</a>',
+            '<a class="nav-link %s" href="%s"%s aria-label="%s" data-nav-label="%s"><i class="bi bi-%s" aria-hidden="true"></i><span class="nav-label">%s</span>%s</a>',
             $active,
             htmlspecialchars($url, ENT_QUOTES),
             $ariaCurrent,
+            htmlspecialchars($label, ENT_QUOTES),
+            htmlspecialchars($label, ENT_QUOTES),
             htmlspecialchars($icon, ENT_QUOTES),
             htmlspecialchars($label, ENT_QUOTES),
             $badgeHtml

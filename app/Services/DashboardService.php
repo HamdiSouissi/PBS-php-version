@@ -33,7 +33,7 @@ final class DashboardService
             ),
             'cash_balance' => (float) $this->scalar('SELECT COALESCE(SUM(current_balance), 0) FROM bank_accounts WHERE is_active = TRUE'),
             'mrr' => (float) $this->scalar('SELECT COALESCE(mrr_ht, 0) FROM v_subscription_mrr'),
-            'pending_expenses' => (int) $this->scalar("SELECT COUNT(*) FROM expense_reports WHERE status IN ('draft','submitted')"),
+            'pending_expenses' => (int) $this->scalar("SELECT COUNT(*) FROM expense_reports WHERE deleted_at IS NULL AND status IN ('draft','submitted')"),
             'open_obligations' => (int) $this->scalar("SELECT COUNT(*) FROM compliance_obligations WHERE status = 'pending'"),
         ];
     }

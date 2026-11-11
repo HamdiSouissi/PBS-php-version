@@ -121,3 +121,9 @@ se référencent par `Module::dossier/vue` (ex. `'Invoicing::invoices/show'`).
 4. ajouter les commandes CLI dans `app/commands.php` si besoin ;
 5. écrire les tests dans `modules/Nom/Tests/` ;
 6. ne jamais introduire de dépendance framework : conserver PHP/PDO natif.
+
+### Notes de frais : modification et archivage
+
+Seul un administrateur peut modifier ou supprimer un brouillon. Les notes soumises, validées, rejetées ou payées ne sont pas modifiables ni supprimables par ce parcours. La suppression est logique : les lignes, justificatifs PDF et documents déjà générés sont conservés et l'administrateur peut les consulter depuis « Archives » dans les notes de frais. Les notes archivées sont exclues des listes et indicateurs courants. L'ajout de pièces et les transitions vérifient également l'état de suppression. Les actions sont journalisées.
+
+Les PDF générés sont des versions historiques : après modification d'un brouillon, il faut en générer un nouveau. Le changement de salarié transfère l'accès aux justificatifs associés à la note. Une ligne portant un ancien chemin de justificatif ne peut pas être retirée via le formulaire. Déployer la migration `20261107_000022_expense_report_soft_delete.sql` avant le code et sauvegarder la base avant toute migration.
