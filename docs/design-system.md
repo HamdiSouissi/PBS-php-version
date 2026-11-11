@@ -67,7 +67,8 @@ Module unique, initialisé une seule fois sur `DOMContentLoaded` :
 
 - thème auto / clair / sombre persisté (`localStorage`, bascule dans la barre
   haute, événement document `pbs:theme-changed` pour rafraîchir les graphiques) ;
-- sidebar : tiroir mobile avec voile, repli en rail sur desktop, persisté ;
+- sidebar : tiroir mobile avec voile et rail desktop repliable par flèche,
+  préférence persistée, libellés accessibles et infobulles au survol ou au focus ;
 - palette de commandes : recherche insensible aux accents, navigation clavier
   (flèches, Entrée, Échap), raccourcis récents mémorisés ;
 - compteurs animés `[data-countup]` (respect de `prefers-reduced-motion`) ;

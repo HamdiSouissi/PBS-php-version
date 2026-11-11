@@ -15,6 +15,16 @@ if ($sheetPdf !== null) {
     $actions .= '<a class="btn btn-outline-secondary btn-sm" target="_blank" href="/pdf/' . (int) $sheetPdf['id'] . '/preview">'
         . '<i data-lucide="eye"></i>Aperçu</a>';
 }
+if ($canEditContact) {
+    $actions .= '<a class="btn btn-outline-secondary btn-sm" href="/employees/' . (int) $employee['id'] . '/edit"><i data-lucide="pencil"></i>Modifier la fiche</a>';
+}
+if ($canCreateAccount) {
+    $actions .= '<button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#createAccountModal"><i data-lucide="user-plus"></i>Ajouter un compte</button>';
+}
+if ($canSendReset) {
+    $actions .= '<form method="post" action="/employees/' . (int) $employee['id'] . '/password-reset" data-confirm="Envoyer un lien de réinitialisation aux adresses personnelle et professionnelle disponibles ?">'
+        . csrf_field() . '<button class="btn btn-outline-secondary btn-sm" type="submit"><i data-lucide="mail"></i>Envoyer un lien de mot de passe</button></form>';
+}
 $actions .= '<button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#portalModal">'
     . '<i data-lucide="id-card"></i>Portail salarié</button>';
 $actions .= '<button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#terminateModal">'
@@ -245,3 +255,49 @@ document.getElementById('portalBtn').addEventListener('click', async () => {
     if (data.success) document.getElementById('portalToken').value = data.portal_token;
 });
 </script>
+
+<?php if ($canCreateAccount): ?>
+<div class="modal fade" id="createAccountModal" tabindex="-1" aria-labelledby="createAccountTitle" aria-hidden="true">
+    <div class="modal-dialog"><form class="modal-content" method="post" action="/employees/<?= (int) $employee['id'] ?>/account">
+        <?= csrf_field() ?>
+        <div class="modal-header"><h2 class="modal-title fs-5" id="createAccountTitle">Ajouter un compte utilisateur</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button></div>
+        <div class="modal-body">
+            <p>Adresse de connexion : <strong><?= e($employee['professional_email'] ?: 'Non renseignée') ?></strong></p>
+            <p class="small text-muted">L’adresse professionnelle sera vérifiée avant la création. Le salarié recevra son identifiant et un lien pour définir son mot de passe.</p>
+            <label class="form-label" for="accountRole">Type de compte</label>
+            <select class="form-select" id="accountRole" name="role_id" required>
+                <option value="" disabled <?= count(array_filter($accountRoles, static fn ($role) => $role['code'] === 'employe')) === 0 ? 'selected' : '' ?>>Sélectionner un rôle</option>
+                <?php foreach ($accountRoles as $role): ?><option value="<?= (int) $role['id'] ?>" <?= $role['code'] === 'employe' ? 'selected' : '' ?>><?= e($role['label']) ?></option><?php endforeach; ?>
+            </select>
+            <p class="small text-muted mt-2">Le rôle sélectionné détermine les autorisations du compte. Vérifiez-le avant de confirmer.</p>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button><button type="submit" class="btn btn-primary">Vérifier et créer</button></div>
+    </form></div>
+</div>
+<?php if ($existingAccount !== null): ?>
+<div class="alert alert-warning mt-3" role="alert">Un compte existe déjà pour <?= e($existingAccount['user']->email) ?>. <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#existingAccountModal">Voir les options</button></div>
+<div class="modal fade" id="existingAccountModal" tabindex="-1" aria-labelledby="existingAccountTitle" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title fs-5" id="existingAccountTitle">Un compte existe déjà</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button></div>
+        <div class="modal-body">
+            <p>Un compte utilise déjà <strong><?= e($existingAccount['user']->email) ?></strong>. Aucun nouveau compte n’a été créé et ses rôles n’ont pas été modifiés.</p>
+            <?php if ($existingAccount['linked_elsewhere']): ?>
+                <p class="alert alert-warning">Ce compte est déjà rattaché à un autre salarié. Vérifiez les fiches avant de continuer.</p>
+            <?php elseif (!$existingAccount['user']->isActive): ?>
+                <p class="alert alert-warning">Ce compte est inactif. Réactivez-le avant de continuer.</p>
+            <?php else: ?>
+                <p class="small text-muted">Vérifiez que ce compte appartient bien à ce salarié. Le lien sera envoyé uniquement à l’adresse professionnelle du compte. Le rattachement est facultatif et ne modifie pas ses rôles.</p>
+            <?php endif; ?>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Fermer</button>
+            <?php if (!$existingAccount['linked_elsewhere'] && $existingAccount['user']->isActive): ?>
+                <form method="post" action="/employees/<?= (int) $employee['id'] ?>/account/link" data-confirm="Confirmez-vous que ce compte appartient à ce salarié ? Ses rôles restent inchangés."><?= csrf_field() ?><button class="btn btn-outline-primary" type="submit">Rattacher le compte</button></form>
+                <form method="post" action="/employees/<?= (int) $employee['id'] ?>/account/existing-reset"><?= csrf_field() ?><button class="btn btn-primary" type="submit">Réinitialiser le mot de passe</button></form>
+            <?php endif; ?>
+        </div>
+    </div></div>
+</div>
+<script>document.addEventListener('DOMContentLoaded', function () { if (window.bootstrap) bootstrap.Modal.getOrCreateInstance(document.getElementById('existingAccountModal')).show(); });</script>
+<?php endif; ?>
+<?php endif; ?>
