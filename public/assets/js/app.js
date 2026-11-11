@@ -102,10 +102,11 @@ const App = {
     init() {
         if (this.initialized) return;
         this.initialized = true;
+        // La navigation doit rester utilisable même si un autre composant échoue.
+        this.initSidebar();
         this.initTheme();
         this.initClock();
         this.initIcons();
-        this.initSidebar();
         this.initToasts();
         this.initConfirm();
         this.initAjaxForms();
@@ -190,22 +191,36 @@ const App = {
     },
 
     /* --- Icônes : Lucide + compatibilité des anciens <i class="bi-…"> ---- */
-    initIcons() {
-        const upgrade = (rootNode = document) => {
-            rootNode.querySelectorAll('i.bi, i[class*="bi-"]').forEach((el) => {
-                const match = el.className.match(/bi-([a-z0-9-]+)/);
-                if (!match) return;
-                const lucideName = ICON_MAP[match[1]];
-                if (!lucideName) return;
-                el.setAttribute('data-lucide', lucideName);
-                el.removeAttribute('class');
-                el.classList.add('pbs-icon-slot');
-            });
-            if (window.lucide) window.lucide.createIcons();
-        };
-        upgrade();
+    refreshIcons() {
+        document.querySelectorAll('i.bi, i[class*="bi-"]').forEach((el) => {
+            const match = el.className.match(/bi-([a-z0-9-]+)/);
+            const name = match && ICON_MAP[match[1]];
+            if (!name) return;
+            el.setAttribute('data-lucide', name);
+            el.removeAttribute('class');
+            el.classList.add('pbs-icon-slot');
+        });
+        if (!window.lucide) return;
 
-        // Gère les noeuds ajoutés dynamiquement (lignes de facture, modales…).
+        // Lucide conserve data-lucide sur les SVG créés. Ne jamais les passer
+        // à createIcons : ils seraient remplacés à chaque mutation du DOM.
+        const pending = Array.from(document.querySelectorAll('[data-lucide]'))
+            .filter((el) => el.tagName.toLowerCase() !== 'svg');
+        if (pending.length === 0) return;
+        pending.forEach((el) => el.setAttribute('data-pbs-icon-pending', el.getAttribute('data-lucide')));
+        try {
+            window.lucide.createIcons({ nameAttr: 'data-pbs-icon-pending' });
+        } finally {
+            document.querySelectorAll('[data-pbs-icon-pending]')
+                .forEach((el) => el.removeAttribute('data-pbs-icon-pending'));
+        }
+    },
+
+    initIcons() {
+        this.refreshIcons();
+
+        // Les remplacements Lucide déclenchent aussi l'observateur : le
+        // balayage suivant ne touche qu'aux nouveaux placeholders, jamais aux SVG.
         let scheduled = false;
         const observer = new MutationObserver((mutations) => {
             if (!mutations.some((m) => m.addedNodes.length)) return;
@@ -213,7 +228,7 @@ const App = {
             scheduled = true;
             requestAnimationFrame(() => {
                 scheduled = false;
-                upgrade();
+                this.refreshIcons();
             });
         });
         observer.observe(document.body, { childList: true, subtree: true });
@@ -227,30 +242,76 @@ const App = {
         const railToggle = document.getElementById('railToggle');
         if (!sidebar) return;
 
+        const desktop = window.matchMedia('(min-width: 992px)');
+        // La préférence reste utilisable en mémoire si localStorage est bloqué.
+        let railCollapsed = this.store.get('pbs-sidebar-rail') === '1';
+        const tooltip = document.createElement('div');
+        tooltip.className = 'sidebar-tooltip';
+        tooltip.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(tooltip);
+        const hideTooltip = () => tooltip.classList.remove('is-visible');
         const closeMobile = () => {
             sidebar.classList.remove('show');
             overlay?.classList.remove('show');
+            mobileToggle?.setAttribute('aria-expanded', 'false');
+        };
+        const updateRail = () => {
+            const collapsed = desktop.matches && railCollapsed;
+            document.body.classList.toggle('sidebar-collapsed', collapsed);
+            const label = collapsed ? 'Développer la barre latérale' : 'Réduire la barre latérale';
+            railToggle?.setAttribute('aria-expanded', String(!collapsed));
+            railToggle?.setAttribute('aria-label', label);
+            railToggle?.setAttribute('title', label);
+            hideTooltip();
         };
 
         mobileToggle?.addEventListener('click', () => {
-            sidebar.classList.toggle('show');
-            overlay?.classList.toggle('show', sidebar.classList.contains('show'));
+            const open = sidebar.classList.toggle('show');
+            overlay?.classList.toggle('show', open);
+            mobileToggle.setAttribute('aria-expanded', String(open));
         });
         overlay?.addEventListener('click', closeMobile);
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeMobile();
+            if (e.key === 'Escape') {
+                hideTooltip();
+                if (sidebar.classList.contains('show')) {
+                    closeMobile();
+                    mobileToggle?.focus();
+                }
+            }
         });
-
-        if (this.store.get('pbs-sidebar-rail') === '1') {
-            document.body.classList.add('sidebar-collapsed');
-        }
+        if (railToggle) railToggle.hidden = false;
+        updateRail();
         railToggle?.addEventListener('click', () => {
-            document.body.classList.toggle('sidebar-collapsed');
-            this.store.set(
-                'pbs-sidebar-rail',
-                document.body.classList.contains('sidebar-collapsed') ? '1' : '0'
-            );
+            railCollapsed = !railCollapsed;
+            this.store.set('pbs-sidebar-rail', railCollapsed ? '1' : '0');
+            updateRail();
         });
+        const onViewportChange = () => {
+            closeMobile();
+            updateRail();
+        };
+        if (desktop.addEventListener) desktop.addEventListener('change', onViewportChange);
+        else if (desktop.addListener) desktop.addListener(onViewportChange);
+
+        const showTooltip = (link) => {
+            if (!desktop.matches || !document.body.classList.contains('sidebar-collapsed')) return;
+            tooltip.textContent = link.dataset.navLabel || '';
+            if (!tooltip.textContent) return;
+            const rect = link.getBoundingClientRect();
+            tooltip.style.left = `${rect.right + 14}px`;
+            tooltip.style.top = `${Math.max(8, rect.top + rect.height / 2)}px`;
+            tooltip.classList.add('is-visible');
+        };
+        sidebar.querySelectorAll('.nav-link[data-nav-label]').forEach((link) => {
+            link.addEventListener('mouseenter', () => showTooltip(link));
+            link.addEventListener('mouseleave', hideTooltip);
+            link.addEventListener('focus', () => showTooltip(link));
+            link.addEventListener('blur', hideTooltip);
+        });
+        sidebar.addEventListener('scroll', hideTooltip, { passive: true, capture: true });
+        window.addEventListener('scroll', hideTooltip, { passive: true });
+        window.addEventListener('resize', hideTooltip);
     },
 
     /* --- Toasts : fermeture, expiration, API globale --------------------- */
@@ -286,7 +347,7 @@ const App = {
         el.querySelector('.toast-message').textContent = message;
         if (title) el.querySelector('.toast-title').textContent = title;
         region.appendChild(el);
-        if (window.lucide) window.lucide.createIcons();
+        this.refreshIcons();
         this.scheduleDismiss(el);
     },
 
@@ -493,7 +554,7 @@ const App = {
                         <span data-lucide="search-x"></span>
                         <div>Aucune commande correspondante.</div>
                     </div>`;
-                if (window.lucide) window.lucide.createIcons();
+                this.refreshIcons();
                 return;
             }
             const recents = q === '' ? recent() : [];
@@ -516,7 +577,7 @@ const App = {
                         <span class="palette-hint">${it.hint || ''}</span>
                     </a>`;
                 }).join('')}`).join('');
-            if (window.lucide) window.lucide.createIcons();
+            this.refreshIcons();
         };
 
         const open = () => {

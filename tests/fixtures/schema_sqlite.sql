@@ -23,6 +23,7 @@ CREATE TABLE users (
     locked_until TEXT,
     last_login_at TEXT,
     must_change_password INTEGER NOT NULL DEFAULT 0,
+    deleted_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -717,10 +718,13 @@ CREATE TABLE expense_reports (
     paid_on TEXT,
     notes TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TEXT,
+    deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL
 );
 CREATE INDEX idx_expense_reports_employee ON expense_reports(employee_id);
 CREATE INDEX idx_expense_reports_status ON expense_reports(status);
+CREATE INDEX idx_expense_reports_deleted_at ON expense_reports(deleted_at);
 
 CREATE TABLE expense_lines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1185,3 +1189,14 @@ CREATE TABLE api_two_factor_challenges (
     used_at TEXT
 );
 CREATE INDEX idx_api_2fa_expiry ON api_two_factor_challenges(expires_at);
+
+CREATE TABLE expense_receipts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_id INTEGER NOT NULL REFERENCES expense_reports(id) ON DELETE CASCADE,
+    original_name TEXT NOT NULL,
+    storage_name TEXT NOT NULL UNIQUE,
+    file_size INTEGER NOT NULL,
+    uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_expense_receipts_report ON expense_receipts(report_id);

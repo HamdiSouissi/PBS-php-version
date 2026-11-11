@@ -19,7 +19,7 @@ $actions = '<a href="/expenses" class="btn btn-outline-secondary btn-sm">Annuler
             <span>Saisie des lignes</span>
             <button type="button" class="btn btn-sm btn-outline-primary" id="add-line"><i data-lucide="plus"></i> Ligne</button>
         </div>
-        <form method="post" action="/expenses" id="expense-form" data-guard>
+        <form method="post" enctype="multipart/form-data" action="/expenses" id="expense-form" data-guard>
             <?= csrf_field() ?>
             <div class="card-body">
                 <div class="row g-3 mb-3">
@@ -28,7 +28,7 @@ $actions = '<a href="/expenses" class="btn btn-outline-secondary btn-sm">Annuler
                         <select class="form-select form-select-sm" name="employee_id" required>
                             <option value="">— Sélectionner —</option>
                             <?php foreach ($employees as $employee): ?>
-                                <option value="<?= (int) $employee['id'] ?>">
+                                <option value="<?= (int) $employee['id'] ?>" <?= (string) ($previous['employee_id'] ?? '') === (string) $employee['id'] ? 'selected' : '' ?>>
                                     <?= e($employee['employee_number'] . ' · ' . mb_strtoupper((string) $employee['last_name']) . ' ' . $employee['first_name']) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -36,7 +36,7 @@ $actions = '<a href="/expenses" class="btn btn-outline-secondary btn-sm">Annuler
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Intitulé *</label>
-                        <input class="form-control form-control-sm" name="title" required placeholder="Déplacement client, séminaire…">
+                        <input class="form-control form-control-sm" name="title" value="<?= e(($previous['title'] ?? '')) ?>" maxlength="180" required placeholder="Déplacement client, séminaire…">
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -47,8 +47,11 @@ $actions = '<a href="/expenses" class="btn btn-outline-secondary btn-sm">Annuler
                         <tbody id="lines"></tbody>
                     </table>
                 </div>
-                <label class="form-label mt-2">Notes</label>
-                <textarea class="form-control form-control-sm" name="notes" rows="2"></textarea>
+                <label class="form-label mt-2" for="expense-receipt">Facture PDF (facultative)</label>
+                <input id="expense-receipt" type="file" name="receipt" class="form-control form-control-sm" accept=".pdf,application/pdf">
+                <small class="text-muted">PDF non vide, 10 Mo maximum. Limites du serveur : fichier <?= e((string) ini_get('upload_max_filesize')) ?>, requête <?= e((string) ini_get('post_max_size')) ?>. Vous pourrez ajouter d’autres justificatifs au brouillon.</small>
+                <br><label class="form-label mt-2" for="expense-notes">Notes</label>
+                <textarea id="expense-notes" class="form-control form-control-sm" name="notes" maxlength="1000" rows="2"><?= e(($previous['notes'] ?? '')) ?></textarea>
             </div>
         </form>
     </div>
@@ -78,5 +81,16 @@ document.getElementById('add-line').addEventListener('click', addLine);
 tbody.addEventListener('click', (e) => {
     if (e.target.closest('.remove-line')) e.target.closest('tr').remove();
 });
-addLine();
+const previousLines = <?= json_encode(($previous['lines'] ?? []), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
+const labels = previousLines && Array.isArray(previousLines.label) ? previousLines.label : [];
+if (labels.length === 0) addLine();
+else labels.forEach((label, index) => {
+    addLine();
+    const row = tbody.lastElementChild;
+    ['label', 'spent_on', 'category', 'amount', 'vat_amount'].forEach((field) => {
+        const input = row.querySelector('[name="lines[' + field + '][]"]');
+        const value = previousLines[field] && previousLines[field][index];
+        if (input && value != null && typeof value !== 'object') input.value = String(value);
+    });
+});
 </script>

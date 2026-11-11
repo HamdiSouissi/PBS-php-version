@@ -9,6 +9,9 @@ declare(strict_types=1);
 $statusBadges = ['draft' => 'secondary', 'submitted' => 'warning', 'approved' => 'info', 'rejected' => 'danger', 'paid' => 'success'];
 $statusLabels = ['draft' => 'Brouillon', 'submitted' => 'Soumise', 'approved' => 'Validée', 'rejected' => 'Rejetée', 'paid' => 'Payée'];
 $actions = '<a class="btn btn-primary btn-sm" href="/expenses/new"><i data-lucide="plus"></i>Nouvelle note</a>';
+if ($isAdmin) {
+    $actions .= '<a class="btn btn-outline-secondary btn-sm" href="/expenses/archive"><i data-lucide="archive"></i>Archives</a>';
+}
 ?>
 <?= $viewRenderer->pageHeader(
     'Notes de frais',

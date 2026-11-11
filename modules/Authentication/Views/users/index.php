@@ -6,6 +6,8 @@ declare(strict_types=1);
  * @var \App\Core\Pagination\Paginator $paginator
  * @var list<array<string,mixed>> $roles
  */
+$canDeleteUsers = container()->get(\App\Core\Auth\AuthManager::class)->hasRole('admin');
+$currentUserId = (int) (current_user()?->id ?? 0);
 $actions = '<button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#newUserCard" aria-expanded="false" aria-controls="newUserCard">
         <i data-lucide="user-plus"></i>Nouvel utilisateur
     </button>';
@@ -66,10 +68,22 @@ $actions = '<button class="btn btn-primary btn-sm" data-bs-toggle="collapse" dat
                     </td>
                     <td class="small text-muted"><?= e($row['last_login_at'] ? date('d/m/Y H:i', strtotime((string) $row['last_login_at'])) : '—') ?></td>
                     <td class="text-end">
-                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
-                                data-bs-target="#editUser<?= (int) $row['id'] ?>">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="modal"
+                                data-bs-target="#editUser<?= (int) $row['id'] ?>"
+                                aria-label="Modifier <?= e($row['email']) ?>" title="Modifier">
                             <i data-lucide="pencil"></i>
                         </button>
+                        <?php if ($canDeleteUsers && (int) $row['id'] !== $currentUserId): ?>
+                            <form method="post" action="/settings/users/<?= (int) $row['id'] ?>/delete" class="d-inline"
+                                  data-confirm="Supprimer le compte <?= e($row['email']) ?> ? Ses accès, jetons et paramètres de messagerie seront révoqués. Les historiques et preuves existants restent conservés."
+                                  data-confirm-title="Supprimer ce compte ?">
+                                <?= csrf_field() ?>
+                                <button class="btn btn-sm btn-outline-danger" type="submit"
+                                        aria-label="Supprimer <?= e($row['email']) ?>" title="Supprimer le compte">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </form>
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
