@@ -13,6 +13,9 @@ use App\Core\Pdf\PdfManager;
 use Modules\Employees\Repositories\EmployeeRepository;
 use Modules\Employees\Services\ContractService;
 use Modules\Employees\Services\EmployeeService;
+use Modules\Employees\Services\EmployeeAccountAdministrationService;
+use Modules\Authentication\Services\PasswordResetMailService;
+use App\Core\Exception\AppException;
 use Modules\HR\Services\LeaveBalanceService;
 use Modules\Organization\Services\OrganizationService;
 
@@ -80,6 +83,16 @@ final class EmployeeController extends Controller
         foreach ($contracts as $contract) {
             $contractPdfs[(int) $contract['id']] = $this->pdf->latestFor('employee_contract', (int) $contract['id']);
         }
+        $canCreateAccount = $this->auth()->hasRole('admin') && empty($employee['user_id']);
+        $accountAdministration = \App\Core\Application::container()->get(EmployeeAccountAdministrationService::class);
+        $existingAccount = null;
+        if ($canCreateAccount && $request->query('account_exists') === '1') {
+            try {
+                $existingAccount = $accountAdministration->existing($id);
+            } catch (AppException $exception) {
+                flash('warning', $exception->getMessage());
+            }
+        }
         return $this->view('Employees::show', [
             'title' => $employee['first_name'] . ' ' . $employee['last_name'],
             'employee' => $employee,
@@ -104,12 +117,176 @@ final class EmployeeController extends Controller
                 ? db()->fetchOne('SELECT id, email, must_change_password FROM users WHERE id = :u', ['u' => $employee['user_id']])
                 : null,
             'leaveSummary' => $this->leaveBalances->summary($id),
+            'canEditContact' => $this->canEditContact() && ($this->auth()->hasRole('admin') || !$this->isAdminAccount($employee)),
+            'canSendReset' => $this->auth()->hasRole('admin') && !empty($employee['user_id']),
+            'canCreateAccount' => $canCreateAccount,
+            'accountRoles' => $canCreateAccount ? $accountAdministration->roles() : [],
+            'existingAccount' => $existingAccount,
         ]);
+    }
+
+    private function canEditContact(): bool
+    {
+        return $this->auth()->hasPermission('employees.write')
+            && ($this->auth()->hasRole('admin') || $this->auth()->hasRole('rh'));
+    }
+
+    private function requireContactEditor(): void
+    {
+        if (!$this->canEditContact()) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs et RH.');
+        }
+    }
+
+    public function edit(Request $request, int $id): Response
+    {
+        $this->requireContactEditor();
+        $employee = $this->employees->getOrFail($id);
+        $this->protectAdminAccount($employee);
+        return $this->view('Employees::form', [
+            'title' => 'Modifier le salarié',
+            'employee' => $employee,
+            'departments' => $this->organization->departments((int) $employee['company_id']),
+            'establishments' => $this->organization->establishments((int) $employee['company_id']),
+        ]);
+    }
+
+    private function isAdminAccount(array $employee): bool
+    {
+        return !empty($employee['user_id']) && db()->fetchOne(
+            "SELECT ru.user_id FROM role_user ru JOIN roles r ON r.id = ru.role_id WHERE ru.user_id = :id AND r.code = 'admin'",
+            ['id' => $employee['user_id']]
+        ) !== null;
+    }
+
+    private function protectAdminAccount(array $employee): void
+    {
+        if (!$this->auth()->hasRole('admin') && $this->isAdminAccount($employee)) {
+            throw new \App\Core\Exception\AuthorizationException('Seul un administrateur peut modifier la fiche liée à un compte administrateur.');
+        }
+    }
+
+    // Compatibilité avec le formulaire de coordonnées précédemment publié.
+    public function editContact(Request $request, int $id): Response
+    {
+        $this->requireContactEditor();
+        $this->protectAdminAccount($this->employees->getOrFail($id));
+        return new RedirectResponse('/employees/' . $id . '/edit');
+    }
+
+    public function updateContact(Request $request, int $id): Response
+    {
+        $this->requireContactEditor();
+        $this->protectAdminAccount($this->employees->getOrFail($id));
+        $data = $this->validator()->validate($request->all(), [
+            'personal_email' => 'nullable|string|email|max:180',
+            'professional_email' => 'nullable|string|email|max:180',
+            'phone' => 'nullable|string|max:40',
+            'address' => 'nullable|string|max:255',
+            'postal_code' => 'nullable|string|max:20',
+            'city' => 'nullable|string|max:120',
+            'iban' => 'nullable|string|iban',
+            'bic' => 'nullable|string|max:11',
+        ]);
+        $this->employees->update($id, array_map(static fn ($value) => $value ?? '', $data));
+        flash('success', 'Coordonnées mises à jour.');
+        return new RedirectResponse('/employees/' . $id);
+    }
+
+    public function sendPasswordReset(Request $request, int $id): Response
+    {
+        if (!$this->auth()->hasRole('admin')) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs.');
+        }
+        $employee = $this->employees->getOrFail($id);
+        if (empty($employee['user_id'])) {
+            flash('danger', 'Ce salarié ne possède pas de compte de connexion.');
+            return new RedirectResponse('/employees/' . $id);
+        }
+        $service = \App\Core\Application::container()->get(\Modules\Authentication\Services\PasswordResetMailService::class);
+        $result = $service->sendForEmployee((int) $employee['user_id'], $employee);
+        if ($result['sent'] === 0) {
+            flash('danger', 'Aucun e-mail n’a été envoyé. Vérifiez le compte, les adresses et la configuration SMTP.');
+        } elseif ($result['sent'] < $result['total']) {
+            flash('warning', 'Le lien a été envoyé à une seule adresse. Vérifiez la configuration SMTP et les adresses de la fiche.');
+        } else {
+            flash('success', 'Le lien de réinitialisation a été envoyé aux adresses disponibles du salarié.');
+        }
+        audit('employee.password_reset_requested', 'Employee', $id, ['sent' => $result['sent'], 'total' => $result['total']]);
+        return new RedirectResponse('/employees/' . $id);
+    }
+
+    private function requireAccountAdministrator(): void
+    {
+        if (!$this->auth()->hasRole('admin')) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs.');
+        }
+    }
+
+    public function createAccount(Request $request, int $id): Response
+    {
+        $this->requireAccountAdministrator();
+        $data = $this->validator()->validate($request->all(), ['role_id' => 'required|integer']);
+        $accounts = \App\Core\Application::container()->get(EmployeeAccountAdministrationService::class);
+        try {
+            $result = $accounts->create($id, (int) $data['role_id']);
+        } catch (AppException $exception) {
+            flash('danger', $exception->getMessage());
+            return new RedirectResponse('/employees/' . $id);
+        }
+        if ($result['status'] === 'exists') {
+            return new RedirectResponse('/employees/' . $id . '?account_exists=1');
+        }
+        $email = (string) $result['employee']['professional_email'];
+        $sent = \App\Core\Application::container()->get(PasswordResetMailService::class)
+            ->sendToAccount((int) $result['user_id'], $email, true);
+        flash($sent ? 'success' : 'warning', $sent
+            ? 'Compte créé. Un e-mail contenant l’identifiant et le lien de création du mot de passe a été envoyé à l’adresse professionnelle.'
+            : 'Compte créé, mais l’e-mail n’a pas pu être envoyé. Vérifiez le SMTP puis utilisez le bouton de réinitialisation.');
+        return new RedirectResponse('/employees/' . $id);
+    }
+
+    public function resetExistingAccount(Request $request, int $id): Response
+    {
+        $this->requireAccountAdministrator();
+        $accounts = \App\Core\Application::container()->get(EmployeeAccountAdministrationService::class);
+        try {
+            $existing = $accounts->existing($id);
+            if ($existing['linked_elsewhere']) {
+                throw new AppException('Ce compte est déjà rattaché à un autre salarié. Vérifiez la fiche avant de continuer.');
+            }
+            if (!$existing['user']->isActive) {
+                throw new AppException('Ce compte est inactif. Réactivez-le avant de demander un lien.');
+            }
+            $sent = \App\Core\Application::container()->get(PasswordResetMailService::class)
+                ->sendToAccount($existing['user']->id, $existing['user']->email);
+            audit('employee.existing_account_reset_requested', 'Employee', $id, ['user_id' => $existing['user']->id, 'sent' => $sent]);
+            flash($sent ? 'success' : 'danger', $sent
+                ? 'Lien de réinitialisation envoyé à l’adresse de connexion professionnelle. Le compte n’a pas été rattaché automatiquement.'
+                : 'L’envoi a échoué. Vérifiez la configuration SMTP.');
+        } catch (AppException $exception) {
+            flash('danger', $exception->getMessage());
+        }
+        return new RedirectResponse('/employees/' . $id);
+    }
+
+    public function linkAccount(Request $request, int $id): Response
+    {
+        $this->requireAccountAdministrator();
+        try {
+            \App\Core\Application::container()->get(EmployeeAccountAdministrationService::class)->linkExisting($id);
+            flash('success', 'Compte existant rattaché. Ses rôles et son mot de passe restent inchangés.');
+        } catch (AppException $exception) {
+            flash('danger', $exception->getMessage());
+        }
+        return new RedirectResponse('/employees/' . $id);
     }
 
     public function update(Request $request, int $id): Response
     {
         $this->auth()->requirePermission('employees.write');
+        $this->requireContactEditor();
+        $this->protectAdminAccount($this->employees->getOrFail($id));
         $data = $this->validateEmployee($request);
         $this->employees->update($id, $data);
         flash('success', 'Salarié mis à jour.');
@@ -206,9 +383,9 @@ final class EmployeeController extends Controller
             'birth_place' => 'nullable|string|max:120',
             'gender' => 'nullable|in:m,f,non_renseigne',
             'nationality' => 'nullable|string|max:60',
-            'personal_email' => 'nullable|email',
+            'personal_email' => 'nullable|string|email|max:180',
             // Obligatoire à l'embauche : il sert d'identifiant au compte créé.
-            'professional_email' => ($emailRequired ? 'required' : 'nullable') . '|email',
+            'professional_email' => ($emailRequired ? 'required' : 'nullable') . '|string|email|max:180',
             'phone' => 'nullable|string|max:40',
             'social_security_number' => 'nullable|string|max:15',
             'job_title' => 'nullable|string|max:120',

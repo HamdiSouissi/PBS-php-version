@@ -72,7 +72,7 @@ final class EmployeeService
      */
     public function update(int $id, array $data): void
     {
-        $this->repository->findOrFail($id);
+        $employee = $this->repository->findOrFail($id);
         $allowed = [
             'establishment_id', 'department_id', 'manager_id', 'last_name', 'first_name', 'birth_date',
             'birth_place', 'gender', 'social_security_number', 'nationality', 'personal_email',
@@ -87,9 +87,35 @@ final class EmployeeService
         if (isset($update['social_security_number'])) {
             $update['social_security_number'] = $this->normalizeNir((string) $update['social_security_number']);
         }
-        $update['updated_at'] = date('Y-m-d H:i:s');
-        $this->repository->update('employees', $update, ['id' => $id]);
-        audit('employee.update', 'Employee', $id);
+        $this->db->transaction(function (Connection $db) use ($id, $employee, $update): void {
+            $userId = (int) ($employee['user_id'] ?? 0);
+            $changes = $update;
+            if ($userId > 0 && array_key_exists('professional_email', $changes)) {
+                $email = mb_strtolower(trim((string) $changes['professional_email']));
+                if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                    throw new ValidationException(['professional_email' => 'Une adresse professionnelle valide est obligatoire pour le compte lié.']);
+                }
+                $changes['professional_email'] = $email;
+                $user = $db->fetchOne('SELECT email FROM users WHERE id = :id AND deleted_at IS NULL' . ($db->isSqlite() ? '' : ' FOR UPDATE'), ['id' => $userId]);
+                if ($user === null) {
+                    throw new ValidationException(['professional_email' => 'Le compte lié est introuvable.']);
+                }
+                if (mb_strtolower((string) $user['email']) !== $email) {
+                    if ($db->fetchOne('SELECT id FROM users WHERE LOWER(email) = :email AND id <> :id', ['email' => $email, 'id' => $userId]) !== null) {
+                        throw new ValidationException(['professional_email' => 'Cette adresse est déjà utilisée par un compte de connexion.']);
+                    }
+                    if ($db->fetchOne('SELECT id FROM employees WHERE user_id = :user AND id <> :id', ['user' => $userId, 'id' => $id]) !== null) {
+                        throw new ValidationException(['professional_email' => 'Ce compte est lié à plusieurs salariés : corrigez les rattachements avant de modifier son identifiant.']);
+                    }
+                    $db->execute('UPDATE users SET email = :email, updated_at = ' . $db->nowExpression() . ' WHERE id = :id', ['email' => $email, 'id' => $userId]);
+                    $db->execute('DELETE FROM password_resets WHERE user_id = :id', ['id' => $userId]);
+                    $db->execute('DELETE FROM remember_tokens WHERE user_id = :id', ['id' => $userId]);
+                }
+            }
+            $changes['updated_at'] = date('Y-m-d H:i:s');
+            $this->repository->update('employees', $changes, ['id' => $id]);
+            audit('employee.update', 'Employee', $id);
+        });
     }
 
     /**

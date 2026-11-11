@@ -121,3 +121,11 @@ se référencent par `Module::dossier/vue` (ex. `'Invoicing::invoices/show'`).
 4. ajouter les commandes CLI dans `app/commands.php` si besoin ;
 5. écrire les tests dans `modules/Nom/Tests/` ;
 6. ne jamais introduire de dépendance framework : conserver PHP/PDO natif.
+
+### Notes de frais : modification et archivage
+
+Seul un administrateur peut modifier un brouillon et supprimer un brouillon ou une note rejetée. Les notes soumises, validées ou payées ne sont ni modifiables ni supprimables par ce parcours ; les notes rejetées ne sont pas modifiables. La suppression est logique : les lignes, justificatifs PDF et documents déjà générés sont conservés et l'administrateur peut les consulter depuis « Archives » dans les notes de frais. Les notes archivées sont exclues des listes et indicateurs courants. L'ajout de pièces et les transitions vérifient également l'état de suppression. Les actions sont journalisées.
+
+Les PDF générés sont des versions historiques : après modification d'un brouillon, il faut en générer un nouveau. Le changement de salarié transfère l'accès aux justificatifs associés à la note. Une ligne portant un ancien chemin de justificatif ne peut pas être retirée via le formulaire. Déployer la migration `20261107_000022_expense_report_soft_delete.sql` avant le code et sauvegarder la base avant toute migration.
+
+Depuis le détail d'une note archivée, l'administrateur peut aussi choisir la suppression définitive et saisir `SUPPRIMER`. La note, ses lignes, ses justificatifs et ses PDF générés (y compris les versions référencées) sont supprimés ; les traces d'audit restent. Les sauvegardes et copies externes ne sont pas modifiées. L'action refuse notamment les justificatifs historiques dont le chemin n'est pas géré, les fichiers partagés et les documents de stockage inattendu. En cas d'échec d'effacement d'un fichier après validation en base, un avertissement est affiché et son chemin temporaire est inscrit dans les journaux serveur pour intervention manuelle. Les suppressions sur disque et en base ne peuvent pas être atomiques en cas d'interruption brutale.
