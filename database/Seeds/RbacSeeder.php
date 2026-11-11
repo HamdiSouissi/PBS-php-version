@@ -104,13 +104,20 @@ final class RbacSeeder
         $existing = $db->fetchScalar('SELECT id FROM users WHERE email = :e', ['e' => $email]);
         if ($existing === false || $existing === null) {
             $hasher = $this->container->get(Password::class);
+            $initialPassword = (string) env('INITIAL_ADMIN_PASSWORD', '');
+            if ($initialPassword === '' && config('app.env') !== 'production') {
+                $initialPassword = 'PBS@2026!admin'; // Développement et tests uniquement.
+            }
+            if ($hasher->validateStrength($initialPassword) !== []) {
+                throw new \RuntimeException('Définissez INITIAL_ADMIN_PASSWORD avec un mot de passe fort avant de créer le premier administrateur.');
+            }
             $userId = $db->lastInsertId();
             $db->execute(
                 'INSERT INTO users (email, password_hash, first_name, last_name, is_active, must_change_password)
                  VALUES (:e, :p, :f, :l, TRUE, TRUE)',
                 [
                     'e' => $email,
-                    'p' => $hasher->hash('PBS@2026!admin'),
+                    'p' => $hasher->hash($initialPassword),
                     'f' => 'Admin',
                     'l' => 'PBS',
                 ]

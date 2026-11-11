@@ -43,14 +43,7 @@ final class GeneratedDocumentController extends Controller
             throw new NotFoundException('Document introuvable.');
         }
 
-        $permission = $this->pdf->permissionForEntity((string) $document['entity_type']);
-        $allowed = $permission === null
-            ? $this->auth()->hasPermission('documents.read')
-            : $this->auth()->hasPermission($permission);
-        if (!$allowed) {
-            // Repli portail salarié : accès aux seuls PDF de sa propre fiche.
-            $this->documentAccess->assertCanAccess($document);
-        }
+        $this->documentAccess->assertCanAccess($document);
 
         // Résolution sécurisée : disque "exports" uniquement, sans traversée.
         $root = realpath(storage_path('exports'));

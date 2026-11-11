@@ -56,6 +56,29 @@ final class FileCache implements CacheInterface
         }
     }
 
+    public function synchronized(string $key, callable $operation): mixed
+    {
+        // Un nombre borné de verrous persistants : ne jamais les supprimer pendant
+        // que des processus peuvent les utiliser (un nouveau inode casserait flock).
+        $stripe = hexdec(substr(hash('sha256', $key), 0, 2)) % 64;
+        $lock = fopen($this->directory . DIRECTORY_SEPARATOR . '.rate-lock-' . $stripe, 'c');
+        if ($lock === false) {
+            throw new \RuntimeException('Verrou du cache inaccessible.');
+        }
+        try {
+            if (!flock($lock, LOCK_EX)) {
+                throw new \RuntimeException('Verrouillage du cache impossible.');
+            }
+            try {
+                return $operation();
+            } finally {
+                flock($lock, LOCK_UN);
+            }
+        } finally {
+            fclose($lock);
+        }
+    }
+
     private function path(string $key): string
     {
         return $this->directory . DIRECTORY_SEPARATOR . hash('sha256', $key) . '.cache';

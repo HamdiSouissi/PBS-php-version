@@ -21,7 +21,9 @@ final class RoleController extends Controller
 
     public function index(Request $request): Response
     {
-        $this->auth()->requirePermission('users.read');
+        if (!$this->auth()->hasRole('admin')) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs.');
+        }
         return $this->view('Authentication::roles/index', [
             'title' => 'Rôles & permissions',
             'roles' => $this->roles->allRoles(),
@@ -33,7 +35,9 @@ final class RoleController extends Controller
 
     public function store(Request $request): Response
     {
-        $this->auth()->requirePermission('users.write');
+        if (!$this->auth()->hasRole('admin')) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs.');
+        }
         $data = $this->validator()->validate($request->all(), [
             'code' => 'required|string|max:60',
             'label' => 'required|string|max:120',
@@ -51,7 +55,9 @@ final class RoleController extends Controller
 
     public function update(Request $request, int $id): Response
     {
-        $this->auth()->requirePermission('users.write');
+        if (!$this->auth()->hasRole('admin')) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs.');
+        }
         $data = $this->validator()->validate($request->all(), [
             'label' => 'required|string|max:120',
             'description' => 'nullable|string|max:500',
@@ -68,7 +74,9 @@ final class RoleController extends Controller
 
     public function delete(Request $request, int $id): Response
     {
-        $this->auth()->requirePermission('users.write');
+        if (!$this->auth()->hasRole('admin')) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs.');
+        }
         $this->roles->delete($id);
         flash('success', 'Rôle supprimé.');
         return new RedirectResponse('/settings/roles');

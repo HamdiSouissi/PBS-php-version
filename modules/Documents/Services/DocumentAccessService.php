@@ -13,10 +13,8 @@ use Modules\Employees\Repositories\EmployeeRepository;
 /**
  * Règles d'accès au centre documentaire.
  *
- * Les gestionnaires documentaires (permission documents.write : RH, paie,
- * comptable, administrateur) voient tous les documents. Un salarié ne voit
- * et ne télécharge que les documents rattachés à sa propre fiche
- * (documents.employee_id), notamment ses bulletins et contrats générés.
+ * Les documents métier exigent la permission correspondante ou appartiennent
+ * au salarié connecté. Les documents génériques relèvent des gestionnaires.
  */
 final class DocumentAccessService
 {
@@ -53,29 +51,25 @@ final class DocumentAccessService
         if ($user === null) {
             return [];
         }
-        if ($this->isManager($user)) {
-            return $this->db->fetchAll(
-                'SELECT d.*, u.email AS uploader
-                 FROM documents d
-                 LEFT JOIN users u ON u.id = d.uploaded_by
-                 ORDER BY d.created_at DESC, d.id DESC
-                 LIMIT 200'
-            );
-        }
-
+        $visible = [];
         $employeeId = $this->employeeIdFor($user);
-        if ($employeeId === null) {
-            return [];
-        }
-        return $this->db->fetchAll(
-            'SELECT d.*, u.email AS uploader
-             FROM documents d
-             LEFT JOIN users u ON u.id = d.uploaded_by
-             WHERE d.employee_id = :employee
-             ORDER BY d.created_at DESC, d.id DESC
-             LIMIT 200',
-            ['employee' => $employeeId]
-        );
+        $offset = 0;
+        do {
+            $documents = $this->db->fetchAll(
+                'SELECT d.*, u.email AS uploader FROM documents d
+                 LEFT JOIN users u ON u.id = d.uploaded_by ORDER BY d.created_at DESC, d.id DESC LIMIT 200 OFFSET ' . $offset
+            );
+            foreach ($documents as $document) {
+                if ($this->canAccess($document, $user, $employeeId)) {
+                    $visible[] = $document;
+                    if (count($visible) === 200) {
+                        break 2;
+                    }
+                }
+            }
+            $offset += count($documents);
+        } while (count($documents) === 200);
+        return $visible;
     }
 
     /**
@@ -91,13 +85,33 @@ final class DocumentAccessService
         if ($user === null) {
             throw new NotFoundException('Document introuvable.');
         }
-        if ($this->isManager($user)) {
-            return;
+        if (!$this->canAccess($document, $user, $this->employeeIdFor($user))) {
+            throw new NotFoundException('Document introuvable.');
         }
-        $employeeId = $this->employeeIdFor($user);
+    }
+
+    private function canAccess(array $document, User $user, ?int $employeeId): bool
+    {
+        $type = (string) ($document['entity_type'] ?? '');
+        if ($type === 'expense_report') {
+            if (!$this->auth->hasPermission('expenses.read')) {
+                return false;
+            }
+            $report = $this->db->fetchOne('SELECT employee_id FROM expense_reports WHERE id = :id AND deleted_at IS NULL', ['id' => $document['entity_id']]);
+            return $report !== null && ($this->auth->hasAnyPermission(['expenses.approve', 'expenses.pay'])
+                || ($employeeId !== null && (int) $report['employee_id'] === $employeeId));
+        }
         if ($employeeId !== null && (int) ($document['employee_id'] ?? 0) === $employeeId) {
-            return;
+            return true;
         }
-        throw new NotFoundException('Document introuvable.');
+        $permission = \App\Core\Application::container()->get(\App\Core\Pdf\PdfManager::class)->permissionForEntity($type);
+        if ($permission !== null) {
+            return $this->auth->hasPermission($permission);
+        }
+        // Un document sans type mais lié à un salarié est traité comme RH.
+        if (!empty($document['employee_id'])) {
+            return $this->auth->hasPermission('employees.read');
+        }
+        return $this->isManager($user);
     }
 }

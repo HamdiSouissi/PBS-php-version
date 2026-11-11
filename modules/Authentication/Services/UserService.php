@@ -125,7 +125,7 @@ final class UserService
         });
     }
 
-    public function changePassword(int $userId, string $current, string $new, string $confirmation): void
+    public function changePassword(int $userId, string $current, string $new, string $confirmation): string
     {
         if ($new !== $confirmation) {
             throw new ValidationException(['password' => 'La confirmation ne correspond pas.']);
@@ -138,11 +138,21 @@ final class UserService
         if ($errors !== []) {
             throw new ValidationException(['password' => $errors[0]]);
         }
-        $this->db->execute(
-            'UPDATE users SET password_hash = :h, must_change_password = FALSE, updated_at = ' . $this->db->nowExpression() . ' WHERE id = :id',
-            ['h' => $this->password->hash($new), 'id' => $userId]
-        );
-        audit('user.password_change', 'User', $userId);
+        $hash = $this->password->hash($new);
+        $this->db->transaction(function (Connection $db) use ($hash, $userId, $user): void {
+            $changed = $db->execute(
+                'UPDATE users SET password_hash = :h, must_change_password = FALSE, updated_at = ' . $db->nowExpression() . ' WHERE id = :id AND password_hash = :old',
+                ['h' => $hash, 'id' => $userId, 'old' => $user->passwordHash]
+            );
+            if ($changed !== 1) {
+                throw new ValidationException(['current_password' => 'Le mot de passe a changé. Reconnectez-vous.']);
+            }
+            foreach (['remember_tokens', 'password_resets', 'api_two_factor_challenges'] as $table) {
+                $db->execute('DELETE FROM ' . $table . ' WHERE user_id = :id', ['id' => $userId]);
+            }
+            audit('user.password_change', 'User', $userId);
+        });
+        return $hash;
     }
 
     /**

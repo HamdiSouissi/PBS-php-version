@@ -31,7 +31,7 @@ final class ExpenseReportController extends Controller
         $this->auth()->requirePermission('expenses.read');
         return $this->view('Expenses::index', [
             'title' => 'Notes de frais',
-            'reports' => $this->reports->all(),
+            'reports' => $this->reports->all($this->isExpenseManager() ? null : $this->ownEmployeeId()),
             'employees' => $this->activeEmployees(),
             'isAdmin' => $this->auth()->hasRole('admin'),
         ]);
@@ -87,7 +87,7 @@ final class ExpenseReportController extends Controller
         $path = null;
         try {
             $file = $request->file('receipt');
-            if ($file !== null && !$this->canAccessReceipts(['employee_id' => $data['employee_id']])) {
+            if (!$this->canAccessReceipts(['employee_id' => $data['employee_id']])) {
                 throw new \App\Core\Exception\AuthorizationException('Vous ne pouvez pas ajouter un justificatif pour ce salarié.');
             }
             $id = $this->db->transaction(function (Connection $db) use ($data, $file, &$path): int {
@@ -127,7 +127,8 @@ final class ExpenseReportController extends Controller
     {
         $this->auth()->requirePermission('expenses.read');
         $report = $this->reports->getOrFail($id);
-        $canAccessReceipts = $this->canAccessReceipts($report);
+        $this->assertReportAccess($report);
+        $canAccessReceipts = true;
         return $this->view('Expenses::show', [
             'title' => 'Note de frais n°' . $id,
             'report' => $report,
@@ -258,9 +259,26 @@ final class ExpenseReportController extends Controller
             ->withHeader('Cache-Control', 'private, no-store');
     }
 
+    private function isExpenseManager(): bool
+    {
+        return $this->auth()->hasAnyPermission(['expenses.approve', 'expenses.pay']);
+    }
+
+    private function ownEmployeeId(): int
+    {
+        return (int) ($this->db->fetchScalar('SELECT id FROM employees WHERE user_id = :user', ['user' => $this->auth()->id()]) ?: 0);
+    }
+
+    private function assertReportAccess(array $report): void
+    {
+        if (!$this->canAccessReceipts($report)) {
+            throw new \App\Core\Exception\NotFoundException('Note de frais introuvable.');
+        }
+    }
+
     private function canAccessReceipts(array $report): bool
     {
-        if ($this->auth()->hasAnyPermission(['expenses.approve', 'expenses.pay'])) {
+        if ($this->isExpenseManager()) {
             return true;
         }
         return $this->db->fetchOne('SELECT id FROM employees WHERE id = :employee AND user_id = :user', [
@@ -331,6 +349,9 @@ final class ExpenseReportController extends Controller
     private function transition(int $id, string $action, string $permission): RedirectResponse
     {
         $this->auth()->requirePermission($permission);
+        if ($action === 'submit') {
+            $this->assertReportAccess($this->reports->getOrFail($id));
+        }
         $this->reports->transition($id, $action, (int) $this->auth()->id());
         flash('success', 'Statut de la note de frais mis à jour.');
         return new RedirectResponse('/expenses/' . $id);
@@ -339,6 +360,7 @@ final class ExpenseReportController extends Controller
     public function generatePdf(Request $request, int $id): Response
     {
         $this->auth()->requirePermission('expenses.read');
+        $this->assertReportAccess($this->reports->getOrFail($id));
         $this->db->transaction(function (Connection $db) use ($id): void {
             $report = $db->fetchOne('SELECT id FROM expense_reports WHERE id = :id AND deleted_at IS NULL' . ($db->isSqlite() ? '' : ' FOR UPDATE'), ['id' => $id]);
             if ($report === null) {

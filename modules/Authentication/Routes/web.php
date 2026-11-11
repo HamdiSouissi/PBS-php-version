@@ -42,15 +42,15 @@ $router->group(['auth', 'csrf'], '', static function (\App\Core\Router\Router $r
     $router->post('/settings/users/{id}/delete', [UserController::class, 'delete'])
         ->middleware('role:admin');
     $router->post('/settings/users/{id}/totp/disable', [UserController::class, 'disableTotp'])
-        ->middleware('permission:users.write');
+        ->middleware('role:admin');
 
     $router->get('/settings/roles', [RoleController::class, 'index'])
-        ->middleware('permission:users.read')->name('roles.index');
+        ->middleware('role:admin')->name('roles.index');
     $router->post('/settings/roles', [RoleController::class, 'store'])
-        ->middleware('permission:users.write');
+        ->middleware('role:admin');
     $router->post('/settings/roles/{id}/update', [RoleController::class, 'update'])
-        ->middleware('permission:users.write');
+        ->middleware('role:admin');
     $router->post('/settings/roles/{id}/delete', [RoleController::class, 'delete'])
-        ->middleware('permission:users.write');
+        ->middleware('role:admin');
 });
 };

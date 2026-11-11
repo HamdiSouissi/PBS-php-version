@@ -70,11 +70,14 @@ $navSections = [
             ['/documents', 'Documents', 'folder2-open', 'documents.read'],
             ['/ai/assistant', 'Assistant IA', 'stars', 'ai.use'],
             ['/settings/users', 'Utilisateurs', 'people', 'users.read'],
-            ['/settings/roles', 'Rôles & permissions', 'shield-lock', 'users.read'],
             ['/settings/audit', "Journal d'audit", 'clock-history', 'audit.read'],
         ],
     ],
 ];
+
+if ($authManager->hasRole('admin')) {
+    $navSections[count($navSections) - 1]['items'][] = ['/settings/roles', 'Rôles & permissions', 'shield-lock', 'users.read'];
+}
 
 // Données de la palette de commandes : mêmes entrées, mêmes permissions.
 $lucideMap = [
@@ -249,6 +252,8 @@ $pageTitle = $title ?? 'Prime Business Suite';
                     <li><a class="dropdown-item" href="/profile"><i data-lucide="user"></i>Mon profil</a></li>
                     <?php if ($authManager->hasPermission('users.read')): ?>
                         <li><a class="dropdown-item" href="/settings/users"><i data-lucide="users"></i>Utilisateurs</a></li>
+                    <?php endif; ?>
+                    <?php if ($authManager->hasRole('admin')): ?>
                         <li><a class="dropdown-item" href="/settings/roles"><i data-lucide="shield-lock"></i>Rôles &amp; permissions</a></li>
                     <?php endif; ?>
                     <li><hr class="dropdown-divider"></li>

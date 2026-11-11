@@ -114,6 +114,7 @@ final class DocumentController extends Controller
     {
         $this->auth()->requirePermission('documents.write');
         $document = $this->findOrFail($id);
+        $this->access->assertCanAccess($document);
         try {
             @unlink($this->resolvePath($document));
         } catch (NotFoundException) {

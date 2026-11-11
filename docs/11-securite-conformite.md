@@ -114,3 +114,11 @@ cache avec une opération lecture/écriture non atomique : en cas de trafic
 concurrent ou de plusieurs serveurs, compléter par un contrôle de débit atomique
 au niveau du frontal partagé. Les permissions documentaires génériques doivent
 être attribuées avec précaution, conformément aux règles métier existantes.
+
+### Durcissement des comptes et documents
+
+La matrice des rôles et la désactivation du TOTP sont réservées aux administrateurs. Les gestionnaires non administrateurs ne peuvent pas attribuer ni gérer un rôle plus privilégié que leurs propres permissions. Les sessions antérieures à ce changement sont déconnectées ; un changement ou une réinitialisation de mot de passe révoque les autres sessions et jetons de connexion persistante. Les journaux ne contiennent plus les identifiants de session ; appliquer la migration `20261107_000023_clear_session_secrets.sql` pour effacer les valeurs historiques (les sauvegardes existantes doivent aussi être protégées).
+
+Les documents métier exigent le droit métier correspondant ou l'appartenance au salarié ; les notes de frais sont limitées au propriétaire ou aux gestionnaires frais. Vérifier les rôles personnalisés existants et les besoins d'accès documentaires avant déploiement. En production, définir un secret fort unique dans `INITIAL_ADMIN_PASSWORD` avant le premier seed, puis le retirer de la configuration. Ne pas exposer l'installation avant initialisation. Le mot de passe de démonstration reste limité aux environnements hors production.
+
+Le limiteur fichier utilise des verrous atomiques entre processus partageant le même stockage et des verrous `flock` fiables. Sur plusieurs serveurs, utiliser un stockage partagé compatible ou une limitation atomique au niveau d'un reverse proxy partagé ; ne pas supprimer les fichiers de verrou pendant le fonctionnement. Expurger les jetons de signature des journaux d'accès. Ne pas exposer `storage/`, sauvegardes ou la passerelle console ; imposer HTTPS et `APP_DEBUG=false`. Exécuter `composer audit --locked` dans un environnement disposant de Composer et d'un accès aux avis de sécurité.

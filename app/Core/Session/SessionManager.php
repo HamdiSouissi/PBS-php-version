@@ -111,7 +111,7 @@ final class SessionManager
              VALUES (:user_id, :sid, :ip, :ua, :remember, ' . $this->connection->nowExpression() . ')',
             [
                 'user_id' => $userId,
-                'sid' => $this->getId(),
+                'sid' => '', // Ne jamais journaliser le secret de session.
                 'ip' => substr($ip, 0, 45),
                 'ua' => substr($userAgent, 0, 255),
                 'remember' => $remember,

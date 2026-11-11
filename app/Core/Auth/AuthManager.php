@@ -27,15 +27,30 @@ final class AuthManager
     {
         $this->session->regenerate();
         $this->session->set('user_id', $user->id);
+        $this->session->set('password_fingerprint', hash('sha256', $user->passwordHash));
         $this->session->set('remember', $remember);
         $this->user = $user;
         $this->loaded = true;
+    }
+
+    /** Renouvelle uniquement la session qui vient de changer son mot de passe. */
+    public function refreshAfterPasswordChange(string $expectedHash): void
+    {
+        $id = $this->id();
+        $user = $id === null ? null : \App\Core\Application::container()
+            ->get(\Modules\Authentication\Repositories\UserRepository::class)->findWithRights($id);
+        if ($user !== null && $user->isActive && hash_equals($expectedHash, $user->passwordHash)) {
+            $this->login($user);
+        } else {
+            $this->logout();
+        }
     }
 
     public function logout(): void
     {
         $this->session->remove('user_id');
         $this->session->remove('remember');
+        $this->session->remove('password_fingerprint');
         $this->user = null;
         $this->loaded = true;
     }
@@ -72,8 +87,10 @@ final class AuthManager
         $user = \App\Core\Application::container()
             ->get(\Modules\Authentication\Repositories\UserRepository::class)
             ->findWithRights((int) $id);
-        if ($user === null || !$user->isActive) {
+        if ($user === null || !$user->isActive || !is_string($this->session->get('password_fingerprint'))
+            || !hash_equals(hash('sha256', $user->passwordHash), $this->session->get('password_fingerprint'))) {
             $this->session->remove('user_id');
+            $this->session->remove('password_fingerprint');
             return null;
         }
         $this->user = $user;

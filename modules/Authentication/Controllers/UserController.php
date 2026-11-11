@@ -88,6 +88,25 @@ final class UserController extends Controller
         if ($targetIsAdmin || in_array($adminRole, $roleIds, true)) {
             throw new \App\Core\Exception\AuthorizationException('Seul un administrateur peut gérer les comptes administrateurs.');
         }
+        // Un gestionnaire ne peut ni gérer un compte plus privilégié, ni
+        // attribuer un rôle qui lui donnerait des permissions supplémentaires.
+        $rolesToCheck = $roleIds;
+        if ($targetId !== null) {
+            foreach ($db->fetchAll('SELECT role_id FROM role_user WHERE user_id = :id', ['id' => $targetId]) as $row) {
+                $rolesToCheck[] = (int) $row['role_id'];
+            }
+        }
+        foreach (array_unique($rolesToCheck) as $roleId) {
+            $role = $db->fetchOne('SELECT id FROM roles WHERE id = :id', ['id' => $roleId]);
+            if ($role === null) {
+                throw new \App\Core\Exception\AuthorizationException('Rôle invalide.');
+            }
+            foreach ($db->fetchAll('SELECT p.code FROM permissions p JOIN role_permission rp ON rp.permission_id = p.id WHERE rp.role_id = :id', ['id' => $roleId]) as $permission) {
+                if ($permission['code'] === '*' || !$this->auth()->hasPermission((string) $permission['code'])) {
+                    throw new \App\Core\Exception\AuthorizationException('Vous ne pouvez pas attribuer ou gérer un rôle plus privilégié.');
+                }
+            }
+        }
     }
 
     public function delete(Request $request, int $id): Response
@@ -133,7 +152,7 @@ final class UserController extends Controller
     {
         $user = $this->auth()->user();
         try {
-            $this->userService->changePassword(
+            $passwordHash = $this->userService->changePassword(
                 $user->id,
                 (string) $request->input('current_password', ''),
                 (string) $request->input('password', ''),
@@ -145,7 +164,8 @@ final class UserController extends Controller
             flash('danger', implode(' ', $exception->errors()));
             return new RedirectResponse('/profile');
         }
-        flash('success', 'Mot de passe modifié.');
+        $this->auth()->refreshAfterPasswordChange($passwordHash);
+        flash('success', 'Mot de passe modifié. Les autres sessions ont été révoquées.');
         return new RedirectResponse('/profile');
     }
 
@@ -174,7 +194,9 @@ final class UserController extends Controller
      */
     public function disableTotp(Request $request, int $id): Response
     {
-        $this->auth()->requirePermission('users.write');
+        if (!$this->auth()->hasRole('admin')) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs.');
+        }
         $user = \App\Core\Application::container()
             ->get(\Modules\Authentication\Repositories\UserRepository::class)
             ->findWithRights($id);

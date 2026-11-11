@@ -23,12 +23,13 @@ final class ExpenseReportService
     /**
      * @return list<array<string,mixed>>
      */
-    public function all(): array
+    public function all(?int $employeeId = null): array
     {
         return $this->db->fetchAll(
             'SELECT r.*, e.employee_number, e.first_name, e.last_name
              FROM expense_reports r JOIN employees e ON e.id = r.employee_id
-             WHERE r.deleted_at IS NULL ORDER BY r.created_at DESC, r.id DESC LIMIT 300'
+             WHERE r.deleted_at IS NULL' . ($employeeId === null ? '' : ' AND r.employee_id = :employee') . ' ORDER BY r.created_at DESC, r.id DESC LIMIT 300',
+            $employeeId === null ? [] : ['employee' => $employeeId]
         );
     }
 

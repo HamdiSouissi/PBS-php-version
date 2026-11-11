@@ -7,7 +7,7 @@ namespace App\Core\Security;
 use App\Core\Cache\CacheInterface;
 
 /**
- * Limiteur de débit à fenêtre glissante (cache file/redis).
+ * Limiteur de débit à fenêtre fixe, avec verrou atomique du cache.
  */
 final class RateLimiter
 {
@@ -32,26 +32,31 @@ final class RateLimiter
         $window ??= (int) $this->config['window'];
 
         $cacheKey = 'ratelimit:' . $key;
-        /** @var array{count:int,reset:int} $bucket */
-        $bucket = $this->cache->get($cacheKey, ['count' => 0, 'reset' => time() + $window]);
-        if (time() > $bucket['reset']) {
-            $bucket = ['count' => 0, 'reset' => time() + $window];
-        }
-        $bucket['count']++;
-        $this->cache->set($cacheKey, $bucket, $window);
-        return $bucket['count'] <= $max;
+        return $this->cache->synchronized($cacheKey, function () use ($cacheKey, $window, $max): bool {
+            /** @var array{count:int,reset:int} $bucket */
+            $bucket = $this->cache->get($cacheKey, ['count' => 0, 'reset' => time() + $window]);
+            if (time() >= $bucket['reset']) {
+                $bucket = ['count' => 0, 'reset' => time() + $window];
+            }
+            $bucket['count']++;
+            $this->cache->set($cacheKey, $bucket, max(1, $bucket['reset'] - time()));
+            return $bucket['count'] <= $max;
+        });
     }
 
     public function remaining(string $key, ?int $max = null): int
     {
         $max ??= (int) $this->config['max'];
-        /** @var array{count:int,reset:int} $bucket */
-        $bucket = $this->cache->get('ratelimit:' . $key, ['count' => 0, 'reset' => 0]);
-        return max(0, $max - $bucket['count']);
+        return $this->cache->synchronized('ratelimit:' . $key, function () use ($key, $max): int {
+            $bucket = $this->cache->get('ratelimit:' . $key, ['count' => 0, 'reset' => 0]);
+            return max(0, $max - $bucket['count']);
+        });
     }
 
     public function clear(string $key): void
     {
-        $this->cache->delete('ratelimit:' . $key);
+        $this->cache->synchronized('ratelimit:' . $key, function () use ($key): void {
+            $this->cache->delete('ratelimit:' . $key);
+        });
     }
 }

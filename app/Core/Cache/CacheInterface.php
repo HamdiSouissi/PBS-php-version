@@ -13,4 +13,7 @@ interface CacheInterface
     public function delete(string $key): void;
 
     public function clear(): void;
+
+    /** Exécute une opération atomique pour une clé sur le stockage partagé. */
+    public function synchronized(string $key, callable $operation): mixed;
 }
