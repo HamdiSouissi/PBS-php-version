@@ -28,7 +28,7 @@ final class UserController extends Controller
         $perPage = (int) config('app.pagination.per_page');
         $repository = \App\Core\Application::container()->get(\Modules\Authentication\Repositories\UserRepository::class);
         $items = $repository->paginateUsers($page, $perPage);
-        $total = $repository->countAll();
+        $total = $repository->countAll('deleted_at IS NULL');
         $paginator = new Paginator($items, $total, $page, $perPage);
 
         return $this->view('Authentication::users/index', [
@@ -49,6 +49,7 @@ final class UserController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
         $roleIds = array_values(array_filter(array_map('intval', (array) $request->input('roles', []))));
+        $this->assertAdminRoleChangeAllowed($roleIds);
         $this->userService->createUser(
             [...$data, 'is_active' => (bool) $request->input('is_active', true)],
             $roleIds
@@ -66,8 +67,40 @@ final class UserController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
         $roleIds = array_values(array_filter(array_map('intval', (array) $request->input('roles', []))));
+        $this->assertAdminRoleChangeAllowed($roleIds, $id);
         $this->userService->updateUser($id, [...$data, 'is_active' => (bool) $request->input('is_active', false)], $roleIds);
         flash('success', 'Utilisateur mis à jour.');
+        return new RedirectResponse('/settings/users');
+    }
+
+    /** @param list<int> $roleIds */
+    private function assertAdminRoleChangeAllowed(array $roleIds, ?int $targetId = null): void
+    {
+        if ($this->auth()->hasRole('admin')) {
+            return;
+        }
+        $db = db();
+        $adminRole = (int) $db->fetchScalar("SELECT id FROM roles WHERE code = 'admin'");
+        $targetIsAdmin = $targetId !== null && (int) $db->fetchScalar(
+            'SELECT COUNT(*) FROM role_user WHERE user_id = :id AND role_id = :role',
+            ['id' => $targetId, 'role' => $adminRole]
+        ) > 0;
+        if ($targetIsAdmin || in_array($adminRole, $roleIds, true)) {
+            throw new \App\Core\Exception\AuthorizationException('Seul un administrateur peut gérer les comptes administrateurs.');
+        }
+    }
+
+    public function delete(Request $request, int $id): Response
+    {
+        if (!$this->auth()->hasRole('admin')) {
+            throw new \App\Core\Exception\AuthorizationException('Réservé aux administrateurs.');
+        }
+        try {
+            $this->userService->deleteUser($id, (int) $this->auth()->id());
+            flash('success', 'Compte supprimé et accès révoqués. Les historiques sont conservés.');
+        } catch (\App\Core\Exception\AppException $exception) {
+            flash('danger', $exception->getMessage());
+        }
         return new RedirectResponse('/settings/users');
     }
 

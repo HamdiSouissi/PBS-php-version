@@ -114,19 +114,11 @@ final class AuthController extends Controller
 
     public function sendResetLink(Request $request): Response
     {
-        $data = $this->validator()->validate($request->all(), ['email' => 'required|email']);
-        $token = $this->resetService->createResetToken((string) $data['email']);
-        if ($token !== '') {
-            $link = config('app.url') . '/reset-password?token=' . $token;
-            \App\Core\Application::container()->get(\App\Services\MailerService::class)->send(
-                (string) $data['email'],
-                'Réinitialisation de votre mot de passe',
-                '<p>Cliquez sur ce lien (valable 1 heure) :</p><p><a href="' . htmlspecialchars($link, ENT_QUOTES) . '">'
-                . htmlspecialchars($link, ENT_QUOTES) . '</a></p>'
-            );
-        }
+        $data = $this->validator()->validate($request->all(), ['email' => 'required|string|email|max:180']);
+        \App\Core\Application::container()->get(\Modules\Authentication\Services\PasswordResetMailService::class)
+            ->sendForLogin((string) $data['email']);
         // Message identique pour ne pas énumérer les comptes.
-        flash('info', 'Si cette adresse existe, un e-mail de réinitialisation vient d\'être envoyé.');
+        flash('info', 'Si un compte actif correspond à cette adresse, un lien de réinitialisation sera envoyé.');
         return new RedirectResponse('/login');
     }
 
@@ -135,7 +127,7 @@ final class AuthController extends Controller
         return $this->view('Authentication::auth/reset', [
             'title' => 'Nouveau mot de passe',
             'token' => (string) $request->query('token', ''),
-        ], 'layouts/minimal');
+        ], 'layouts/minimal')->withHeader('Referrer-Policy', 'no-referrer')->withHeader('Cache-Control', 'no-store');
     }
 
     public function resetPassword(Request $request): Response

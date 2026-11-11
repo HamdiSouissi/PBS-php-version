@@ -14,6 +14,9 @@ $headerActions = '<a href="/employees" class="btn btn-outline-secondary btn-sm">
     <div class="card-body">
         <form method="post" action="<?= e($action) ?>" class="row g-3" id="employee-form" data-guard>
             <?= csrf_field() ?>
+            <?php if ($employee !== null): ?>
+                <div class="col-12"><div class="alert alert-info small">L’e-mail professionnel est l’identifiant de connexion du compte lié. Le modifier met aussi à jour cet identifiant.</div></div>
+            <?php endif; ?>
             <?php if ($employee === null): ?>
                 <div class="col-12">
                     <div class="alert alert-info py-2 small mb-0">
@@ -32,7 +35,7 @@ $headerActions = '<a href="/employees" class="btn btn-outline-secondary btn-sm">
                     'social_security_number' => ['N° sécurité sociale (15 chiffres)', 'text', false],
                 ],
                 'Coordonnées' => [
-                    'personal_email' => ['E-mail personnel', 'email', false], 'professional_email' => ['E-mail professionnel', 'email', $employee === null],
+                    'personal_email' => ['E-mail personnel', 'email', false], 'professional_email' => ['E-mail professionnel (identifiant)', 'email', $employee === null || !empty($employee['user_id'])],
                     'phone' => ['Téléphone', 'text', false], 'address' => ['Adresse', 'text', false],
                     'postal_code' => ['Code postal', 'text', false], 'city' => ['Ville', 'text', false],
                 ],
