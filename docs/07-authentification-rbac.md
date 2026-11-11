@@ -68,13 +68,13 @@ explicitement retirée du rôle `paie`, bien que celui-ci hérite du module RH.
 
 ### Comptes salariés et mot de passe forcé
 
-Chaque fiche salarié est rattachée à un compte (`employees.user_id`). À
-l'embauche, un compte de rôle `employe` est créé automatiquement avec le mot
-de passe temporaire `change_me@` et le drapeau `must_change_password`. Le
-middleware global `ForcePasswordChangeMiddleware` ne laisse alors accessible
-que la page de profil, la modification du mot de passe et la déconnexion,
-jusqu'au remplacement du mot de passe temporaire. La reprise des fiches
-existantes se fait avec `php bin/console employees:provision-accounts`.
+La fiche salarié est créée sans compte. Un administrateur crée ensuite un compte
+avec un secret aléatoire et envoie une invitation, ou confirme explicitement le
+rattachement d'un compte existant à l'adresse professionnelle. L'ancien
+provisionnement automatique est désactivé. Les comptes historiques utilisant
+le mot de passe public `change_me@` doivent recevoir une réinitialisation sécurisée.
+La sortie désactive immédiatement le compte lié et invalide ses sessions ; les
+comptes partagés ou administrateurs exigent une vérification manuelle préalable.
 
 Le module Mail illustre la séparation lecture/administration : tous les rôles
 disposent de `mail.read` (chacun n'accède qu'à la boîte affectée à son compte),

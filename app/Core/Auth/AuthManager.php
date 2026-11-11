@@ -87,7 +87,9 @@ final class AuthManager
         $user = \App\Core\Application::container()
             ->get(\Modules\Authentication\Repositories\UserRepository::class)
             ->findWithRights((int) $id);
-        if ($user === null || !$user->isActive || !is_string($this->session->get('password_fingerprint'))
+        if ($user === null || !$user->isActive
+            || password_verify('change_me@', $user->passwordHash)
+            || !is_string($this->session->get('password_fingerprint'))
             || !hash_equals(hash('sha256', $user->passwordHash), $this->session->get('password_fingerprint'))) {
             $this->session->remove('user_id');
             $this->session->remove('password_fingerprint');

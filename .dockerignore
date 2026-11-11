@@ -9,11 +9,17 @@
 /test-results.xml
 
 # Secrets et environnement local
-.env
-.env.local
+.env*
+!.env.example
 *.key
+*.pem
+*.p12
+*.pfx
 
 # Contenu généré (la structure des dossiers est recréée par le Dockerfile)
+/storage/contract-signatures/*
+/storage/encryption/*
+/storage/scheduler/*
 /storage/cache/*
 /storage/sessions/*
 /storage/queue/*

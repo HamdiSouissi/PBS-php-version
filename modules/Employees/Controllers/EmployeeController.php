@@ -69,7 +69,7 @@ final class EmployeeController extends Controller
         $data = $this->validateEmployee($request, true);
         $company = $this->organization->defaultCompany();
         $id = $this->employees->create((int) $company['id'], $data);
-        flash('success', 'Salarié créé : un compte de connexion a été généré avec le mot de passe temporaire change_me@.');
+        flash('success', 'Salarié créé. Un administrateur peut créer son compte depuis sa fiche et lui envoyer une invitation.');
         return new RedirectResponse('/employees/' . $id);
     }
 
@@ -301,7 +301,7 @@ final class EmployeeController extends Controller
             'termination_reason' => 'required|string|max:120',
         ]);
         $this->employees->terminate($id, (string) $data['termination_date'], (string) $data['termination_reason']);
-        flash('warning', 'Sortie du salarié enregistrée, contrat actif clôturé.');
+        flash('warning', 'Sortie enregistrée : contrat clôturé et compte lié désactivé immédiatement.');
         return new RedirectResponse('/employees/' . $id);
     }
 

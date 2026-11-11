@@ -21,8 +21,7 @@ $headerActions = '<a href="/employees" class="btn btn-outline-secondary btn-sm">
                 <div class="col-12">
                     <div class="alert alert-info py-2 small mb-0">
                         <i data-lucide="info"></i>
-                        Un compte de connexion (rôle « salarié ») est créé automatiquement à l'enregistrement,
-                        avec le mot de passe temporaire <code>change_me@</code>, à changer à la première connexion.
+                        La fiche est créée sans compte. Un administrateur pourra ensuite créer le compte et envoyer une invitation à l’adresse professionnelle.
                     </div>
                 </div>
             <?php endif; ?>
@@ -62,7 +61,7 @@ $headerActions = '<a href="/employees" class="btn btn-outline-secondary btn-sm">
                             </select>
                         <?php elseif ($name === 'status'): ?>
                             <select class="form-select form-select-sm" name="status">
-                                <?php foreach (['candidate' => 'Candidat', 'active' => 'Actif', 'on_leave' => 'En congé', 'suspended' => 'Suspendu', 'terminated' => 'Sorti'] as $code => $lib): ?>
+                                <?php foreach (['candidate' => 'Candidat', 'active' => 'Actif', 'on_leave' => 'En congé', 'suspended' => 'Suspendu'] + (($employee['status'] ?? '') === 'terminated' ? ['terminated' => 'Sorti'] : []) as $code => $lib): ?>
                                     <option value="<?= e($code) ?>" <?= ($employee['status'] ?? 'candidate') === $code ? 'selected' : '' ?>><?= e($lib) ?></option>
                                 <?php endforeach; ?>
                             </select>

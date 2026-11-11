@@ -42,6 +42,7 @@ final class JwtAuthMiddleware implements MiddlewareInterface
             ->get(\Modules\Authentication\Repositories\UserRepository::class)
             ->findWithRights((int) ($claims['sub'] ?? 0));
         if ($user === null || !$user->isActive || $user->mustChangePassword
+            || password_verify('change_me@', $user->passwordHash)
             || !hash_equals(hash('sha256', $user->passwordHash), (string) ($claims['pwd'] ?? ''))) {
             throw new AuthenticationException('Utilisateur lié au jeton introuvable.');
         }

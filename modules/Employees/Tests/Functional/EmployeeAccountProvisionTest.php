@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Modules\Employees\Tests\Functional;
 
 use App\Core\Application;
-use App\Core\Security\Password;
-use Modules\Authentication\Repositories\UserRepository;
-use Modules\Authentication\Services\UserService;
+use App\Core\Exception\AppException;
+use App\Core\Exception\ValidationException;
 use Modules\Employees\Repositories\EmployeeRepository;
 use Modules\Employees\Services\EmployeeAccountService;
 use Modules\Employees\Services\EmployeeService;
@@ -15,140 +14,79 @@ use Tests\Core\DatabaseTestCase;
 
 final class EmployeeAccountProvisionTest extends DatabaseTestCase
 {
-    private function companyId(): int
+    private function employee(): int
     {
-        $this->db->execute(
-            "INSERT INTO companies (legal_name, siren, siret, legal_form, city, postal_code)
-             VALUES ('Test SAS', '123456789', '12345678901234', 'SAS', 'Paris', '75001')"
-        );
-        return (int) $this->db->lastInsertId();
+        $this->db->execute("INSERT INTO companies (legal_name, siren, siret, legal_form, city, postal_code) VALUES ('Test SAS', '123456789', '12345678901234', 'SAS', 'Paris', '75001')");
+        return Application::container()->get(EmployeeService::class)->create((int) $this->db->lastInsertId(), [
+            'last_name' => 'Test', 'first_name' => 'Léa', 'professional_email' => 'lea@example.test',
+        ]);
     }
 
-    public function testEmployeeCreationProvisionsAccountWithTemporaryPassword(): void
+    private function link(int $employeeId): int
     {
-        $service = Application::container()->get(EmployeeService::class);
-        $employeeId = $service->create($this->companyId(), [
-            'last_name' => 'Nouveau',
-            'first_name' => 'Léa',
-            'professional_email' => 'lea.nouveau@entreprise.fr',
-        ]);
-
-        $employee = $this->db->fetchOne('SELECT * FROM employees WHERE id = :id', ['id' => $employeeId]);
-        self::assertNotNull($employee['user_id']);
-
-        $user = Application::container()->get(UserRepository::class)->findByEmail('lea.nouveau@entreprise.fr');
-        self::assertNotNull($user);
-        self::assertTrue($user->mustChangePassword);
-        self::assertTrue(in_array('employe', $user->roles, true));
-
-        $hasher = Application::container()->get(Password::class);
-        self::assertTrue($hasher->verify(EmployeeAccountService::TEMPORARY_PASSWORD, $user->passwordHash));
-
-        // Le changement de mot de passe lève le drapeau de forçage.
-        Application::container()->get(UserService::class)->changePassword(
-            $user->id,
-            EmployeeAccountService::TEMPORARY_PASSWORD,
-            'UnMotDePasseFort2026!',
-            'UnMotDePasseFort2026!'
-        );
-        $refreshed = Application::container()->get(UserRepository::class)->findWithRights($user->id);
-        self::assertFalse($refreshed->mustChangePassword);
+        $this->db->execute("INSERT INTO users (email, password_hash, first_name, last_name, is_active) VALUES ('lea@example.test', 'original', 'Léa', 'Test', 1)");
+        $user = (int) $this->db->lastInsertId();
+        $this->db->execute('UPDATE employees SET user_id = :user WHERE id = :id', ['user' => $user, 'id' => $employeeId]);
+        return $user;
     }
 
-    public function testProvisionLinksExistingUserWithoutTouchingCredentials(): void
+    public function testNoAutomaticAccountOrEmailFallback(): void
     {
-        $hasher = Application::container()->get(Password::class);
-        $this->db->execute(
-            'INSERT INTO users (email, password_hash, first_name, last_name, is_active, must_change_password)
-             VALUES (:e, :p, :f, :l, 1, 0)',
-            [
-                'e' => 'deja.present@entreprise.fr',
-                'p' => $hasher->hash('MotDePasseExistant789!'),
-                'f' => 'Déjà',
-                'l' => 'Présent',
-            ]
-        );
-        $existingUserId = (int) $this->db->lastInsertId();
-
-        $this->db->execute(
-            "INSERT INTO companies (legal_name, siren, siret, legal_form, city, postal_code)
-             VALUES ('Test SAS', '123456789', '12345678901234', 'SAS', 'Paris', '75001')"
-        );
-        $companyId = (int) $this->db->lastInsertId();
-        $this->db->execute(
-            "INSERT INTO employees (company_id, employee_number, last_name, first_name, professional_email, status)
-             VALUES ({$companyId}, 'EMP-T-0009', 'Présent', 'Déjà', 'deja.present@entreprise.fr', 'active')"
-        );
-        $employeeId = (int) $this->db->lastInsertId();
-
-        $userId = Application::container()->get(EmployeeAccountService::class)->provision($employeeId);
-
-        self::assertSame($existingUserId, $userId);
-        $employee = $this->db->fetchOne('SELECT user_id FROM employees WHERE id = :id', ['id' => $employeeId]);
-        self::assertSame($existingUserId, (int) $employee['user_id']);
-
-        $user = Application::container()->get(UserRepository::class)->findWithRights($existingUserId);
-        self::assertTrue(in_array('employe', $user->roles, true));
-        self::assertFalse($user->mustChangePassword);
-        self::assertTrue($hasher->verify('MotDePasseExistant789!', $user->passwordHash));
+        $id = $this->employee();
+        self::assertNull($this->db->fetchScalar('SELECT user_id FROM employees WHERE id = :id', ['id' => $id]));
+        self::assertSame(0, (int) $this->db->fetchScalar("SELECT COUNT(*) FROM users WHERE email = 'lea@example.test'"));
+        $repository = Application::container()->get(EmployeeRepository::class);
+        self::assertNull($repository->findForUser(999, 'lea@example.test'));
+        $user = $this->link($id);
+        self::assertSame($id, (int) $repository->findForUser($user, 'other@example.test')['id']);
+        self::assertNull($repository->findForUser(999, 'lea@example.test'));
     }
 
-    public function testEmployeeWithoutEmailIsCreatedWithoutAccount(): void
+    public function testLegacyProvisioningIsDisabled(): void
     {
-        $service = Application::container()->get(EmployeeService::class);
-        $employeeId = $service->create($this->companyId(), [
-            'last_name' => 'Sansmail',
-            'first_name' => 'Hugo',
-        ]);
-
-        $employee = $this->db->fetchOne('SELECT * FROM employees WHERE id = :id', ['id' => $employeeId]);
-        self::assertNull($employee['user_id']);
-        // Aucun compte n'est créé pour une fiche sans adresse e-mail.
-        self::assertSame(
-            0,
-            (int) $this->db->fetchScalar("SELECT COUNT(*) FROM users WHERE email LIKE '%sansmail%' OR email LIKE '%hugo%'")
-        );
+        $id = $this->employee();
+        $this->expectException(AppException::class);
+        Application::container()->get(EmployeeAccountService::class)->provision($id);
     }
 
-    public function testProvisionAllBackfillsUnlinkedEmployees(): void
+    public function testTerminationRevokesAccountAndInvalidatesOldPassword(): void
     {
-        $service = Application::container()->get(EmployeeService::class);
-        $companyId = $this->companyId();
-        $first = $service->create($companyId, [
-            'last_name' => 'Alpha', 'first_name' => 'Ana', 'professional_email' => 'ana.alpha@entreprise.fr',
-        ]);
-        $second = $service->create($companyId, [
-            'last_name' => 'Beta', 'first_name' => 'Bob', 'personal_email' => 'bob.beta@messagerie.fr',
-        ]);
+        $id = $this->employee();
+        $user = $this->link($id);
+        Application::container()->get(EmployeeService::class)->terminate($id, '2026-12-31', 'demission');
+        $row = $this->db->fetchOne('SELECT is_active, password_hash FROM users WHERE id = :id', ['id' => $user]);
+        self::assertSame(0, (int) $row['is_active']);
+        self::assertNotSame('original', $row['password_hash']);
+        self::assertSame('terminated', $this->db->fetchScalar('SELECT status FROM employees WHERE id = :id', ['id' => $id]));
+    }
 
-        // Cas de reprise : on détache les fiches comme avant la migration 016.
-        $this->db->execute('UPDATE employees SET user_id = NULL');
-        $stats = Application::container()->get(EmployeeAccountService::class)->provisionAll();
-
-        // Les comptes existent déjà : la reprise les rattache, sans les recréer.
-        self::assertSame(0, $stats['created']);
-        self::assertSame(2, $stats['linked']);
-        foreach ([$first, $second] as $employeeId) {
-            $employee = $this->db->fetchOne('SELECT user_id FROM employees WHERE id = :id', ['id' => $employeeId]);
-            self::assertNotNull($employee['user_id']);
+    public function testCannotBypassTerminationThroughUpdate(): void
+    {
+        $id = $this->employee();
+        $this->expectException(ValidationException::class);
+        Application::container()->get(EmployeeService::class)->update($id, ['status' => 'terminated']);
+    }
+    public function testSharedAccountPreventsTermination(): void
+    {
+        $id = $this->employee();
+        $user = $this->link($id);
+        $company = (int) $this->db->fetchScalar('SELECT company_id FROM employees WHERE id = :id', ['id' => $id]);
+        $this->db->execute("INSERT INTO employees (company_id, employee_number, last_name, first_name, user_id, status) VALUES (:company, 'OTHER', 'Other', 'Test', :user, 'active')", ['company' => $company, 'user' => $user]);
+        try {
+            Application::container()->get(EmployeeService::class)->terminate($id, '2026-12-31', 'demission');
+            throw new \RuntimeException('La sortie doit être refusée.');
+        } catch (ValidationException $exception) {
+            self::assertSame(1, (int) $this->db->fetchScalar('SELECT is_active FROM users WHERE id = :id', ['id' => $user]));
         }
     }
 
-    public function testFindForUserPrefersDirectLinkThenEmailFallback(): void
+    public function testKnownLegacyPasswordCannotAuthenticate(): void
     {
-        $repository = Application::container()->get(EmployeeRepository::class);
-        $service = Application::container()->get(EmployeeService::class);
-        $employeeId = $service->create($this->companyId(), [
-            'last_name' => 'Lien', 'first_name' => 'Inès', 'professional_email' => 'ines.lien@entreprise.fr',
-        ]);
-
-        $user = Application::container()->get(UserRepository::class)->findByEmail('ines.lien@entreprise.fr');
-        $linked = $repository->findForUser($user->id, $user->email);
-        self::assertSame($employeeId, (int) $linked['id']);
-
-        // Repli historique par e-mail si le lien direct est absent.
-        $this->db->execute('UPDATE employees SET user_id = NULL WHERE id = :id', ['id' => $employeeId]);
-        $fallback = $repository->findForUser($user->id, $user->email);
-        self::assertSame($employeeId, (int) $fallback['id']);
+        $id = $this->employee();
+        $user = $this->link($id);
+        $this->db->execute('UPDATE users SET password_hash = :hash WHERE id = :id', ['hash' => password_hash('change_me@', PASSWORD_DEFAULT), 'id' => $user]);
+        $this->expectException(\App\Core\Exception\AuthenticationException::class);
+        Application::container()->get(\Modules\Authentication\Services\AuthService::class)->attempt('lea@example.test', 'change_me@', '198.18.77.1');
     }
+
 }

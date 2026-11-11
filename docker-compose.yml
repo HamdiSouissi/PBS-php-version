@@ -67,7 +67,7 @@ services:
     container_name: pbs-nginx
     restart: unless-stopped
     ports:
-      - "${APP_HTTP_PORT:-8080}:80"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_HTTP_PORT:-8080}:80"
     depends_on:
       # Nginx n'accepte le trafic qu'une fois PHP-FPM sain (migrations incluses),
       # ce qui évite les 502 pendant le démarrage de l'applicatif.

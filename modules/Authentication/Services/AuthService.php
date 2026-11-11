@@ -54,6 +54,13 @@ final class AuthService
             throw new AuthenticationException('Identifiants invalides.');
         }
 
+        // Bloquer les anciens comptes créés avec le secret public connu.
+        // Une réinitialisation par lien est indispensable, même si un ancien
+        // compte a perdu le drapeau de changement forcé.
+        if ($this->password->verify('change_me@', $user->passwordHash)) {
+            throw new AuthenticationException('Ce mot de passe temporaire est désactivé. Demandez une réinitialisation sécurisée.');
+        }
+
         // Re-hachage si les paramètres de sécurité ont évolué.
         if ($this->password->needsRehash($user->passwordHash)) {
             $this->db->execute(
@@ -103,7 +110,7 @@ final class AuthService
             return null;
         }
         $user = $this->users->findByRememberToken($token);
-        if ($user === null) {
+        if ($user === null || !$user->isActive || $this->password->verify('change_me@', $user->passwordHash)) {
             return null;
         }
         // Rotation du jeton à chaque utilisation.

@@ -27,7 +27,7 @@ final class PortalController extends Controller
 
     /**
      * Fiche salarié rattachée au compte utilisateur courant (lien direct
-     * via employees.user_id, repli historique par e-mail).
+     * via employees.user_id, après rattachement explicite).
      */
     private function currentEmployee(): array
     {
@@ -49,7 +49,7 @@ final class PortalController extends Controller
         } catch (NotFoundException $exception) {
             // Cas normal pour l'administrateur initial : pas de fiche salarié.
             flash('warning', $exception->getMessage()
-                . ' (Renseignez l\'e-mail professionnel d\'une fiche salarié identique à l\'e-mail du compte.)');
+                . ' Demandez à un administrateur de vérifier le rattachement du compte.');
             return new RedirectResponse('/dashboard');
         }
         $year = (int) date('Y');

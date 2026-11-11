@@ -40,10 +40,9 @@ final class DocumentAccessTest extends DatabaseTestCase
             'first_name' => 'Test',
             'professional_email' => $email,
         ]);
-        $userId = (int) $this->db->fetchScalar(
-            'SELECT user_id FROM employees WHERE id = :id',
-            ['id' => $employeeId]
-        );
+        $roleId = (int) $this->db->fetchScalar("SELECT id FROM roles WHERE code = 'employe'");
+        $result = Application::container()->get(\Modules\Employees\Services\EmployeeAccountAdministrationService::class)->create($employeeId, $roleId);
+        $userId = (int) $result['user_id'];
         return ['employee_id' => $employeeId, 'user_id' => $userId];
     }
 

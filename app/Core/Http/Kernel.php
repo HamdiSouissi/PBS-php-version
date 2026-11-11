@@ -72,7 +72,8 @@ final class Kernel
 
             return $pipeline->handle($request, $core, $this->container);
         } catch (Throwable $exception) {
-            return $this->exceptionHandler->handle($exception, $request);
+            $response = $this->exceptionHandler->handle($exception, $request);
+            return (new \App\Core\Http\Middleware\SecurityHeadersMiddleware())->handle($request, static fn () => $response);
         }
     }
 

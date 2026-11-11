@@ -33,6 +33,9 @@ final class EmployeeAccountAdministrationService
         if ($row === null) {
             throw new NotFoundException('Salarié introuvable.');
         }
+        if ($row['status'] === 'terminated') {
+            throw new AppException('Impossible de créer ou rattacher un compte pour un salarié sorti.');
+        }
         if (!empty($row['user_id'])) {
             throw new AppException('Ce salarié possède déjà un compte rattaché.');
         }

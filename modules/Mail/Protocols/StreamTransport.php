@@ -31,6 +31,7 @@ final class StreamTransport implements MailTransport
             'ssl' => [
                 'verify_peer' => true,
                 'verify_peer_name' => true,
+                'peer_name' => $host,
                 'allow_self_signed' => false,
                 'disable_compression' => true,
                 'SNI_server_name' => $host,
@@ -59,16 +60,9 @@ final class StreamTransport implements MailTransport
         if ($this->stream === null) {
             throw new ProtocolException('Aucune connexion ouverte à sécuriser.');
         }
-        $result = stream_socket_enable_crypto(
-            $this->stream,
-            true,
-            [
-                'verify_peer' => true,
-                'verify_peer_name' => true,
-                'allow_self_signed' => false,
-                'SNI_server_name' => $this->host,
-            ]
-        );
+        // Les options de vérification sont déjà définies sur le contexte du
+        // flux dans connect() ; le troisième paramètre est un masque entier.
+        $result = stream_socket_enable_crypto($this->stream, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
         if ($result !== true) {
             throw new ProtocolException('La négociation STARTTLS a échoué.');
         }

@@ -61,7 +61,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/pbs
 
 # Dépendances PHP d'abord (meilleure réutilisation du cache de couches).
-COPY composer.json ./
+COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts
 
 # ---- Code de l'application ---------------------------------------------------

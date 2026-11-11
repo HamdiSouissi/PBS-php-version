@@ -17,8 +17,9 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         $response = $next($request);
         $response->withHeader('X-Content-Type-Options', 'nosniff');
         $response->withHeader('X-Frame-Options', 'DENY');
-        $response->withHeader('Referrer-Policy', str_starts_with($request->path(), '/signature/') ? 'no-referrer' : 'strict-origin-when-cross-origin');
-        if (str_starts_with($request->path(), '/signature/')) {
+        $sensitive = str_starts_with($request->path(), '/signature/') || $request->path() === '/reset-password';
+        $response->withHeader('Referrer-Policy', $sensitive ? 'no-referrer' : 'strict-origin-when-cross-origin');
+        if ($sensitive) {
             $response->withHeader('Cache-Control', 'no-store');
             $response->withHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
         }

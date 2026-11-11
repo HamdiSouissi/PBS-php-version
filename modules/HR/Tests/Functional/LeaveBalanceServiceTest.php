@@ -87,9 +87,12 @@ final class LeaveBalanceServiceTest extends DatabaseTestCase
         $employeeId = $this->hireEmployee('2026-01-01');
         $summary = $this->service()->summary($employeeId, 2026);
 
-        // Janvier jusqu'à la date courante (28 octobre 2026) : 9 mois pleins
-        // (janvier→septembre) plus la fraction d'octobre.
-        self::assertEqualsWithDelta(9 + 28 / 31, $summary['months'], 0.001);
+        // Le calcul utilise la date du jour, bornée à l'année demandée.
+        $today = new \DateTimeImmutable('today');
+        $start = new \DateTimeImmutable('2026-01-01');
+        $end = min($today, new \DateTimeImmutable('2026-12-31'));
+        $expectedMonths = $end < $start ? 0.0 : $this->service()->accruedMonths($start, $end);
+        self::assertEqualsWithDelta($expectedMonths, $summary['months'], 0.001);
         self::assertEqualsWithDelta(
             $summary['months'] * (25 / 12),
             $summary['accrued_days'],

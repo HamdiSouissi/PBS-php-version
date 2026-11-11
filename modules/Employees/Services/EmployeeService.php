@@ -16,8 +16,7 @@ final class EmployeeService
 {
     public function __construct(
         private readonly EmployeeRepository $repository,
-        private readonly Connection $db,
-        private readonly EmployeeAccountService $accounts
+        private readonly Connection $db
     ) {
     }
 
@@ -58,11 +57,6 @@ final class EmployeeService
             ]);
             audit('employee.create', 'Employee', $employeeId, ['number' => $number]);
 
-            // Création automatique du compte de connexion (rôle employe,
-            // mot de passe temporaire). Sans e-mail exploitable, la fiche est
-            // conservée et la reprise se fait via la commande dédiée.
-            $this->accounts->provision($employeeId);
-
             return $employeeId;
         });
     }
@@ -81,6 +75,9 @@ final class EmployeeService
             'termination_reason',
         ];
         $update = array_intersect_key($data, array_flip($allowed));
+        if (($update['status'] ?? '') === 'terminated' && $employee['status'] !== 'terminated') {
+            throw new ValidationException(['status' => 'Utilisez la procédure de sortie pour révoquer les accès.']);
+        }
         if ($update === []) {
             return;
         }
@@ -123,11 +120,28 @@ final class EmployeeService
      */
     public function terminate(int $id, string $date, string $reason): void
     {
-        $this->repository->findOrFail($id);
         $this->db->transaction(function (Connection $db) use ($id, $date, $reason): void {
+            $employee = $db->fetchOne('SELECT * FROM employees WHERE id = :id' . ($db->isSqlite() ? '' : ' FOR UPDATE'), ['id' => $id]);
+            if ($employee === null) {
+                throw new NotFoundException('Salarié introuvable.');
+            }
+            $userId = (int) ($employee['user_id'] ?? 0);
+            if ($userId > 0) {
+                $user = $db->fetchOne('SELECT id FROM users WHERE id = :id' . ($db->isSqlite() ? '' : ' FOR UPDATE'), ['id' => $userId]);
+                if ($user === null || $db->fetchOne('SELECT id FROM employees WHERE user_id = :user AND id <> :id', ['user' => $userId, 'id' => $id]) !== null) {
+                    throw new ValidationException(['account' => 'Vérifiez le rattachement du compte avant la sortie.']);
+                }
+                if ($db->fetchOne("SELECT ru.user_id FROM role_user ru JOIN roles r ON r.id = ru.role_id WHERE ru.user_id = :id AND r.code = 'admin'", ['id' => $userId]) !== null) {
+                    throw new ValidationException(['account' => 'La sortie d’un compte administrateur exige une gestion manuelle préalable de ses accès.']);
+                }
+                $db->execute('UPDATE users SET is_active = 0, password_hash = :hash, must_change_password = 1, updated_at = ' . $db->nowExpression() . ' WHERE id = :id', ['id' => $userId, 'hash' => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT)]);
+                foreach (['remember_tokens', 'password_resets', 'api_two_factor_challenges'] as $table) {
+                    $db->execute('DELETE FROM ' . $table . ' WHERE user_id = :id', ['id' => $userId]);
+                }
+            }
             $db->execute(
                 "UPDATE employees SET status = 'terminated', termination_date = :d,
-                    termination_reason = :r, updated_at = {$db->nowExpression()} WHERE id = :id",
+                    termination_reason = :r, is_portal_enabled = 0, portal_token = NULL, updated_at = {$db->nowExpression()} WHERE id = :id",
                 ['d' => $date, 'r' => $reason, 'id' => $id]
             );
             $db->execute(
@@ -135,13 +149,16 @@ final class EmployeeService
                  WHERE employee_id = :id AND status = 'active'",
                 ['d' => $date, 'id' => $id]
             );
+            audit('employee.terminate', 'Employee', $id, ['date' => $date, 'reason' => $reason, 'account_revoked' => $userId > 0]);
         });
-        audit('employee.terminate', 'Employee', $id, ['date' => $date, 'reason' => $reason]);
     }
 
     public function enablePortal(int $id): string
     {
-        $this->repository->findOrFail($id);
+        $employee = $this->repository->findOrFail($id);
+        if ($employee['status'] === 'terminated') {
+            throw new ValidationException(['status' => 'Impossible d’activer le portail pour un salarié sorti.']);
+        }
         $token = bin2hex(random_bytes(24));
         $this->db->execute(
             'UPDATE employees SET is_portal_enabled = TRUE, portal_token = :t, updated_at = ' . $this->db->nowExpression() . ' WHERE id = :id',

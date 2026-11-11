@@ -218,6 +218,7 @@ $actions .= '<button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal
             <?= csrf_field() ?>
             <div class="modal-header"><h5 class="modal-title" id="terminateModalTitle">Enregistrer la sortie</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
+                <p class="alert alert-warning small">Le compte lié sera désactivé immédiatement et ses sessions révoquées, même si la date de sortie est future. Une réinitialisation sera nécessaire pour le réactiver.</p>
                 <div class="mb-2"><label class="form-label small">Date de sortie</label><input type="date" class="form-control form-control-sm" name="termination_date" required></div>
                 <div><label class="form-label small">Motif</label>
                     <select class="form-select form-select-sm" name="termination_reason" required>
