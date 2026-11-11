@@ -24,7 +24,7 @@ final class ExpenseReceiptService
         return $this->db->fetchAll('SELECT id, original_name, file_size, created_at FROM expense_receipts WHERE report_id = :id ORDER BY id DESC', ['id' => $id]);
     }
 
-    public function upload(int $reportId, UploadedFile $file, int $userId): void
+    public function upload(int $reportId, UploadedFile $file, int $userId): string
     {
         if ($file->extension() !== 'pdf' || $file->size() <= 0 || $file->size() > self::MAX_SIZE) {
             throw new ValidationException(['file' => 'Sélectionnez un PDF non vide de 10 Mo maximum.']);
@@ -59,6 +59,7 @@ final class ExpenseReceiptService
             }
             throw $exception;
         }
+        return $path;
     }
 
     /** @return array{path:string,name:string,size:int} */

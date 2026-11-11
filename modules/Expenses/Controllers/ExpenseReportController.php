@@ -40,7 +40,10 @@ final class ExpenseReportController extends Controller
     public function create(Request $request): Response
     {
         $this->auth()->requireAnyPermission(['expenses.request', 'expenses.approve']);
+        $previous = $_SESSION['expense_create_input'] ?? [];
+        unset($_SESSION['expense_create_input']);
         return $this->view('Expenses::form', [
+            'previous' => is_array($previous) ? $previous : [],
             'title' => 'Nouvelle note de frais',
             'employees' => $this->activeEmployees(),
             'categories' => ExpenseReportService::CATEGORIES,
@@ -50,11 +53,16 @@ final class ExpenseReportController extends Controller
     public function store(Request $request): Response
     {
         $this->auth()->requireAnyPermission(['expenses.request', 'expenses.approve']);
-        $data = $this->validator()->validate($request->all(), [
-            'employee_id' => 'required|integer',
-            'title' => 'required|string|max:180',
-            'notes' => 'nullable|string|max:1000',
-        ]);
+        try {
+            $data = $this->validator()->validate($request->all(), [
+                'employee_id' => 'required|integer',
+                'title' => 'required|string|max:180',
+                'notes' => 'nullable|string|max:1000',
+            ]);
+        } catch (\App\Core\Exception\ValidationException $exception) {
+            flash('danger', implode(' ', $exception->errors()) . ' Sélectionnez à nouveau le fichier avant de réessayer.');
+            return $this->retryCreate($request);
+        }
         $rawLines = (array) $request->input('lines', []);
         $lines = [];
         foreach ((array) ($rawLines['label'] ?? []) as $i => $label) {
@@ -73,12 +81,46 @@ final class ExpenseReportController extends Controller
         }
         if ($lines === []) {
             flash('error', 'Ajoutez au moins une ligne de dépense valide.');
-            return new RedirectResponse('/expenses/new');
+            return $this->retryCreate($request);
         }
         $data['lines'] = $lines;
-        $id = $this->reports->create($data, $this->auth()->id());
-        flash('success', 'Note de frais enregistrée en brouillon.');
+        $path = null;
+        try {
+            $file = $request->file('receipt');
+            if ($file !== null && !$this->canAccessReceipts(['employee_id' => $data['employee_id']])) {
+                throw new \App\Core\Exception\AuthorizationException('Vous ne pouvez pas ajouter un justificatif pour ce salarié.');
+            }
+            $id = $this->db->transaction(function (Connection $db) use ($data, $file, &$path): int {
+                $id = $this->reports->create($data, (int) $this->auth()->id());
+                if ($file !== null) {
+                    $path = $this->receipts->upload($id, $file, (int) $this->auth()->id());
+                }
+                return $id;
+            });
+        } catch (\App\Core\Exception\AuthorizationException $exception) {
+            throw $exception;
+        } catch (\App\Core\Exception\ValidationException $exception) {
+            if ($path !== null) {
+                @unlink($path);
+            }
+            flash('danger', implode(' ', $exception->errors()) . ' Sélectionnez à nouveau le fichier avant de réessayer.');
+            return $this->retryCreate($request);
+        } catch (\Throwable $exception) {
+            if ($path !== null) {
+                @unlink($path);
+            }
+            \App\Core\Application::container()->get(\App\Core\Logger\Logger::class)->error('Échec de création de note de frais ou de son justificatif', ['error' => $exception->getMessage()]);
+            flash('danger', 'La note n’a pas été enregistrée. Vérifiez le stockage et la base de données, puis réessayez. Sélectionnez à nouveau le fichier.');
+            return $this->retryCreate($request);
+        }
+        flash('success', $file !== null ? 'Note et justificatif PDF enregistrés en brouillon.' : 'Note de frais enregistrée en brouillon.');
         return new RedirectResponse('/expenses/' . $id);
+    }
+
+    private function retryCreate(Request $request): RedirectResponse
+    {
+        $_SESSION['expense_create_input'] = $request->only(['employee_id', 'title', 'notes', 'lines']);
+        return new RedirectResponse('/expenses/new');
     }
 
     public function show(Request $request, int $id): Response
@@ -238,12 +280,21 @@ final class ExpenseReportController extends Controller
     {
         $this->requireReceiptAccess($id);
         $this->auth()->requireAnyPermission(['expenses.request', 'expenses.approve']);
-        $file = $request->file('receipt');
-        if ($file === null) {
-            throw new \App\Core\Exception\ValidationException(['receipt' => 'Sélectionnez un fichier PDF.']);
+        try {
+            $file = $request->file('receipt');
+            if ($file === null) {
+                throw new \App\Core\Exception\ValidationException(['receipt' => 'Sélectionnez un fichier PDF.']);
+            }
+            $this->receipts->upload($id, $file, (int) $this->auth()->id());
+            flash('success', 'Justificatif ajouté.');
+        } catch (\App\Core\Exception\ValidationException $exception) {
+            flash('danger', implode(' ', $exception->errors()));
+        } catch (\App\Core\Exception\AppException $exception) {
+            flash('danger', $exception->getMessage());
+        } catch (\Throwable $exception) {
+            \App\Core\Application::container()->get(\App\Core\Logger\Logger::class)->error('Échec du téléversement du justificatif de frais', ['report_id' => $id, 'error' => $exception->getMessage()]);
+            flash('danger', 'Impossible d’ajouter le justificatif. Vérifiez le stockage et les migrations, puis réessayez.');
         }
-        $this->receipts->upload($id, $file, (int) $this->auth()->id());
-        flash('success', 'Justificatif ajouté.');
         return new RedirectResponse('/expenses/' . $id);
     }
 

@@ -85,7 +85,7 @@ if ($report['status'] === 'approved') {
             <?= csrf_field() ?><label class="visually-hidden" for="receipt">Facture PDF</label>
             <input id="receipt" class="form-control" type="file" name="receipt" accept=".pdf,application/pdf" required>
             <button class="btn btn-primary" type="submit">Ajouter une facture PDF</button>
-            <small class="text-muted">PDF uniquement, 10 Mo maximum. Ajoutez plusieurs fichiers un par un avant soumission.</small>
+            <small class="text-muted">PDF uniquement, 10 Mo maximum (limites serveur : fichier <?= e((string) ini_get('upload_max_filesize')) ?>, requête <?= e((string) ini_get('post_max_size')) ?>). Ajoutez plusieurs fichiers un par un avant soumission.</small>
         </form>
     <?php endif; ?>
 </div></div>
